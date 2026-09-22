@@ -24,3 +24,4 @@ No Auth flow, business table, GPS/PostGIS setup, staging/production project, or 
 ## Verification
 
 Node 24.21.0 selected by pnpm for root and API scripts. Build, lint, typecheck, unit test and API e2e test passed. Peer dependencies have no conflicts after removing the unused path alias plugin from the Nest template. Local HTTP smoke checks are run for both apps.
+Supabase Auth settings endpoint returned HTTP 200 using the publishable key. Direct SQL verification was not performed because an earlier automatic approval review was blocked by a Codex usage limit.
