@@ -21,7 +21,7 @@ For another checkout copy the `.env.example` files and supply credentials from S
 
 Development project: [rental-fleet-dev](https://supabase.com/dashboard/project/eeryymswcufnebibigqf), Singapore.
 Only development is provisioned. Staging and production will use separate Supabase projects and secrets when needed.
-`DATABASE_URL` requires a database password set by the owner; see [setup status](docs/setup-status.md).
+`DATABASE_URL` is configured in this local checkout and verified with a read-only PostgreSQL query over TLS. See [setup status](docs/setup-status.md).
 The API loads `.env` at startup. The web app loads `.env.local` through Next.js.
 Credentials are prepared for Stage 2; application Auth/database integration is not implemented yet.
 

@@ -9,7 +9,7 @@ The source guide is Stage_1_Setup_Repo_to_Supabase_Project.docx. Scope is reposi
 - Creation quote confirmed by owner: 0/month. Future plan/usage changes are separate.
 - URL and publishable key are configured in both local env files.
 - Backend credential is configured only in the ignored API env file.
-- DATABASE_URL is pending the owner's database password. The project creation tool did not return a password.
+- DATABASE_URL is configured in the ignored local API env file. Removed the template brackets around the supplied password after successful verification.
 
 ## Complete database connection
 
@@ -24,4 +24,9 @@ No Auth flow, business table, GPS/PostGIS setup, staging/production project, or 
 ## Verification
 
 Node 24.21.0 selected by pnpm for root and API scripts. Build, lint, typecheck, unit test and API e2e test passed. Peer dependencies have no conflicts after removing the unused path alias plugin from the Nest template. Local HTTP smoke checks are run for both apps.
-Supabase Auth settings endpoint returned HTTP 200 using the publishable key. Direct SQL verification was not performed because an earlier automatic approval review was blocked by a Codex usage limit.
+Supabase Auth settings endpoint returned HTTP 200 using the publishable key. PostgreSQL read-only verification subsequently passed over TLS with CA and hostname validation.
+
+## Completion
+
+GitHub CLI is authenticated as nhuffan and main has been pushed to the private repository.
+The public Supabase CA is saved at infra/certs/supabase-ca.crt, downloaded from the project Dashboard certificate link. When integrating a database driver, load this CA and enable certificate validation (for node-postgres: ssl: { ca: certificateContents, rejectUnauthorized: true }). Do not disable TLS verification.
