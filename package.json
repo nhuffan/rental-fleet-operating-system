@@ -14,7 +14,10 @@
     "lint": "pnpm -r --if-present lint",
     "typecheck": "pnpm -r --if-present typecheck",
     "test": "pnpm --filter api test",
-    "test:e2e": "pnpm --filter api test:e2e"
+    "test:e2e": "pnpm --filter api build && pnpm --filter api test:e2e",
+    "db:migrate": "pnpm --filter api db:migrate",
+    "db:seed": "pnpm --filter api db:seed",
+    "openapi": "pnpm --filter api openapi"
   },
   "devEngines": {
     "runtime": {

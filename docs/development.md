@@ -1,54 +1,50 @@
-# Development guide
+# Development
 
-Stage 1 foundation: Next.js Web, NestJS API and managed Supabase in a pnpm monorepo.
+## Run and verify
 
-## Run locally
-
-```sh
-pnpm install
-pnpm dev
-```
-
-Web: http://localhost:3000. API: http://localhost:3001 (GET / returns Hello World!).
-Run independently with `pnpm dev:web` and `pnpm dev:api`.
-Node 24.21.0 is downloaded and selected for package scripts by pnpm. pnpm is pinned to 11.19.0.
-For direct Node commands use `pnpm exec node`, or activate `.nvmrc` with your Node version manager.
-
-## Environment
-
-Local files: `apps/web/.env.local` and `apps/api/.env`; both are ignored by Git.
-For another checkout copy the `.env.example` files and supply credentials from Supabase.
-
-Development project: [rental-fleet-dev](https://supabase.com/dashboard/project/eeryymswcufnebibigqf), Singapore.
-Only development is provisioned. Staging and production will use separate Supabase projects and secrets when needed.
-`DATABASE_URL` is configured in this local checkout and verified with a read-only PostgreSQL query over TLS. See [setup status](docs/setup-status.md).
-The API loads `.env` at startup. The web app loads `.env.local` through Next.js.
-Credentials are prepared for Stage 2; application Auth/database integration is not implemented yet.
-
-## Workspace
-
-- `apps/web`: Next.js, TypeScript, App Router, Tailwind, ESLint.
-- `apps/api`: NestJS, strict TypeScript, Oxlint, Vitest.
-- `packages/contracts`: shared API type boundary.
-- `packages/config`: shared configuration boundary.
-- `docs`: setup and architecture notes.
-- `infra`: managed infrastructure information.
-
-## Checks
+Use pnpm 11.19.0; project scripts select Node 24.21.0. Copy apps/web/.env.example to apps/web/.env.local and apps/api/.env.example to apps/api/.env on a new checkout. Supply real values locally only.
 
 ```sh
+pnpm install --frozen-lockfile
+pnpm dev                 # Web :3000, API :3001; Ctrl+C stops both
 pnpm build
 pnpm lint
 pnpm typecheck
-pnpm test
-pnpm test:e2e
+pnpm test                # permissions and clean-database migration replay
+pnpm test:e2e            # real dev Auth/API/RLS tests; requires demo seed
+pnpm openapi             # after API build; exports spec and generated types
 ```
 
-## Security and next stage
+API: /api/v1. Swagger: /api/docs; JSON: /api/openapi.json (disabled in production). API errors contain statusCode, code, message, requestId. Lists accept page (default 1), limit (default 20, maximum 100). Dates are UTC ISO strings.
 
-Never put backend secrets in `NEXT_PUBLIC_*` variables or commit real environment files.
-When adding exposed tables, enable RLS and enforce tenant membership/business_id authorization.
-NestJS owns domain logic and critical state changes; RLS is defense in depth.
-Next stage: Auth integration, token verification, migrations, Business/Membership schema and tenant isolation tests.
+## Database and demo login
 
-References: [Next.js](https://nextjs.org/docs/app/getting-started/installation), [NestJS](https://docs.nestjs.com/first-steps), [pnpm runtime](https://pnpm.io/package_json#devenginesruntime), [Supabase API keys](https://supabase.com/docs/guides/api/api-keys).
+Drizzle is the query layer. SQL migrations in supabase/migrations are the sole schema source of truth; schema.ts maps the query types. Create files with `supabase migration new descriptive_name`, test with `pnpm test`, then `pnpm db:migrate`. The migration command checks SUPABASE_PROJECT_REF against SUPABASE_URL, links that project, and uses Supabase migration history. Supabase CLI must be installed and authenticated. Preview migrations with `pnpm --filter api db:migrate --dry-run`.
+
+DATABASE_URL is the PostgreSQL URI from Connect → Session pooler, with a URL-encoded password and no placeholder brackets. The database client verifies TLS using infra/certs/supabase-ca.crt (public CA downloaded from the Supabase Dashboard); override DATABASE_CA_PATH if the deployment uses another CA. Never disable certificate verification.
+
+On a development project only, set APP_ENV=development, ALLOW_DEMO_SEED=true and a working server key in SUPABASE_SECRET_KEY, then run `pnpm db:seed`. It creates two demo businesses and role-specific test users without sending email. Login details live only in ignored `.env.demo.json` at the repository root; use accounts.ownerA.email/password to log in. Seed is repeatable and does not reset existing users or data. Tests add temporary records and clean them up; audit records remain as security evidence. Use only disposable demo tenants for integration tests.
+
+Production users are created in Supabase Auth by an administrator. An OWNER/ADMIN adds their known Auth User ID through the membership UI; there is no automatic email invite. An OWNER can assign elevated roles. Demo accounts must never be seeded into staging/production.
+
+## Architecture and security
+
+- Web uses per-request Supabase SSR clients, cookie refresh in proxy.ts, and protected server layouts. It forwards access tokens to NestJS. Browser code uses only the publishable key.
+- NestJS verifies each bearer token against Supabase Auth, then checks active profile/business/membership. Optional X-Business-Id selects one of the user's active memberships; otherwise the oldest active membership is used. Frontend tenant selection is never trusted by itself.
+- OWNER manages all roles; ADMIN manages operations memberships and business/branch/settings data; OPERATIONS reads business/branches/settings. The last active owner cannot be disabled or demoted through the API. Guards and transaction rechecks enforce this independently of the UI.
+- Every tenant query is scoped. Writes and audit events share a transaction; a business row lock serializes tenant admin changes. Audit metadata contains changed field names and request IDs, not passwords/tokens.
+- RLS permits only membership-scoped Data API reads; direct writes by anon/authenticated are revoked. No SECURITY DEFINER helper is used. The API uses a trusted DB connection and must always enforce its own authorization.
+- Shared API contracts are under packages/contracts. Database schema and API env are server-only. No vehicle/rental/GPS domain is implemented yet.
+
+## Staging
+
+Use an independent Supabase project and run the same migrations with its env. Supply .env.staging.api and .env.staging.web at the root (both ignored); use the app env examples as a starting point. Set APP_ENV=staging, WEB_ORIGIN to the HTTPS Web origin, public API/Supabase URLs and the staging database credentials. Do not run demo seed.
+
+```sh
+docker compose --env-file .env.staging.web -f compose.staging.yaml up --build -d
+docker compose --env-file .env.staging.web -f compose.staging.yaml down
+```
+
+The Dockerfile has separate api/web targets. NEXT_PUBLIC_* values are public build arguments; secrets are runtime env only and excluded from the build context. Put an HTTPS reverse proxy in front of the loopback-bound ports. Configure Supabase Auth Site URL/redirect allowlist for that Web origin. No staging cloud project is created automatically.
+
+Supabase leaked-password protection requires Pro or above; it is unavailable on the current Free project ([documentation](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection)).

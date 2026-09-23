@@ -1,7 +1,7 @@
 # Rental Fleet Operating System
 
-Hệ thống hỗ trợ quản lý hoạt động cho thuê xe và vận hành đội xe, với định hướng mở rộng cho nhiều doanh nghiệp trên cùng nền tảng.
+Nền tảng quản lý hoạt động cho thuê xe và vận hành đội xe cho nhiều doanh nghiệp.
 
-Dự án hướng đến quản lý xe, hợp đồng thuê và theo dõi đội xe/GPS. Hiện tại dự án đã hoàn thành nền tảng kỹ thuật Stage 1; các chức năng nghiệp vụ sẽ được triển khai ở các giai đoạn tiếp theo.
+Hệ thống cung cấp đăng nhập, không gian làm việc theo doanh nghiệp, quản lý thành viên và phân quyền, chi nhánh, cài đặt và nhật ký thay đổi. Dữ liệu được phân tách theo doanh nghiệp ở API và cơ sở dữ liệu.
 
-Nền tảng sử dụng Next.js cho ứng dụng web, NestJS cho backend và Supabase cho PostgreSQL, Auth và Storage. Mã nguồn được tổ chức theo monorepo với pnpm workspace, theo kiến trúc modular monolith và định hướng phân tách dữ liệu doanh nghiệp bằng business_id.
+Ứng dụng sử dụng Next.js cho Web, NestJS cho API và Supabase cho Auth, PostgreSQL và Storage; mã nguồn tổ chức theo pnpm monorepo. Các chức năng quản lý xe, hợp đồng thuê và GPS sẽ được phát triển trên nền tảng này.

@@ -1,0 +1,26 @@
+services:
+  api:
+    build:
+      context: .
+      target: api
+    env_file: .env.staging.api
+    environment:
+      APP_ENV: staging
+      HOST: 0.0.0.0
+      PORT: 3001
+    ports: ['127.0.0.1:3001:3001']
+    restart: unless-stopped
+  web:
+    build:
+      context: .
+      target: web
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:?required}
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:?required}
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:?required}
+    env_file: .env.staging.web
+    environment:
+      API_INTERNAL_URL: http://api:3001
+    ports: ['127.0.0.1:3000:3000']
+    depends_on: [api]
+    restart: unless-stopped
