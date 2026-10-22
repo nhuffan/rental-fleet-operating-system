@@ -16,7 +16,28 @@ type VehicleUpdate = Schemas["VehicleUpdate"];
 type GpsDeviceCreate = Schemas["GpsDeviceCreate"];
 type GpsDeviceUpdate = Schemas["GpsDeviceUpdate"];
 type DeviceAssignmentCreate = Schemas["DeviceAssignmentCreate"];
+type CustomerCreate = Schemas["CustomerCreate"];
+type CustomerUpdate = Schemas["CustomerUpdate"];
+type RentalCreate = Schemas["RentalCreate"];
+type RentalUpdate = Schemas["RentalUpdate"];
+type RentalHandover = Schemas["RentalHandover"];
+type RentalExtend = Schemas["RentalExtend"];
+type RentalReturn = Schemas["RentalReturn"];
+type RentalCancel = Schemas["RentalCancel"];
 type Mutation =
+  | { path: "/customers"; body: CustomerCreate; method: "POST" }
+  | { path: `/customers/${string}`; body: CustomerUpdate; method?: "PATCH" }
+  | { path: "/rentals"; body: RentalCreate; method: "POST" }
+  | { path: `/rentals/${string}`; body: RentalUpdate; method?: "PATCH" }
+  | { path: `/rentals/${string}/reserve`; body?: never; method: "POST" }
+  | {
+      path: `/rentals/${string}/handover`;
+      body: RentalHandover;
+      method: "POST";
+    }
+  | { path: `/rentals/${string}/extend`; body: RentalExtend; method: "POST" }
+  | { path: `/rentals/${string}/return`; body: RentalReturn; method: "POST" }
+  | { path: `/rentals/${string}/cancel`; body: RentalCancel; method: "POST" }
   | { path: "/businesses/current"; body: BusinessUpdate; method?: "PATCH" }
   | { path: "/settings"; body: SettingsUpdate; method?: "PATCH" }
   | { path: "/memberships"; body: MemberCreate; method: "POST" }
@@ -42,7 +63,11 @@ export function useMutation(businessId: string) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-  async function mutate({ path, body, method = "PATCH" }: Mutation) {
+  async function mutateResult<T>({
+    path,
+    body,
+    method = "PATCH",
+  }: Mutation): Promise<T | null> {
     setBusy(true);
     setError("");
     setMessage("");
@@ -52,7 +77,7 @@ export function useMutation(businessId: string) {
       } = await browserClient().auth.getSession();
       if (!session) {
         router.replace("/login");
-        return false;
+        return null;
       }
       const response = await fetch(`${publicEnv().api}/api/v1${path}`, {
         method,
@@ -65,11 +90,36 @@ export function useMutation(businessId: string) {
       });
       if (response.status === 401) {
         router.replace("/login");
-        return false;
+        return null;
       }
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
         const messages: Record<string, string> = {
+          CUSTOMER_NOT_FOUND:
+            "Khách hàng không tồn tại trong doanh nghiệp hiện tại.",
+          CUSTOMER_CONTACT_REQUIRED:
+            "Nhập ít nhất số điện thoại hoặc email của khách hàng.",
+          CUSTOMER_INACTIVE:
+            "Khách hàng đã ngưng hoạt động. Hãy chọn khách hàng khác.",
+          RENTAL_NOT_FOUND:
+            "Hợp đồng không tồn tại trong doanh nghiệp hiện tại.",
+          RENTAL_CONFLICT:
+            "Xe đã có lịch đặt hoặc đang thuê trong khoảng thời gian này. Chọn thời gian/xe khác hoặc tải lại danh sách xe sẵn sàng.",
+          VEHICLE_RENTED:
+            "Xe chưa được trả từ hợp đồng đang thuê. Nhận trả trước khi bàn giao hợp đồng khác.",
+          RESOURCE_HAS_RENTAL:
+            "Có hợp đồng đã đặt hoặc đang thuê. Hãy xử lý hợp đồng trước khi ngưng hoạt động.",
+          INVALID_RENTAL_STATE:
+            "Trạng thái hợp đồng đã thay đổi hoặc thao tác không còn hợp lệ. Hãy tải lại dữ liệu.",
+          RENTAL_FIELDS_LOCKED:
+            "Xe, khách hàng và thời gian không thể thay đổi ở trạng thái này. Dùng thao tác gia hạn khi cần.",
+          RENTAL_EXPIRED:
+            "Thời gian đặt xe đã hết. Cập nhật bản nháp hoặc tạo hợp đồng mới.",
+          RENTAL_NOT_STARTED:
+            "Chưa tới thời gian nhận xe. Bàn giao trong thời gian đã đặt.",
+          INVALID_EXTENSION:
+            "Thời gian trả mới phải sau thời gian trả hiện tại.",
+          INVALID_ODOMETER: "Odometer trả phải bằng hoặc lớn hơn lúc bàn giao.",
           LAST_OWNER: "Doanh nghiệp phải có ít nhất một Owner hoạt động.",
           VEHICLE_NOT_FOUND: "Xe không tồn tại trong doanh nghiệp hiện tại.",
           DEVICE_NOT_FOUND:
@@ -81,7 +131,7 @@ export function useMutation(businessId: string) {
           DEVICE_UID_EXISTS:
             "Thiết bị với nhà cung cấp và UID này đã được đăng ký.",
           VEHICLE_INACTIVE:
-            "Xe đang ngưng hoạt động. Hãy kích hoạt xe trước khi gắn thiết bị.",
+            "Xe đang ngưng hoạt động. Hãy kích hoạt xe trước khi đặt thuê hoặc gắn thiết bị.",
           DEVICE_INACTIVE:
             "Thiết bị đang ngưng hoạt động. Hãy kích hoạt thiết bị trước khi gắn.",
           VEHICLE_ASSIGNED:
@@ -108,14 +158,14 @@ export function useMutation(businessId: string) {
                 ? `Dữ liệu chưa hợp lệ. Kiểm tra các trường và thử lại. Mã yêu cầu: ${payload.requestId ?? "—"}`
                 : `Không thể lưu (${payload.code ?? response.status}). Mã yêu cầu: ${payload.requestId ?? "—"}`),
         );
-        return false;
+        return null;
       }
       setMessage("Đã lưu thay đổi.");
       router.refresh();
-      return true;
+      return payload as T;
     } catch {
       setError("Không thể kết nối API. Vui lòng thử lại.");
-      return false;
+      return null;
     } finally {
       setBusy(false);
     }
@@ -124,7 +174,9 @@ export function useMutation(businessId: string) {
     busy,
     error,
     message,
-    mutate,
+    mutate: async (input: Mutation) =>
+      (await mutateResult<unknown>(input)) !== null,
+    mutateResult,
     clear: () => {
       setError("");
       setMessage("");

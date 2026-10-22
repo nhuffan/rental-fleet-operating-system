@@ -1,4 +1,6 @@
 "use client";
+import { VehicleRentalPanel } from "@/features/rentals/vehicle-rental-panel";
+import type { VehicleRentalState } from "@/features/rentals/types";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { Branch, Me } from "@rental-fleet/contracts";
@@ -21,11 +23,13 @@ export function VehicleDetail({
   history,
   branches,
   context,
+  rentalState,
 }: {
   vehicle: Vehicle;
   history: DeviceAssignmentPage;
   branches: Branch[];
   context: Me;
+  rentalState: VehicleRentalState | null;
 }) {
   const router = useRouter();
   const [message, setMessage] = useState("");
@@ -159,6 +163,7 @@ export function VehicleDetail({
           </p>
         </Panel>
       </div>
+      {rentalState && <VehicleRentalPanel rentalState={rentalState} />}
       <Panel>
         <PanelHeader
           title="Lịch sử gắn thiết bị"

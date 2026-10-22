@@ -5,6 +5,9 @@ import {
   text,
   timestamp,
   jsonb,
+  integer,
+  numeric,
+  boolean,
   check,
   unique,
   index,
@@ -223,6 +226,169 @@ export const deviceAssignments = pgTable(
       table.businessId,
       table.deviceId,
       table.assignedAt.desc(),
+      table.id,
+    ),
+  ],
+);
+
+export const customers = pgTable(
+  'customers',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    businessId: uuid('business_id')
+      .notNull()
+      .references(() => businesses.id, { onDelete: 'restrict' }),
+    name: text().notNull(),
+    phone: text().notNull().default(''),
+    email: text().notNull().default(''),
+    notes: text().notNull().default(''),
+    status: text().notNull().default('ACTIVE'),
+    ...times(),
+  },
+  (table) => [
+    check(
+      'customers_name_check',
+      sql`${table.name} = trim(${table.name}) and length(${table.name}) between 1 and 120`,
+    ),
+    check(
+      'customers_phone_check',
+      sql`${table.phone} = trim(${table.phone}) and length(${table.phone}) <= 32 and (${table.phone} = '' or ${table.phone} ~ '^\\+?[0-9][0-9 -]{4,31}$')`,
+    ),
+    check(
+      'customers_email_check',
+      sql`${table.email} = lower(trim(${table.email})) and length(${table.email}) <= 254 and (${table.email} = '' or ${table.email} ~ '^[^[:space:]@]+@[^[:space:]@]+[.][^[:space:]@]+$')`,
+    ),
+    check(
+      'customers_contact_check',
+      sql`${table.phone} <> '' or ${table.email} <> ''`,
+    ),
+    check('customers_notes_check', sql`length(${table.notes}) <= 2000`),
+    check(
+      'customers_status_check',
+      sql`${table.status} in ('ACTIVE', 'INACTIVE')`,
+    ),
+    unique('customers_business_id_id_unique').on(table.businessId, table.id),
+    index('customers_business_created').on(
+      table.businessId,
+      table.createdAt.desc(),
+      table.id,
+    ),
+    index('customers_business_status_name').on(
+      table.businessId,
+      table.status,
+      table.name,
+      table.id,
+    ),
+  ],
+);
+
+export const rentals = pgTable(
+  'rentals',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    businessId: uuid('business_id')
+      .notNull()
+      .references(() => businesses.id, { onDelete: 'restrict' }),
+    customerId: uuid('customer_id').notNull(),
+    vehicleId: uuid('vehicle_id').notNull(),
+    startAt: timestamp('start_at', { withTimezone: true }).notNull(),
+    endAt: timestamp('end_at', { withTimezone: true }).notNull(),
+    status: text().notNull().default('DRAFT'),
+    rentalAmount: numeric('rental_amount', { precision: 14, scale: 2 })
+      .notNull()
+      .default('0'),
+    depositRequiredAmount: numeric('deposit_required_amount', {
+      precision: 14,
+      scale: 2,
+    })
+      .notNull()
+      .default('0'),
+    depositReceived: boolean('deposit_received').notNull().default(false),
+    notes: text().notNull().default(''),
+    reservedAt: timestamp('reserved_at', { withTimezone: true }),
+    handedOverAt: timestamp('handed_over_at', { withTimezone: true }),
+    returnedAt: timestamp('returned_at', { withTimezone: true }),
+    cancelledAt: timestamp('cancelled_at', { withTimezone: true }),
+    odometerStart: integer('odometer_start'),
+    odometerEnd: integer('odometer_end'),
+    ...times(),
+  },
+  (table) => [
+    foreignKey({
+      name: 'rentals_customer_tenant_fk',
+      columns: [table.businessId, table.customerId],
+      foreignColumns: [customers.businessId, customers.id],
+    }).onDelete('restrict'),
+    foreignKey({
+      name: 'rentals_vehicle_tenant_fk',
+      columns: [table.businessId, table.vehicleId],
+      foreignColumns: [vehicles.businessId, vehicles.id],
+    }).onDelete('restrict'),
+    check(
+      'rentals_time_check',
+      sql`isfinite(${table.startAt}) and isfinite(${table.endAt}) and ${table.endAt} > ${table.startAt}`,
+    ),
+    check(
+      'rentals_amount_check',
+      sql`${table.rentalAmount} >= 0 and ${table.depositRequiredAmount} >= 0 and ${table.rentalAmount} <> 'NaN'::numeric and ${table.depositRequiredAmount} <> 'NaN'::numeric`,
+    ),
+    check('rentals_notes_check', sql`length(${table.notes}) <= 4000`),
+    check(
+      'rentals_status_check',
+      sql`${table.status} in ('DRAFT', 'RESERVED', 'ACTIVE', 'COMPLETED', 'CANCELLED')`,
+    ),
+    check(
+      'rentals_odometer_check',
+      sql`(${table.odometerStart} is null or ${table.odometerStart} >= 0) and (${table.odometerEnd} is null or ${table.odometerEnd} >= ${table.odometerStart})`,
+    ),
+    check(
+      'rentals_milestone_time_check',
+      sql`
+      (${table.reservedAt} is null or isfinite(${table.reservedAt})) and
+      (${table.handedOverAt} is null or isfinite(${table.handedOverAt})) and
+      (${table.returnedAt} is null or isfinite(${table.returnedAt})) and
+      (${table.cancelledAt} is null or isfinite(${table.cancelledAt})) and
+      (${table.handedOverAt} is null or ${table.handedOverAt} >= ${table.reservedAt}) and
+      (${table.returnedAt} is null or ${table.returnedAt} >= ${table.handedOverAt}) and
+      (${table.cancelledAt} is null or ${table.reservedAt} is null or ${table.cancelledAt} >= ${table.reservedAt})
+    `,
+    ),
+    check(
+      'rentals_state_milestones_check',
+      sql`
+      (${table.status} = 'DRAFT' and ${table.reservedAt} is null and ${table.handedOverAt} is null and ${table.returnedAt} is null and ${table.cancelledAt} is null and ${table.odometerStart} is null and ${table.odometerEnd} is null) or
+      (${table.status} = 'RESERVED' and ${table.reservedAt} is not null and ${table.handedOverAt} is null and ${table.returnedAt} is null and ${table.cancelledAt} is null and ${table.odometerStart} is null and ${table.odometerEnd} is null) or
+      (${table.status} = 'ACTIVE' and ${table.reservedAt} is not null and ${table.handedOverAt} is not null and ${table.returnedAt} is null and ${table.cancelledAt} is null and ${table.odometerStart} is not null and ${table.odometerEnd} is null) or
+      (${table.status} = 'COMPLETED' and ${table.reservedAt} is not null and ${table.handedOverAt} is not null and ${table.returnedAt} is not null and ${table.cancelledAt} is null and ${table.odometerStart} is not null and ${table.odometerEnd} is not null) or
+      (${table.status} = 'CANCELLED' and ${table.handedOverAt} is null and ${table.returnedAt} is null and ${table.cancelledAt} is not null and ${table.odometerStart} is null and ${table.odometerEnd} is null)
+    `,
+    ),
+    // Drizzle has no exclusion-constraint mapping. SQL migration is authoritative for
+    // rentals_blocking_vehicle_time_exclusion (btree_gist + half-open tstzrange).
+    uniqueIndex('rentals_active_vehicle_unique')
+      .on(table.businessId, table.vehicleId)
+      .where(sql`${table.status} = 'ACTIVE'`),
+    index('rentals_business_created').on(
+      table.businessId,
+      table.createdAt.desc(),
+      table.id,
+    ),
+    index('rentals_business_status_start').on(
+      table.businessId,
+      table.status,
+      table.startAt,
+      table.id,
+    ),
+    index('rentals_customer_history').on(
+      table.businessId,
+      table.customerId,
+      table.startAt.desc(),
+      table.id,
+    ),
+    index('rentals_vehicle_history').on(
+      table.businessId,
+      table.vehicleId,
+      table.startAt.desc(),
       table.id,
     ),
   ],

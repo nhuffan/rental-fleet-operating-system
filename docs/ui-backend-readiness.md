@@ -1,6 +1,6 @@
 # Backend epics for live operational screens
 
-This list began with the UI design rollout. Stage 3 now implements Fleet Core (vehicles, GPS device registry, assignment history, RBAC and audit). Remaining domain epics below are separate work.
+This list began with the UI design rollout. Stage 3 implements Fleet Core (vehicles, GPS device registry, assignment history, RBAC and audit); Stage 4 adds live Customer/Rental lifecycle, reservations and derived availability. Remaining domain epics below are separate work.
 
 | Epic                     | Required before live UI                                                                                | Acceptance boundary                                                                                      |
 | ------------------------ | ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
@@ -9,7 +9,7 @@ This list began with the UI design rollout. Stage 3 now implements Fleet Core (v
 | Platform writes          | Onboarding/suspension/configuration/entitlements, transaction-safe global audit                        | Confirm destructive effects; never simulate write success                                                |
 | Platform audit           | Authorized global event API separate from tenant `/audit-logs`                                         | Redacted metadata and cross-tenant authorization tests                                                   |
 | Fleet Core (implemented) | Tenant-scoped vehicles, branch assignment, GPS device registry and assignment history                  | Live `/app/vehicles` and generated contracts; telemetry/ingestion remains separate                       |
-| Rentals                  | Reservation/active/complete lifecycle, conflict validation, due time and scoped customer access        | Backend serializes overlap checks; overdue derives from active rental end time                           |
+| Rentals (implemented)    | Customer registry, reservation/active/complete/cancel lifecycle, handover/return, extensions and availability | GiST exclusion and tenant transaction lock prevent overlap; overdue is derived; no payment ledger |
 | Telematics / Trips       | Authorized last-known location, lastSeen, stale/offline thresholds, provider ingestion, trip route API | Timestamp/timezone and freshness displayed explicitly; Mapbox integration only after location API exists |
 | Commercial               | Deposit per rental, toll linked to trip/rental, revenue signals                                        | No P&L, depreciation or full accounting implied                                                          |
 

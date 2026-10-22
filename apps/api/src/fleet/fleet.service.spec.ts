@@ -1,5 +1,6 @@
 import 'reflect-metadata';
 import { PGlite } from '@electric-sql/pglite';
+import { btree_gist } from '@electric-sql/pglite/contrib/btree_gist';
 import { drizzle } from 'drizzle-orm/pglite';
 import { count, eq } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
@@ -44,7 +45,7 @@ async function actor(businessId: string, role = 'OWNER') {
   };
 }
 beforeAll(async () => {
-  client = new PGlite();
+  client = new PGlite({ extensions: { btree_gist } });
   await client.exec(
     `create role anon; create role authenticated; create schema auth; create table auth.users(id uuid primary key); create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$; grant usage on schema auth to authenticated; grant execute on function auth.uid() to authenticated;`,
   );

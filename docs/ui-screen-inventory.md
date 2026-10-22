@@ -14,7 +14,7 @@ The active working checkout is `/Users/nhuffan/Documents/Projects/Car Rental Fle
 | `/app/settings`                                                  | Live                      | GET/PATCH `/settings`, locale and date format                                                                    |
 | `/app/audit`                                                     | Live                      | GET `/audit-logs`, server-side `audit.read` check, pagination and timezone-aware display                         |
 | `/access-denied`                                                 | Live                      | Retry / logout; no tenant information exposed                                                                    |
-| `/app/{rentals,customers,fleet-map,trips,commercial}`            | Development preview       | Authenticated tenant shell; clearly separate synthetic fixtures, production returns unavailable / 404 after auth |
+| `/app/{fleet-map,trips,commercial}`            | Development preview       | Authenticated tenant shell; clearly separate synthetic fixtures, production returns unavailable / 404 after auth |
 | `/dev-preview/business`                                          | Development preview       | Map + computed fixture statistics + vehicle schedule + rental queue                                              |
 | `/dev-preview/business/vehicles`                                 | Development preview       | Vehicle filters, client pagination, vehicle detail and separate GPS status                                       |
 | `/dev-preview/business/rentals`                                  | Development preview       | Rental filters/detail/lifecycle; 3-step creation walkthrough, final write disabled                               |
@@ -50,3 +50,17 @@ Existing `/app` URLs are preserved by explicit feature routes, replacing the old
 The inventory above records the earlier UI rollout. Stage 3 promotes `/app/vehicles` to a live tenant-scoped screen, adds `/app/vehicles/devices` for GPS registration and `/app/vehicles/:id` for profile/current device/history. These routes use the generated Fleet API contracts in production and never import preview fixtures. `/dev-preview/business/vehicles` remains a synthetic design example. All other operational prototypes and platform routes retain their original development-only boundary.
 
 See [Fleet Core architecture](fleet-core.md) and [Stage Output](../STAGE_OUTPUT.md) for the current API readiness and verification results.
+
+
+## Stage 4 live Customer/Rental update
+
+| URL | Mode | Data / behavior |
+| --- | --- | --- |
+| `/app/customers` | Live | Customer search/status/pagination, create/edit with tenant authorization |
+| `/app/customers/:id` | Live | Customer profile and real rental history |
+| `/app/rentals` | Live | Rental list/filter/pagination and date-based reservation wizard |
+| `/app/rentals/:id` | Live | Canonical lifecycle/timeline, reserve/handover/extend/return/cancel |
+| `/app/vehicles/:id` | Live | Adds derived availability and current/next rental without changing vehicle lifecycle |
+| `/app` | Live | Real rental schedule and active queue alongside SaaS Core information; no fixture map |
+
+The Customers/Rentals design examples under `/dev-preview` remain synthetic and development-only. New live routes never import those fixtures. See [Rental Core](rental-core.md) and the Stage 4 entry in [Stage Output](../STAGE_OUTPUT.md).

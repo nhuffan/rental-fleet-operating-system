@@ -9,6 +9,7 @@ import {
   validId,
   type SearchParams,
 } from "@/features/vehicles/query";
+import type { VehicleRentalState } from "@/features/rentals/types";
 import type { DeviceAssignmentPage, Vehicle } from "@/features/vehicles/types";
 export default async function VehiclePage({
   params,
@@ -21,13 +22,18 @@ export default async function VehiclePage({
   const { id } = await params;
   if (!validId(id)) notFound();
   const page = pageNumber((await searchParams).page);
-  const [vehicle, history, branches] = await Promise.all([
+  const [vehicle, history, branches, rentalState] = await Promise.all([
     api<Vehicle>(`/vehicles/${id}`, { notFoundOn404: true }),
     api<DeviceAssignmentPage>(
       `/vehicles/${id}/device-assignments?page=${page}&limit=20`,
       { notFoundOn404: true },
     ),
     tenantBranches(),
+    context.permissions.includes("rental.read")
+      ? api<VehicleRentalState>(`/vehicles/${id}/rental-state`, {
+          notFoundOn404: true,
+        })
+      : Promise.resolve(null),
   ]);
   return (
     <>
@@ -44,6 +50,7 @@ export default async function VehiclePage({
         history={history}
         branches={branches}
         context={context}
+        rentalState={rentalState}
       />
     </>
   );

@@ -124,3 +124,62 @@ Supabase ban đầu paused, sau Resume có lỗi routing pooler tạm thời r�
 - [Development guide](docs/development.md)
 - [Ảnh hồ sơ và lịch sử thiết bị](docs/stage-3-screenshots/vehicle-history-1440.png)
 - [Ảnh mobile](docs/stage-3-screenshots/vehicle-history-390.png)
+
+
+## `Stage_4_Rental_Core_Implementation_Plan_Compact.md`
+
+### 22–23/10/2026 — Customer & Rental Core
+
+- **File stage đầu vào:** `Stage_4_Rental_Core_Implementation_Plan_Compact.md`.
+- **Bản lưu trong repo:** [docs/stages/Stage_4_Rental_Core_Implementation_Plan_Compact.md](docs/stages/Stage_4_Rental_Core_Implementation_Plan_Compact.md).
+- **Nhánh triển khai:** `main` tại project hiện tại trong `Documents/Projects`.
+- **Commit gốc:** `4b8baa2e4e7a9b1d8242f65f21dfb7926b44ca94`, đúng baseline trong file stage.
+- **Trạng thái:** Đạt acceptance criteria Stage 4 trong phạm vi Customer/Rental Core, đã xác minh bằng Supabase thật và browser desktop/mobile; chưa deploy staging/production.
+
+#### Đã implement
+
+| Hạng mục | Kết quả |
+| --- | --- |
+| S4-01 — Schema & migration | Thêm `customers`, `rentals`, Drizzle mapping, composite tenant FKs, RLS và indexes/constraints. PostgreSQL GiST exclusion chống overlap cho RESERVED/ACTIVE trên khoảng `[startAt,endAt)`; partial unique index giữ tối đa một ACTIVE rental trên xe. Migration CLI `20261022163648_rental_core.sql` đã apply đúng development Supabase. |
+| S4-02 — Domain | DRAFT → RESERVED → ACTIVE → COMPLETED; DRAFT/RESERVED → CANCELLED. Handover/Return ghi timestamps và odometer, return không nhỏ hơn handover. OVERDUE là derived condition; không ghi RENTED/AVAILABLE vào `vehicles.status`. Reserve kiểm tra resource ACTIVE; Reserve/Extend kiểm tra lịch trùng. Xe overdue chưa trả tiếp tục chặn đặt mới. |
+| S4-03 — API & security | Customer/Rental list/detail/create/update, reserve/handover/extend/return/cancel, date-based vehicle availability và current/next rental state. OWNER/ADMIN manage, OPERATIONS chỉ đọc. Mọi write khóa Business, recheck quyền và ghi audit nguyên tử; tenant predicates, validation, pagination/filter/search và stable errors. OpenAPI/contracts đã tái sinh. |
+| S4-04 — Live UI | Customers/Rentals production routes dùng API thật; list/detail/create/edit, reservation wizard chọn xe theo lịch, lifecycle actions/timeline. Draft có thể đổi xe/khách/ngày. Vehicle Detail có current/next rental và derived state; dashboard schedule/active queue/overdue tabs dùng dữ liệu thật, phân trang riêng. Loading/empty/error/retry/404 và action theo permission. |
+| S4-05 — Automated verification | Migration replay, DTO/domain/service/RBAC/audit tests và real Supabase E2E/SaaS/Fleet regression đã đạt; production boundary checks đã đạt. Browser QA đã đạt sau khi người dùng bật lại công cụ browser. |
+
+#### Policy và ranh giới live/preview
+
+- Customer cần tên và ít nhất phone/email; liên hệ có thể trùng để hỗ trợ người dùng chung số/email. Chuẩn hóa trim/email lowercase; disable thay hard-delete. Customer/Vehicle đang có RESERVED/ACTIVE rental không được disable.
+- Draft chưa giữ xe. Reserve/Extend luôn recheck dưới transaction lock; DB exclusion giữ invariant khi có request đồng thời. Hai khoảng liền nhau được phép dùng chung endpoint. Handover chỉ trong khoảng thuê và không khi xe còn hợp đồng ACTIVE khác.
+- DRAFT PATCH được đổi customer/vehicle/date; RESERVED/ACTIVE chỉ sửa tiền/cọc/notes, gia hạn qua action riêng; COMPLETED/CANCELLED read-only. Request lặp hoặc state không hợp lệ bị từ chối.
+- Tiền thuê/cọc không âm, tối đa hai chữ số thập phân; cọc chỉ có số tiền yêu cầu và cờ đã nhận. Không có payment/refund ledger hoặc đối soát.
+- Các form/time labels dùng giờ Việt Nam, truyền ISO có UTC offset và lưu `timestamptz`; action/overdue dựa trên DB clock. Audit metadata chỉ có requestId/field names, không lưu contact/notes/body.
+- `/app/customers`, `/app/rentals`, dashboard schedule/queue và Vehicle rental integration live; không đưa fixture GPS/map/Trip/Commercial hoặc Superadmin vào production.
+
+#### Kết quả xác minh
+
+| Kiểm tra | Kết quả |
+| --- | --- |
+| `pnpm build` | Đạt API và production web với Turbopack mặc định. |
+| `pnpm lint` | Đạt, không warning; web lint chạy lại sau các chỉnh sửa cuối. |
+| `pnpm typecheck` | Đạt cả API và web. |
+| `pnpm test` | **94/94**, 9 file, gồm 15 DB cases mới và 41 DTO/domain/service cases mới. |
+| `pnpm test:e2e` | **27/27**, 3 file trên Supabase development thật; gồm 8 Customer/Rental scenarios và regression SaaS/Fleet. |
+| Production HTTP boundaries | **17/17**: design previews production 404, private Customer/Rental/create/detail và SaaS/Fleet routes chuyển login khi chưa đăng nhập. |
+| Security/domain review | Review độc lập schema/API/UI không còn finding quan trọng; xác nhận tenant scope, race/rollback, UTC, permission, picker pagination và fixture boundaries. |
+| Supabase | Project `eeryymswcufnebibigqf`; 11 bảng application bật RLS. Không phát sinh security advisory mới; warning Auth leaked-password protection đã có từ trước. |
+| Browser QA | Đạt Customer create/edit/history, wizard, reserve/handover/extend/return, draft edit/reserve/cancel, Vehicle current/next rental, dashboard schedule/queue, Operations chỉ đọc và direct-create denial, loading/empty/404. |
+| Responsive | Rental profile 1440/768/390px không tràn ngang toàn trang; thao tác nhận trả hoàn tất trên mobile. |
+| Cleanup | Dọn đúng 1 Vehicle + 1 Customer + 2 Rental QA, giữ nguyên 13 audit events. Server tạm đã dừng, xác minh PID/cổng; khôi phục build mặc định sau QA. |
+
+#### Còn lại / ngoài scope
+
+- GPS ingestion/Traccar/realtime map/Trip, Toll/VETC, payment gateway, full accounting/P&L, advanced pricing, customer portal và global Superadmin API thuộc stage/workstream khác.
+- Chưa deploy staging/production; không seed/reset hoặc migrate nhầm project.
+
+#### Tài liệu
+
+- [Rental Core architecture, policy và API](docs/rental-core.md)
+- [Báo cáo kiểm thử Stage 4](docs/stage-4-rental-core-validation.md)
+- [Ảnh Rental live desktop](docs/stage-4-screenshots/rental-active-1440.png)
+- [Ảnh Rental live mobile](docs/stage-4-screenshots/rental-active-390.png)
+- [Development guide](docs/development.md)

@@ -14,6 +14,7 @@ import {
   eq,
   ilike,
   isNull,
+  inArray,
   notExists,
   or,
   sql,
@@ -27,6 +28,7 @@ import {
   gpsDevices,
   memberships,
   profiles,
+  rentals,
   vehicles,
 } from '../database/schema.js';
 import { denied, type TenantContext } from '../auth/guards.js';
@@ -299,6 +301,24 @@ export class FleetService {
             'RESOURCE_HAS_ASSIGNMENT',
             'End the active assignment before deactivating this vehicle',
           );
+        if (body.status === 'INACTIVE') {
+          const [blocking] = await tx
+            .select({ id: rentals.id })
+            .from(rentals)
+            .where(
+              and(
+                eq(rentals.businessId, c.businessId),
+                eq(rentals.vehicleId, id),
+                inArray(rentals.status, ['RESERVED', 'ACTIVE']),
+              ),
+            )
+            .limit(1);
+          if (blocking)
+            throw conflict(
+              'RESOURCE_HAS_RENTAL',
+              'Cancel or complete blocking rentals before deactivating this vehicle',
+            );
+        }
         await tx
           .update(vehicles)
           .set({

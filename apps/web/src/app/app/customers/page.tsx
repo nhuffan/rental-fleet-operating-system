@@ -1,18 +1,30 @@
-import { notFound } from "next/navigation";
-import { currentContext } from "@/lib/api";
-export default async function PreviewPage() {
-  if (process.env.NODE_ENV !== "development") notFound();
-  await currentContext();
-  const { FleetPreview } = await import("@/features/fleet/fleet-preview");
+import { api } from "@/lib/api";
+import { PageHeader } from "@/components/ui/primitives";
+import { CustomersPanel } from "@/features/rentals/customers-panel";
+import { rentalContext } from "@/features/rentals/server";
+import { customerFilters } from "@/features/rentals/query";
+import { queryString, type SearchParams } from "@/features/vehicles/query";
+import type { CustomerPage } from "@/features/rentals/types";
+export default async function CustomersPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  const context = await rentalContext("customer.read");
+  const filters = customerFilters(await searchParams);
+  const initial = await api<CustomerPage>(`/customers?${queryString(filters)}`);
   return (
     <>
-      <div className="preview-banner">
-        <strong>
-          Dữ liệu minh họa · Không phải dữ liệu doanh nghiệp hiện tại. Chỉ có
-          trong development.
-        </strong>
-      </div>
-      <FleetPreview screen="customers" />
+      <PageHeader
+        title="Khách hàng"
+        description="Thông tin liên hệ và lịch sử hợp đồng theo doanh nghiệp."
+      />
+      <CustomersPanel
+        key={`${context.business.id}:${queryString(filters)}`}
+        initial={initial}
+        context={context}
+        filters={filters}
+      />
     </>
   );
 }

@@ -31,10 +31,10 @@ Production users are created in Supabase Auth by an administrator. An OWNER/ADMI
 
 - Web uses per-request Supabase SSR clients, cookie refresh in proxy.ts, and protected server layouts. It forwards access tokens to NestJS. Browser code uses only the publishable key.
 - NestJS verifies each bearer token against Supabase Auth, then checks active profile/business/membership. Optional X-Business-Id selects one of the user's active memberships; otherwise the oldest active membership is used. Frontend tenant selection is never trusted by itself.
-- OWNER manages all roles; ADMIN manages operations memberships and business/branch/settings data; OPERATIONS reads business/branches/settings and the Fleet vehicle/device registry; Fleet writes require OWNER/ADMIN. The last active owner cannot be disabled or demoted through the API. Guards and transaction rechecks enforce this independently of the UI.
+- OWNER manages all roles; ADMIN manages operations memberships and business/branch/settings data; OPERATIONS reads business/branches/settings and the Fleet vehicle/device registry; Fleet and Customer/Rental writes require OWNER/ADMIN; OPERATIONS reads customers/rentals/availability. The last active owner cannot be disabled or demoted through the API. Guards and transaction rechecks enforce this independently of the UI.
 - Every tenant query is scoped. Writes and audit events share a transaction; a business row lock serializes tenant admin changes. Audit metadata contains changed field names and request IDs, not passwords/tokens.
 - RLS permits only membership-scoped Data API reads; direct writes by anon/authenticated are revoked. No SECURITY DEFINER helper is used. The API uses a trusted DB connection and must always enforce its own authorization.
-- Shared API contracts are under packages/contracts. Database schema and API env are server-only. Fleet Core implements tenant-scoped vehicles, GPS device registration and assignment history. Rental and GPS ingestion/location domains are not implemented yet.
+- Shared API contracts are under packages/contracts. Database schema and API env are server-only. Fleet Core implements tenant-scoped vehicles, GPS device registration and assignment history. Customer/Rental Core implements reservations, handover/return, extensions, derived availability and overdue. GPS ingestion/location is not implemented yet.
 
 ## Staging
 
@@ -68,7 +68,7 @@ If the host sandbox prevents Turbopack's CSS worker from opening its internal po
 
 ## Fleet Core
 
-`/app/vehicles`, `/app/vehicles/devices` and `/app/vehicles/:id` are live server-authorized pages in all environments. Vehicle lifecycle is `ACTIVE` / `INACTIVE`; availability and rental states are not inferred. Devices are registry records, not online/offline telemetry. The existing development-only Fleet dashboard/map/rental previews remain separate.
+`/app/vehicles`, `/app/vehicles/devices` and `/app/vehicles/:id` are live server-authorized pages in all environments. Vehicle lifecycle is `ACTIVE` / `INACTIVE`; rental availability is derived separately by Rental Core. Devices are registry records, not online/offline telemetry. The existing development-only Fleet dashboard/map/rental previews remain separate.
 
 OWNER/ADMIN have `vehicle.read`, `vehicle.manage`, `gps.read`, `gps.manage`; OPERATIONS has the two read permissions. Device assignment/end requires `vehicle.manage`. Vehicle/device writes and audit events share a transaction after taking the same tenant business-row lock used by SaaS Core and rechecking the current membership/profile/business/permission.
 
@@ -77,3 +77,16 @@ License plates are uppercased with whitespace/dot/hyphen removed, then validated
 A vehicle and device can each have at most one current primary assignment. End the active assignment before disabling either resource or replacing its device. Assignment/end timestamps use the database clock; ended rows remain in history. There are no hard-delete or cross-business transfer APIs. See `docs/fleet-core.md` and the source stage plan under `docs/stages`.
 
 Fleet E2E uses only the existing seeded development project `eeryymswcufnebibigqf`, creates uniquely named disposable records and removes only those records afterward; audit evidence remains. E2E suites run serially because SaaS Core tests exercise revocation of shared demo accounts. Never run these suites against staging/production.
+
+
+## Customer and Rental Core
+
+`/app/customers`, `/app/customers/:id`, `/app/rentals` and `/app/rentals/:id` are live tenant-authorized pages. Dashboard schedule/active queue and Vehicle Detail current/next rental use real Rental API data. Maps, GPS telemetry, Trips, Commercial and platform administration remain separate development previews.
+
+OWNER/ADMIN have `customer.read`, `customer.manage`, `rental.read`, `rental.manage`; OPERATIONS has the two read permissions. All lifecycle actions require `rental.manage` and recheck authorization under the same Business lock used by SaaS/Fleet Core. Customer contact data/notes never enter audit metadata.
+
+Lifecycle: DRAFT → RESERVED → ACTIVE → COMPLETED; DRAFT/RESERVED → CANCELLED. Handover and Return record validated timestamps/odometers. OVERDUE derives from ACTIVE + elapsed end time and is never a stored workflow status. Drafts do not hold a vehicle. Reserve/Extend check half-open UTC intervals `[startAt,endAt)`, backed by PostgreSQL GiST exclusion using `btree_gist` installed in the `extensions` schema. A partial unique index prevents two ACTIVE rentals per vehicle even after one becomes overdue. An overdue unreturned vehicle is unavailable until returned. Vehicle lifecycle remains ACTIVE/INACTIVE.
+
+Customers need a name and at least phone/email; contacts may be shared and are nonunique. Use disable rather than hard-delete; customers and vehicles with RESERVED/ACTIVE rentals cannot be disabled. Amount/deposit inputs use at most two decimal places; depositReceived is only a simple flag, not a ledger. See [Rental Core policies/API](rental-core.md).
+
+`pnpm test:e2e` includes a separate Customer/Rental suite restricted to `eeryymswcufnebibigqf`. It checks real lifecycle, competing reservation requests, extension conflicts, overdue, cross-tenant IDs, RBAC and direct Data API RLS/write denial. It deletes only recorded suite-owned domain IDs and retains audit records. Never seed or run these tests on staging/production.

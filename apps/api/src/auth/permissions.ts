@@ -14,6 +14,10 @@ export const PERMISSIONS = [
   'vehicle.manage',
   'gps.read',
   'gps.manage',
+  'customer.read',
+  'customer.manage',
+  'rental.read',
+  'rental.manage',
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 const map: Record<Role, readonly Permission[]> = {
@@ -25,6 +29,8 @@ const map: Record<Role, readonly Permission[]> = {
     'settings.read',
     'vehicle.read',
     'gps.read',
+    'customer.read',
+    'rental.read',
   ],
 };
 export function permissionsFor(role: string): readonly Permission[] {

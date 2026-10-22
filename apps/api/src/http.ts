@@ -108,7 +108,7 @@ export function configureApp(app: INestApplication) {
     new DocumentBuilder()
       .setTitle('Rental Fleet API')
       .setDescription(
-        'Tenant-scoped SaaS Core and Fleet Core. Bearer token required; optional X-Business-Id selects an active membership. Lists use page/limit; errors include statusCode, code, message and requestId.',
+        'Tenant-scoped SaaS Core, Fleet Core and Customer/Rental Core. Bearer token required; optional X-Business-Id selects an active membership. Lists use page/limit; errors include statusCode, code, message and requestId.',
       )
       .setVersion('1.0.0')
       .addBearerAuth()

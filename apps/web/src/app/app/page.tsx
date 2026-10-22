@@ -1,4 +1,7 @@
 import Link from "next/link";
+import { RentalDashboard } from "@/features/rentals/rental-dashboard";
+import type { RentalPage } from "@/features/rentals/types";
+import { pageNumber, type SearchParams } from "@/features/vehicles/query";
 import type { Branch, Membership, Page } from "@rental-fleet/contracts";
 import { api, currentContext } from "@/lib/api";
 import {
@@ -8,14 +11,36 @@ import {
   Badge,
 } from "@/components/ui/primitives";
 import { Icon } from "@/components/ui/icon";
-export default async function Dashboard() {
+export default async function Dashboard({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  const params = await searchParams;
+  const schedulePage = pageNumber(params.schedulePage);
+  const queuePage = pageNumber(params.queuePage);
+  const overdue = params.overdue === "true";
   const c = await currentContext();
-  const [branches, members] = await Promise.all([
-    api<Page<Branch>>("/branches?limit=1"),
-    c.permissions.includes("user.read")
-      ? api<Page<Membership>>("/memberships?limit=1")
-      : Promise.resolve(null),
-  ]);
+  const [branches, members, schedule, queue, overdueRentals] =
+    await Promise.all([
+      api<Page<Branch>>("/branches?limit=1"),
+      c.permissions.includes("user.read")
+        ? api<Page<Membership>>("/memberships?limit=1")
+        : Promise.resolve(null),
+      c.permissions.includes("rental.read")
+        ? api<RentalPage>(
+            `/rentals?status=RESERVED&sort=startAt&order=asc&page=${schedulePage}&limit=10`,
+          )
+        : Promise.resolve(null),
+      c.permissions.includes("rental.read")
+        ? api<RentalPage>(
+            `/rentals?status=ACTIVE&sort=endAt&order=asc&page=${queuePage}&limit=10${overdue ? "&overdue=true" : ""}`,
+          )
+        : Promise.resolve(null),
+      c.permissions.includes("rental.read")
+        ? api<RentalPage>("/rentals?status=ACTIVE&overdue=true&limit=1")
+        : Promise.resolve(null),
+    ]);
   return (
     <>
       <PageHeader
@@ -135,10 +160,16 @@ export default async function Dashboard() {
           ))}
         </Panel>
       </div>
-      <div className="notice notice-info" style={{ marginTop: 18 }}>
-        Hợp đồng thuê và GPS realtime đang được phát triển. Tổng quan hiện hiển
-        thị dữ liệu doanh nghiệp từ SaaS Core API.
-      </div>
+      {schedule && queue && overdueRentals && (
+        <RentalDashboard
+          key={`${c.business.id}:${schedulePage}:${queuePage}:${overdue}`}
+          schedule={schedule}
+          queue={queue}
+          overdueTotal={overdueRentals.total}
+          currency={c.business.currency}
+          overdue={overdue}
+        />
+      )}
       {process.env.NODE_ENV === "development" && (
         <Link className="button button-secondary" href="/dev-preview/business">
           Xem bản thiết kế dashboard đội xe <Icon name="arrow" size={15} />

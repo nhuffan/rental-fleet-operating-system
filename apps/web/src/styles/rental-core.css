@@ -1,0 +1,214 @@
+.form-fieldset {
+  padding: 0;
+  margin: 0;
+  border: 0;
+  min-width: 0;
+}
+.rental-section {
+  margin-top: 22px;
+  margin-bottom: 22px;
+}
+.rental-notes {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.7;
+}
+.rental-id {
+  overflow-wrap: anywhere;
+  font-size: 11px;
+}
+.rental-detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  gap: 20px;
+  margin: 20px 0;
+}
+.rental-detail-grid .panel {
+  min-width: 0;
+}
+.rental-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 18px 0;
+}
+.rental-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  margin: 12px 0;
+  white-space: nowrap;
+}
+.rental-checkbox input {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--brand);
+}
+.rental-steps {
+  display: flex;
+  padding: 0;
+  margin: 0 0 24px;
+  list-style: none;
+  gap: 14px;
+}
+.rental-steps li {
+  flex: 1;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+}
+.rental-steps li span {
+  flex: 0 0 23px;
+  height: 23px;
+  border-radius: 50%;
+  background: var(--surface-muted);
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+}
+.rental-steps li[aria-current] {
+  color: var(--brand-strong);
+  font-weight: 600;
+}
+.rental-steps li[aria-current] span {
+  color: white;
+  background: var(--brand);
+  border-color: var(--brand);
+}
+.rental-review {
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-muted);
+  margin-bottom: 20px;
+}
+.rental-review div {
+  margin: 0 0 14px;
+}
+.rental-review div:last-child {
+  margin-bottom: 0;
+}
+.rental-review dt {
+  color: var(--text-secondary);
+  font-size: 11px;
+  margin-bottom: 5px;
+}
+.rental-review dd {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.rental-timeline {
+  padding: 10px 24px 24px;
+  list-style: none;
+  margin: 0;
+}
+.rental-timeline li {
+  display: flex;
+  gap: 12px;
+  position: relative;
+  padding: 12px 0;
+  font-size: 12px;
+}
+.rental-timeline-dot {
+  flex: 0 0 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--brand);
+  margin-top: 3px;
+}
+.rental-timeline li:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 24px;
+  bottom: -11px;
+  width: 1px;
+  background: var(--border);
+}
+.rental-timeline small {
+  display: block;
+  color: var(--text-secondary);
+  margin-top: 7px;
+  font-size: 11px;
+}
+.rental-current-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 0 22px 22px;
+  gap: 22px;
+}
+.rental-current-grid h3 {
+  font-size: 12px;
+  margin: 0 0 14px;
+}
+.rental-current-grid p {
+  font-size: 11px;
+  line-height: 1.7;
+}
+.rental-dashboard {
+  display: grid;
+  gap: 20px;
+  margin-top: 22px;
+}
+.rental-dashboard .panel {
+  min-width: 0;
+}
+.rental-schedule {
+  display: grid;
+  gap: 12px;
+  padding: 0 22px 22px;
+}
+.rental-schedule-item {
+  display: grid;
+  grid-template-columns: 90px minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  border: 1px solid var(--border);
+  padding: 15px;
+  border-radius: 8px;
+  font-size: 12px;
+}
+.rental-schedule-item small {
+  display: block;
+  color: var(--text-secondary);
+  margin-top: 7px;
+  font-size: 11px;
+}
+.rental-queue-tabs {
+  display: flex;
+  gap: 12px;
+  padding: 0 22px 18px;
+}
+@media (max-width: 767px) {
+  .rental-detail-grid,
+  .rental-current-grid {
+    grid-template-columns: 1fr;
+  }
+  .rental-steps {
+    gap: 8px;
+  }
+  .rental-steps li {
+    flex-direction: column;
+    align-items: flex-start;
+    font-size: 10px;
+  }
+  .rental-steps li span {
+    flex-basis: 23px;
+    width: 23px;
+  }
+  .rental-schedule-item {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+  }
+  .rental-schedule-item > div:first-child {
+    grid-column: 1 / -1;
+  }
+  .rental-form-actions .button {
+    flex: 1 1 130px;
+  }
+}

@@ -1,4 +1,5 @@
 import { PGlite } from '@electric-sql/pglite';
+import { btree_gist } from '@electric-sql/pglite/contrib/btree_gist';
 import { readFileSync, readdirSync } from 'node:fs';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
@@ -20,7 +21,7 @@ const tables = ['vehicles', 'gps_devices', 'device_assignments'] as const;
 let db: PGlite;
 
 beforeAll(async () => {
-  db = new PGlite();
+  db = new PGlite({ extensions: { btree_gist } });
   await db.exec(`
     create role anon;
     create role authenticated;

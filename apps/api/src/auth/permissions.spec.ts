@@ -4,9 +4,19 @@ describe('Permission boundaries', () => {
     expect(permissionsFor('unknown')).toEqual([]);
     expect(permissionsFor('OPERATIONS')).not.toContain('user.manage');
     expect(permissionsFor('OPERATIONS')).toContain('branch.read');
-    for (const permission of ['vehicle.read', 'gps.read'])
+    for (const permission of [
+      'vehicle.read',
+      'gps.read',
+      'customer.read',
+      'rental.read',
+    ])
       expect(permissionsFor('OPERATIONS')).toContain(permission);
-    for (const permission of ['vehicle.manage', 'gps.manage']) {
+    for (const permission of [
+      'vehicle.manage',
+      'gps.manage',
+      'customer.manage',
+      'rental.manage',
+    ]) {
       expect(permissionsFor('OPERATIONS')).not.toContain(permission);
       expect(permissionsFor('ADMIN')).toContain(permission);
       expect(permissionsFor('OWNER')).toContain(permission);

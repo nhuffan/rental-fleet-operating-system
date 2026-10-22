@@ -98,9 +98,31 @@ export function AppShell({
         ...(!preview && context?.permissions.includes("vehicle.read")
           ? [{ href: "/app/vehicles", label: "Đội xe", icon: "car" as const }]
           : []),
+        ...(!preview && context?.permissions.includes("rental.read")
+          ? [
+              {
+                href: "/app/rentals",
+                label: "Hợp đồng thuê",
+                icon: "rental" as const,
+              },
+            ]
+          : []),
+        ...(!preview && context?.permissions.includes("customer.read")
+          ? [
+              {
+                href: "/app/customers",
+                label: "Khách hàng",
+                icon: "users" as const,
+              },
+            ]
+          : []),
         ...(preview || showPreviews
           ? fleetItems
-              .filter(([path]) => preview || path !== "vehicles")
+              .filter(
+                ([path]) =>
+                  preview ||
+                  !["vehicles", "rentals", "customers"].includes(path),
+              )
               .map(([path, label, icon]) => ({
                 href: `${preview ? prefix : "/app"}/${path}`,
                 label,
@@ -141,7 +163,13 @@ export function AppShell({
   const all = [...core, ...management, settings];
   const current =
     all.find((i) => i.href === pathname)?.label ??
-    (pathname.startsWith("/app/vehicles/") ? "Đội xe" : undefined) ??
+    (pathname.startsWith("/app/vehicles/")
+      ? "Đội xe"
+      : pathname.startsWith("/app/rentals/")
+        ? "Hợp đồng thuê"
+        : pathname.startsWith("/app/customers/")
+          ? "Khách hàng"
+          : undefined) ??
     (pathname.includes("businesses/")
       ? "Chi tiết doanh nghiệp"
       : "Không gian làm việc");
@@ -150,11 +178,13 @@ export function AppShell({
       <Link
         key={item.href}
         href={item.href}
-        className={`nav-link ${pathname === item.href || (item.href === "/app/vehicles" && pathname.startsWith("/app/vehicles/")) ? "is-active" : ""}`}
+        className={`nav-link ${pathname === item.href || (["/app/vehicles", "/app/rentals", "/app/customers"].includes(item.href) && pathname.startsWith(`${item.href}/`)) ? "is-active" : ""}`}
         aria-current={
           pathname === item.href ||
-          (item.href === "/app/vehicles" &&
-            pathname.startsWith("/app/vehicles/"))
+          (["/app/vehicles", "/app/rentals", "/app/customers"].includes(
+            item.href,
+          ) &&
+            pathname.startsWith(`${item.href}/`))
             ? "page"
             : undefined
         }
@@ -201,17 +231,24 @@ export function AppShell({
             <small>{platform ? "PLATFORM CONSOLE" : "OPERATING SYSTEM"}</small>
           </span>
         </Link>
-        <Button
-          className="create-action"
-          disabled
-          title={
-            platform ? "Chờ API quản trị nền tảng" : "Chờ API hợp đồng thuê"
-          }
-        >
-          <Icon name="plus" />
-          {platform ? "Tạo doanh nghiệp" : "Tạo hợp đồng"}
-          <small>Sắp có</small>
-        </Button>
+        {!preview && context?.permissions.includes("rental.manage") ? (
+          <Link
+            className="button button-primary create-action"
+            href="/app/rentals/new"
+          >
+            <Icon name="plus" /> Tạo hợp đồng
+          </Link>
+        ) : preview ? (
+          <Button
+            className="create-action"
+            disabled
+            title="Thao tác không khả dụng trong bản thiết kế"
+          >
+            <Icon name="plus" />
+            {platform ? "Tạo doanh nghiệp" : "Tạo hợp đồng"}
+            <small>Preview</small>
+          </Button>
+        ) : null}
         <div className="business-context">
           <span className="context-avatar">
             <Icon name={platform ? "globe" : "business"} />
