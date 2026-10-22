@@ -27,7 +27,14 @@ for (const path of [
     );
   });
 }
-for (const path of ["/app", "/app/users", "/app/audit"]) {
+for (const path of [
+  "/app",
+  "/app/users",
+  "/app/audit",
+  "/app/vehicles",
+  "/app/vehicles/devices",
+  "/app/vehicles/00000000-0000-4000-8000-000000000001",
+]) {
   test(`unauthenticated tenant route redirects to login: ${path}`, async () => {
     const response = await fetch(new URL(path, base), { redirect: "manual" });
     assert.ok([302, 303, 307, 308].includes(response.status));

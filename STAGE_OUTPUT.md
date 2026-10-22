@@ -64,3 +64,63 @@ Lần build đầu ở checkout hiện tại phát hiện route types cũ trong 
 - [Backend readiness epics](docs/ui-backend-readiness.md)
 - [Ảnh dashboard Business](docs/ui-screenshots/after-business-dashboard-1440.png)
 - [Ảnh dashboard Platform](docs/ui-screenshots/after-preview-platform-1440.png)
+
+
+## `Stage_3_Fleet_Core_Implementation_Plan_Compact.md`
+
+### 22/10/2026 — Fleet Core live trên development Supabase
+
+- **File stage đầu vào:** `Stage_3_Fleet_Core_Implementation_Plan_Compact.md`.
+- **Bản lưu trong repo:** [docs/stages/Stage_3_Fleet_Core_Implementation_Plan_Compact.md](docs/stages/Stage_3_Fleet_Core_Implementation_Plan_Compact.md).
+- **Nhánh triển khai:** `main` tại project Car Rental trong `Documents/Projects`.
+- **Commit gốc:** `ead0e8e6ccaa5fbf16b6c0126a9b78eebfd9d09c`.
+- **Trạng thái:** Đạt các acceptance criteria của Stage 3 trong phạm vi Fleet Core, đã xác minh bằng development Supabase thật. Chưa triển khai/deploy staging hoặc production.
+
+#### Đã implement
+
+| Hạng mục | Kết quả |
+| --- | --- |
+| S3-01 — Schema & migration | Thêm `vehicles`, `gps_devices`, `device_assignments`, Drizzle mapping, tenant foreign keys, RLS và indexes/constraints. Migration `20261022151714_fleet_core.sql` được tạo và apply qua Supabase CLI; replay DB sạch đã kiểm tra. |
+| S3-02 — Domain rules | Vehicle tách khỏi GPS registry và assignment; trạng thái `ACTIVE`/`INACTIVE`. Biển số chuẩn hóa viết hoa/bỏ khoảng trắng/dấu chấm/gạch nối, duy nhất trong Business. Provider chuẩn hóa chữ thường; `(provider, deviceUid)` duy nhất toàn hệ thống, ownership và identity bất biến sau tạo. Dùng disable thay hard-delete; phải tháo thiết bị trước khi disable xe/thiết bị đang gắn. |
+| S3-03 — API & security | Vehicles list/detail/create/update; GPS list/create/update; assignment list/create/end. Tenant scope, RBAC, validation/error codes, search/filter/sort/pagination; khóa Business và kiểm tra lại quyền trong transaction cùng audit. Hai unique indexes chống gắn đồng thời trên cùng xe hoặc thiết bị; thời gian lấy từ DB, history không bị ghi đè. Swagger và TypeScript contracts đã tái sinh. |
+| S3-04 — Business Admin UI | `/app/vehicles`, `/app/vehicles/devices`, `/app/vehicles/[id]` dùng API thật trong production path. Có list/filter/pagination, profile/branch/lifecycle, GPS hiện gắn, lịch sử, create/edit/assign/end drawers, permission controls và thông báo kết quả. Có loading/empty/error/retry/404; giữ design system và tenant shell. |
+| S3-05 — Verification | Unit/integration, real Supabase E2E, production boundary checks, browser QA và review độc lập đã đạt. Dữ liệu QA được dọn đúng các bản ghi do bài test tạo; audit được giữ lại. |
+
+#### Phần live và ranh giới
+
+- OWNER/ADMIN quản lý Vehicle/GPS/Assignment; OPERATIONS chỉ đọc. Backend kiểm tra quyền độc lập với UI.
+- Branch/Vehicle/Device/Assignment luôn được kiểm tra cùng Business. Cross-tenant ID/API request bị từ chối; RLS không cho Data API ghi trực tiếp.
+- Mỗi xe và mỗi thiết bị chỉ có tối đa một active assignment; kết thúc và gắn lại tạo lịch sử riêng, không mất liên kết cũ.
+- Live Vehicles không còn dùng fixtures, không hiển thị fake telemetry, GPS online, bản đồ live hoặc trạng thái Rental. Registry/assignment chưa đồng nghĩa có kết nối GPS.
+- Các domain vận hành còn lại giữ ranh giới preview development; Superadmin chưa có global production backend.
+
+#### Kết quả xác minh
+
+| Kiểm tra | Kết quả |
+| --- | --- |
+| `pnpm build` | Đạt API và production web với Turbopack mặc định; build lại bản source cuối. |
+| `pnpm lint` | Đạt, không warning. |
+| `pnpm typecheck` | Đạt cả API và web. |
+| `pnpm test` | **38/38**, 5 file; gồm migration replay/RLS, tenant FK/uniqueness/temporal constraints, domain rules, authorization recheck và atomic audit rollback. |
+| `pnpm test:e2e` | **19/19**, 2 file trên development Supabase thật; gồm 7 Fleet scenarios và SaaS Core regression, IDOR, roles, concurrent assignment, history/audit, Data API RLS/write denial. |
+| Production HTTP regression | **12/12**: preview trả 404, private SaaS/Fleet routes chuyển login khi chưa đăng nhập. |
+| Browser QA thật | Tạo/sửa xe, chuẩn hóa plate/provider, đăng ký hai thiết bị, assign/end/reassign/history, Operations chỉ đọc, loading/error/retry và 404 đều đạt. |
+| Responsive | Hồ sơ/lịch sử xe ở 1440/768/390px không tràn ngang toàn trang. |
+| Development migration | Đã apply duy nhất migration mới vào `eeryymswcufnebibigqf` sau khi người dùng Resume; xác nhận đủ 9 bảng application bật RLS. |
+| Cleanup | Dọn 1 xe + 2 thiết bị + 2 assignment QA; giữ nguyên 7 audit events. Tất cả server tạm đã dừng và xác minh không còn listener. |
+
+Supabase ban đầu paused, sau Resume có lỗi routing pooler tạm thời rồi kết nối TLS/dry-run/migrate thành công. Lượt E2E đầu có một scenario nhiều request vượt timeout mặc định 5 giây; tăng timeout E2E lên 30 giây và chạy lại toàn bộ đạt 19/19, không thay assertion. Browser gặp một lần tải lỗi và nút Thử lại phục hồi dữ liệu đúng. Không sửa real env files, không seed/reset database và không đụng staging/production.
+
+#### Còn lại / ngoài Stage 3
+
+- Rental/Customer Core, booking availability và các trạng thái thuê xe.
+- GPS ingestion/Traccar, telemetry/location/online/map, Trips và Commercial.
+- Global Superadmin APIs, product visual signoff và triển khai staging/production.
+
+#### Tài liệu và bằng chứng
+
+- [Fleet Core architecture, policy và API](docs/fleet-core.md)
+- [Báo cáo kiểm thử Stage 3](docs/stage-3-fleet-core-validation.md)
+- [Development guide](docs/development.md)
+- [Ảnh hồ sơ và lịch sử thiết bị](docs/stage-3-screenshots/vehicle-history-1440.png)
+- [Ảnh mobile](docs/stage-3-screenshots/vehicle-history-390.png)

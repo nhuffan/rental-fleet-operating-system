@@ -11,13 +11,32 @@ export type MemberCreate = Schemas["MemberCreate"];
 export type MemberUpdate = Schemas["MemberUpdate"];
 export type BranchCreate = Schemas["BranchCreate"];
 export type BranchUpdate = Schemas["BranchUpdate"];
+type VehicleCreate = Schemas["VehicleCreate"];
+type VehicleUpdate = Schemas["VehicleUpdate"];
+type GpsDeviceCreate = Schemas["GpsDeviceCreate"];
+type GpsDeviceUpdate = Schemas["GpsDeviceUpdate"];
+type DeviceAssignmentCreate = Schemas["DeviceAssignmentCreate"];
 type Mutation =
   | { path: "/businesses/current"; body: BusinessUpdate; method?: "PATCH" }
   | { path: "/settings"; body: SettingsUpdate; method?: "PATCH" }
   | { path: "/memberships"; body: MemberCreate; method: "POST" }
   | { path: `/memberships/${string}`; body: MemberUpdate; method?: "PATCH" }
   | { path: "/branches"; body: BranchCreate; method: "POST" }
-  | { path: `/branches/${string}`; body: BranchUpdate; method?: "PATCH" };
+  | { path: `/branches/${string}`; body: BranchUpdate; method?: "PATCH" }
+  | { path: "/vehicles"; body: VehicleCreate; method: "POST" }
+  | { path: `/vehicles/${string}`; body: VehicleUpdate; method?: "PATCH" }
+  | { path: "/gps-devices"; body: GpsDeviceCreate; method: "POST" }
+  | { path: `/gps-devices/${string}`; body: GpsDeviceUpdate; method?: "PATCH" }
+  | {
+      path: `/vehicles/${string}/device-assignments`;
+      body: DeviceAssignmentCreate;
+      method: "POST";
+    }
+  | {
+      path: `/vehicles/${string}/device-assignments/${string}/end`;
+      body?: never;
+      method: "POST";
+    };
 export function useMutation(businessId: string) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -42,7 +61,7 @@ export function useMutation(businessId: string) {
           Authorization: `Bearer ${session.access_token}`,
           "X-Business-Id": businessId,
         },
-        body: JSON.stringify(body),
+        ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
       });
       if (response.status === 401) {
         router.replace("/login");
@@ -52,6 +71,28 @@ export function useMutation(businessId: string) {
       if (!response.ok) {
         const messages: Record<string, string> = {
           LAST_OWNER: "Doanh nghiệp phải có ít nhất một Owner hoạt động.",
+          VEHICLE_NOT_FOUND: "Xe không tồn tại trong doanh nghiệp hiện tại.",
+          DEVICE_NOT_FOUND:
+            "Thiết bị không tồn tại trong doanh nghiệp hiện tại.",
+          INVALID_BRANCH:
+            "Chi nhánh không hợp lệ hoặc không thuộc doanh nghiệp hiện tại.",
+          PLATE_EXISTS:
+            "Biển số đã tồn tại trong doanh nghiệp. Hãy kiểm tra lại.",
+          DEVICE_UID_EXISTS:
+            "Thiết bị với nhà cung cấp và UID này đã được đăng ký.",
+          VEHICLE_INACTIVE:
+            "Xe đang ngưng hoạt động. Hãy kích hoạt xe trước khi gắn thiết bị.",
+          DEVICE_INACTIVE:
+            "Thiết bị đang ngưng hoạt động. Hãy kích hoạt thiết bị trước khi gắn.",
+          VEHICLE_ASSIGNED:
+            "Xe đã gắn thiết bị. Hãy tháo thiết bị hiện tại trước.",
+          DEVICE_ASSIGNED:
+            "Thiết bị đã được gắn vào xe khác. Hãy chọn thiết bị khác hoặc tháo gán trước.",
+          ASSIGNMENT_NOT_FOUND: "Không tìm thấy lần gắn thiết bị này.",
+          ASSIGNMENT_ENDED:
+            "Lần gắn thiết bị này đã kết thúc. Hãy tải lại dữ liệu.",
+          RESOURCE_HAS_ASSIGNMENT:
+            "Hãy tháo thiết bị đang gắn trước khi ngưng hoạt động.",
           ROLE_CHANGE_DENIED:
             "Chỉ Owner được quản lý vai trò Admin hoặc Owner.",
           USER_NOT_FOUND:
@@ -63,7 +104,9 @@ export function useMutation(businessId: string) {
           messages[payload.code] ??
             (response.status === 403
               ? "Bạn không có quyền thực hiện thao tác này."
-              : `Không thể lưu (${payload.code ?? response.status}). Mã yêu cầu: ${payload.requestId ?? "—"}`),
+              : response.status === 400
+                ? `Dữ liệu chưa hợp lệ. Kiểm tra các trường và thử lại. Mã yêu cầu: ${payload.requestId ?? "—"}`
+                : `Không thể lưu (${payload.code ?? response.status}). Mã yêu cầu: ${payload.requestId ?? "—"}`),
         );
         return false;
       }

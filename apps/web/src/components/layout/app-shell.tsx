@@ -95,13 +95,18 @@ export function AppShell({
       }))
     : [
         { href: prefix, label: "Tổng quan", icon: "grid" },
+        ...(!preview && context?.permissions.includes("vehicle.read")
+          ? [{ href: "/app/vehicles", label: "Đội xe", icon: "car" as const }]
+          : []),
         ...(preview || showPreviews
-          ? fleetItems.map(([path, label, icon]) => ({
-              href: `${preview ? prefix : "/app"}/${path}`,
-              label,
-              icon,
-              preview: true,
-            }))
+          ? fleetItems
+              .filter(([path]) => preview || path !== "vehicles")
+              .map(([path, label, icon]) => ({
+                href: `${preview ? prefix : "/app"}/${path}`,
+                label,
+                icon,
+                preview: true,
+              }))
           : []),
       ];
   const management: NavItem[] = platform
@@ -136,6 +141,7 @@ export function AppShell({
   const all = [...core, ...management, settings];
   const current =
     all.find((i) => i.href === pathname)?.label ??
+    (pathname.startsWith("/app/vehicles/") ? "Đội xe" : undefined) ??
     (pathname.includes("businesses/")
       ? "Chi tiết doanh nghiệp"
       : "Không gian làm việc");
@@ -144,8 +150,14 @@ export function AppShell({
       <Link
         key={item.href}
         href={item.href}
-        className={`nav-link ${pathname === item.href ? "is-active" : ""}`}
-        aria-current={pathname === item.href ? "page" : undefined}
+        className={`nav-link ${pathname === item.href || (item.href === "/app/vehicles" && pathname.startsWith("/app/vehicles/")) ? "is-active" : ""}`}
+        aria-current={
+          pathname === item.href ||
+          (item.href === "/app/vehicles" &&
+            pathname.startsWith("/app/vehicles/"))
+            ? "page"
+            : undefined
+        }
         onClick={() => setOpen(false)}
       >
         <Icon name={item.icon} />

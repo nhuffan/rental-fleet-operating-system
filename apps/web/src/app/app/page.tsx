@@ -136,7 +136,7 @@ export default async function Dashboard() {
         </Panel>
       </div>
       <div className="notice notice-info" style={{ marginTop: 18 }}>
-        Quản lý xe, hợp đồng và GPS đang được phát triển. Tổng quan hiện hiển
+        Hợp đồng thuê và GPS realtime đang được phát triển. Tổng quan hiện hiển
         thị dữ liệu doanh nghiệp từ SaaS Core API.
       </div>
       {process.env.NODE_ENV === "development" && (

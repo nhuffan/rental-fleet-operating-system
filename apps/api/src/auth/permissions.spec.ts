@@ -4,6 +4,13 @@ describe('Permission boundaries', () => {
     expect(permissionsFor('unknown')).toEqual([]);
     expect(permissionsFor('OPERATIONS')).not.toContain('user.manage');
     expect(permissionsFor('OPERATIONS')).toContain('branch.read');
+    for (const permission of ['vehicle.read', 'gps.read'])
+      expect(permissionsFor('OPERATIONS')).toContain(permission);
+    for (const permission of ['vehicle.manage', 'gps.manage']) {
+      expect(permissionsFor('OPERATIONS')).not.toContain(permission);
+      expect(permissionsFor('ADMIN')).toContain(permission);
+      expect(permissionsFor('OWNER')).toContain(permission);
+    }
   });
   it('only owners manage elevated roles', () => {
     expect(canManageRole('OWNER', 'OWNER', 'ADMIN')).toBe(true);

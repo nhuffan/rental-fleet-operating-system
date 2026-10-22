@@ -1,0 +1,125 @@
+.fleet-tabs {
+  display: flex;
+  gap: 24px;
+  margin: -4px 0 22px;
+  border-bottom: 1px solid var(--border);
+}
+.fleet-tabs a {
+  display: block;
+  padding: 12px 2px;
+  border-bottom: 2px solid transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+}
+.fleet-tabs a[aria-current="page"] {
+  border-color: var(--brand);
+  color: var(--brand-strong);
+}
+.fleet-filters {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+.fleet-filters .search-input {
+  flex: 1 1 210px;
+}
+.fleet-filters .filter-select {
+  max-width: 190px;
+}
+.fleet-record-link {
+  color: var(--brand-strong);
+}
+.fleet-record-link:hover {
+  text-decoration: underline;
+}
+.fleet-cell-meta {
+  display: block;
+  margin-top: 5px;
+  color: var(--text-secondary);
+  font-size: 10px;
+}
+.fleet-profile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  margin-bottom: 22px;
+}
+.fleet-profile-grid .panel {
+  min-width: 0;
+}
+.fleet-device-note {
+  padding: 0 22px 16px;
+  line-height: 1.7;
+}
+.fleet-footnote {
+  margin-top: 14px;
+  line-height: 1.7;
+}
+.fleet-assignment-context {
+  margin-bottom: 20px;
+}
+.fleet-device-search {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  margin: 22px 0 18px;
+}
+.fleet-device-search .form-field {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+.fleet-device-options {
+  padding: 0;
+  border: 0;
+  margin: 16px 0 0;
+}
+.fleet-device-options legend {
+  font-weight: 600;
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+.fleet-device-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 12px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  margin-bottom: 9px;
+  cursor: pointer;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.fleet-device-option:has(input:checked) {
+  background: var(--brand-muted);
+  border-color: var(--brand);
+}
+.fleet-device-option small {
+  display: block;
+  margin-top: 5px;
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+.fleet-device-option input {
+  flex-shrink: 0;
+  accent-color: var(--brand-strong);
+}
+@media (max-width: 767px) {
+  .fleet-profile-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .fleet-filters .filter-select {
+    flex: 1 1 130px;
+    min-width: 0;
+    max-width: none;
+  }
+  .fleet-filters .search-input {
+    max-width: none;
+    flex-basis: 100%;
+  }
+  .fleet-filters .button {
+    flex: 1;
+  }
+}

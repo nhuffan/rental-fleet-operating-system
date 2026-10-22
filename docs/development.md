@@ -31,10 +31,10 @@ Production users are created in Supabase Auth by an administrator. An OWNER/ADMI
 
 - Web uses per-request Supabase SSR clients, cookie refresh in proxy.ts, and protected server layouts. It forwards access tokens to NestJS. Browser code uses only the publishable key.
 - NestJS verifies each bearer token against Supabase Auth, then checks active profile/business/membership. Optional X-Business-Id selects one of the user's active memberships; otherwise the oldest active membership is used. Frontend tenant selection is never trusted by itself.
-- OWNER manages all roles; ADMIN manages operations memberships and business/branch/settings data; OPERATIONS reads business/branches/settings. The last active owner cannot be disabled or demoted through the API. Guards and transaction rechecks enforce this independently of the UI.
+- OWNER manages all roles; ADMIN manages operations memberships and business/branch/settings data; OPERATIONS reads business/branches/settings and the Fleet vehicle/device registry; Fleet writes require OWNER/ADMIN. The last active owner cannot be disabled or demoted through the API. Guards and transaction rechecks enforce this independently of the UI.
 - Every tenant query is scoped. Writes and audit events share a transaction; a business row lock serializes tenant admin changes. Audit metadata contains changed field names and request IDs, not passwords/tokens.
 - RLS permits only membership-scoped Data API reads; direct writes by anon/authenticated are revoked. No SECURITY DEFINER helper is used. The API uses a trusted DB connection and must always enforce its own authorization.
-- Shared API contracts are under packages/contracts. Database schema and API env are server-only. No vehicle/rental/GPS domain is implemented yet.
+- Shared API contracts are under packages/contracts. Database schema and API env are server-only. Fleet Core implements tenant-scoped vehicles, GPS device registration and assignment history. Rental and GPS ingestion/location domains are not implemented yet.
 
 ## Staging
 
@@ -65,3 +65,15 @@ UI_TEST_BASE_URL=http://127.0.0.1:3103 node --test apps/web/test/preview-boundar
 ```
 
 If the host sandbox prevents Turbopack's CSS worker from opening its internal port, `pnpm --filter web exec next build --webpack` verifies the production output without changing the pinned Next.js version or default build script. See `docs/ui-screen-inventory.md`, `docs/ui-design-tokens.md` and `docs/ui-backend-readiness.md` for current UI boundaries.
+
+## Fleet Core
+
+`/app/vehicles`, `/app/vehicles/devices` and `/app/vehicles/:id` are live server-authorized pages in all environments. Vehicle lifecycle is `ACTIVE` / `INACTIVE`; availability and rental states are not inferred. Devices are registry records, not online/offline telemetry. The existing development-only Fleet dashboard/map/rental previews remain separate.
+
+OWNER/ADMIN have `vehicle.read`, `vehicle.manage`, `gps.read`, `gps.manage`; OPERATIONS has the two read permissions. Device assignment/end requires `vehicle.manage`. Vehicle/device writes and audit events share a transaction after taking the same tenant business-row lock used by SaaS Core and rechecking the current membership/profile/business/permission.
+
+License plates are uppercased with whitespace/dot/hyphen removed, then validated as 4–16 ASCII letters/digits. A plate is unique within the business, including inactive vehicles. GPS `provider` is lowercase and `deviceUid` is trimmed but case-sensitive; the pair is globally unique with immutable business ownership and identity. PATCH can change only device label/status. Branches must belong to the verified tenant and be active when newly associated.
+
+A vehicle and device can each have at most one current primary assignment. End the active assignment before disabling either resource or replacing its device. Assignment/end timestamps use the database clock; ended rows remain in history. There are no hard-delete or cross-business transfer APIs. See `docs/fleet-core.md` and the source stage plan under `docs/stages`.
+
+Fleet E2E uses only the existing seeded development project `eeryymswcufnebibigqf`, creates uniquely named disposable records and removes only those records afterward; audit evidence remains. E2E suites run serially because SaaS Core tests exercise revocation of shared demo accounts. Never run these suites against staging/production.
