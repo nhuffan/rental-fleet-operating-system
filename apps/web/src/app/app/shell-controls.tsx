@@ -10,7 +10,7 @@ export function Logout() {
   return (
     <div>
       <button
-        className="secondary"
+        className="button button-secondary logout-button"
         disabled={pending}
         onClick={async () => {
           setPending(true);
@@ -41,7 +41,6 @@ export function BusinessPicker({
   businesses: Me["businesses"];
   selected: string;
 }) {
-  const router = useRouter();
   return (
     <label className="business-picker">
       Doanh nghiệp
@@ -50,7 +49,8 @@ export function BusinessPicker({
         value={selected}
         onChange={(e) => {
           document.cookie = `current-business=${encodeURIComponent(e.target.value)}; Path=/; SameSite=Lax${location.protocol === "https:" ? "; Secure" : ""}`;
-          router.refresh();
+          // A full reload drops all client state from the previous verified tenant.
+          window.location.reload();
         }}
       >
         {businesses.map((b) => (

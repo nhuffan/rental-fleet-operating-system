@@ -48,3 +48,20 @@ docker compose --env-file .env.staging.web -f compose.staging.yaml down
 The Dockerfile has separate api/web targets. NEXT_PUBLIC_* values are public build arguments; secrets are runtime env only and excluded from the build context. Put an HTTPS reverse proxy in front of the loopback-bound ports. Configure Supabase Auth Site URL/redirect allowlist for that Web origin. No staging cloud project is created automatically.
 
 Supabase leaked-password protection requires Pro or above; it is unavailable on the current Free project ([documentation](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection)).
+
+## Web UI and development previews
+
+The web UI uses shared semantic tokens under `apps/web/src/styles`, scoped components under `components`, and feature-specific SaaS Core pages under `features`. Existing `/app` URLs and API payloads are unchanged. Mutation types come from the generated OpenAPI schemas. A business switch reloads the document so local form/list state cannot survive into another verified tenant context.
+
+While `next dev` is running, `/dev-preview/business` and `/dev-preview/platform` display clearly labelled, historical synthetic fixtures. Core component examples in that area are read-only. `/superadmin` redirects to the platform design preview only during development. All design preview routes return 404 in production; they cannot grant platform access. Fleet preview routes within `/app` still pass through the existing tenant auth layout/proxy.
+
+Production release-boundary regression tests require a temporary production server and use only unauthenticated localhost requests:
+
+```sh
+pnpm --filter web build
+# Start a server only with user authorization; stop it after verification.
+pnpm --filter web exec next start --hostname 127.0.0.1 --port 3103
+UI_TEST_BASE_URL=http://127.0.0.1:3103 node --test apps/web/test/preview-boundaries.mjs
+```
+
+If the host sandbox prevents Turbopack's CSS worker from opening its internal port, `pnpm --filter web exec next build --webpack` verifies the production output without changing the pinned Next.js version or default build script. See `docs/ui-screen-inventory.md`, `docs/ui-design-tokens.md` and `docs/ui-backend-readiness.md` for current UI boundaries.

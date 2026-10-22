@@ -1,0 +1,47 @@
+@theme inline {
+  --color-background: var(--canvas);
+  --color-surface: var(--surface);
+  --color-brand: var(--brand);
+  --color-foreground: var(--text-primary);
+  --color-border: var(--border);
+}
+:root {
+  --canvas: #f4f4f3;
+  --surface: #fff;
+  --surface-muted: #f8f8f7;
+  --sidebar: #f2f2f1;
+  --border: #dededb;
+  --text-primary: #2e3540;
+  --text-secondary: #606973;
+  --text-muted: #707982;
+  --brand: #e9702e;
+  --brand-strong: #ad4511;
+  --brand-muted: #fff0e6;
+  --focus: #ad4511;
+  --success: #24734e;
+  --success-muted: #eaf5ee;
+  --warning: #885b12;
+  --warning-muted: #fff5df;
+  --danger: #b63d42;
+  --danger-muted: #fcecee;
+  --info: #356482;
+  --info-muted: #eaf2f8;
+  --font-sans: Arial, Helvetica, sans-serif;
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-lg: 18px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-card: 12px;
+  --shadow: 0 2px 4px #242e3904;
+  --sidebar-width: 248px;
+  --topbar-height: 68px;
+}

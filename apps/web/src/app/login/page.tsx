@@ -50,7 +50,7 @@ export default function Login() {
           <p className="muted">
             Sử dụng tài khoản được cấp cho doanh nghiệp của bạn.
           </p>
-          <form onSubmit={submit}>
+          <form method="post" onSubmit={submit}>
             <label>
               Email
               <input
@@ -74,7 +74,11 @@ export default function Login() {
                 {error}
               </p>
             )}
-            <button disabled={pending} type="submit">
+            <button
+              className="button button-primary"
+              disabled={pending}
+              type="submit"
+            >
               {pending ? "Đang đăng nhập…" : "Đăng nhập →"}
             </button>
           </form>

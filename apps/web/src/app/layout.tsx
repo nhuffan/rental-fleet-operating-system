@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 export const metadata: Metadata = {
   title: "Rental Fleet Operating System",
-  description: "Rental Fleet development foundation",
+  description: "Nền tảng vận hành doanh nghiệp và đội xe cho thuê",
 };
 export default function RootLayout({
   children,
