@@ -61,6 +61,7 @@ export function disposableFixture() {
         // Every row in these run-created tenants belongs to this suite, including
         // successful writes whose response was lost before an individual ID was recorded.
         for (const table of [
+          'commercial_movements',
           'gps_positions',
           'rentals',
           'device_assignments',

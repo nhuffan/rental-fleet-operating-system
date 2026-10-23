@@ -1,19 +1,18 @@
 "use client";
-import Link from "next/link";
 import { BrandLockup } from "@/components/ui/brand-lockup";
 import { Button, Input } from "@/components/ui/primitives";
 import { Icon } from "@/components/ui/icon";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { browserClient } from "@/lib/supabase/client";
-import { resolveLoginDestination } from "@/lib/auth-navigation";
-import { publicEnv } from "@/lib/env";
-export function LoginForm({ destination }: { destination: string | null }) {
-  const platform =
-    destination === "/superadmin" || destination?.startsWith("/superadmin/");
-  const [error, setError] = useState("");
+export function LoginForm({
+  destination,
+  initialError = "",
+}: {
+  destination: string | null;
+  initialError?: string;
+}) {
+  const [error, setError] = useState(initialError);
   const [pending, setPending] = useState(false);
-  const router = useRouter();
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setPending(true);
@@ -31,19 +30,11 @@ export function LoginForm({ destination }: { destination: string | null }) {
         return;
       }
       document.cookie = "current-business=; Path=/; Max-Age=0; SameSite=Lax";
-      const token = data.session.access_token;
-      const target = await resolveLoginDestination(
-        destination,
-        async (path) => {
-          const response = await fetch(`${publicEnv().api}/api/v1${path}`, {
-            cache: "no-store",
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          return response.status;
-        },
-      );
-      // A concurrent refresh can cancel this transition in Next 16.
-      router.replace(target);
+      const query = destination
+        ? `?${new URLSearchParams({ next: destination })}`
+        : "";
+      // Verify grants on the server after the browser has persisted Auth cookies.
+      window.location.replace(`/auth/continue${query}`);
     } catch {
       setError("Không thể xác minh quyền truy cập. Vui lòng thử lại.");
     } finally {
@@ -84,13 +75,7 @@ export function LoginForm({ destination }: { destination: string | null }) {
         <div className="login-card">
           <span className="eyebrow">CHÀO MỪNG TRỞ LẠI</span>
           <h2 id="login-title">Đăng nhập</h2>
-          <p className="muted">
-            {platform
-              ? "Đăng nhập bằng tài khoản Superadmin được cấp quyền quản trị nền tảng."
-              : destination
-                ? "Tiếp tục công việc trong doanh nghiệp của bạn."
-                : "Tiếp tục trong không gian được cấp quyền của bạn."}
-          </p>
+          <p className="muted">Đăng nhập để tiếp tục công việc của bạn.</p>
           <form method="post" onSubmit={submit} aria-busy={pending}>
             <label htmlFor="login-email">
               Email
@@ -127,18 +112,8 @@ export function LoginForm({ destination }: { destination: string | null }) {
             </Button>
           </form>
           <p className="login-help">
-            {platform
-              ? "Quyền quản trị doanh nghiệp không cấp quyền quản trị nền tảng."
-              : "Chưa có tài khoản? Liên hệ quản trị viên doanh nghiệp để được cấp quyền truy cập."}
+            Chưa có tài khoản? Liên hệ quản trị viên để được cấp quyền truy cập.
           </p>
-          <Link
-            className="link-brand"
-            href={platform ? "/login?next=%2Fapp" : "/login?next=%2Fsuperadmin"}
-          >
-            {platform
-              ? "Đăng nhập không gian doanh nghiệp"
-              : "Đăng nhập quản trị nền tảng"}
-          </Link>
         </div>
       </section>
     </main>

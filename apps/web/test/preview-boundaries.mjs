@@ -30,6 +30,8 @@ for (const path of [
   "/app",
   "/app/users",
   "/app/audit",
+  "/app/commercial",
+  "/app/commercial/00000000-0000-4000-8000-000000000001",
   "/app/fleet-map",
   "/app/trips",
   "/app/trips/invalid-trip-id",
@@ -59,7 +61,7 @@ for (const path of [
   "/superadmin/businesses/00000000-0000-4000-8000-000000000001",
   "/superadmin/users",
 ]) {
-  test(`unauthenticated superadmin route redirects to platform login: ${path}`, async () => {
+  test(`unauthenticated superadmin route redirects to shared login: ${path}`, async () => {
     const response = await fetch(new URL(path, base), { redirect: "manual" });
     assert.ok([302, 303, 307, 308].includes(response.status));
     const target = new URL(response.headers.get("location"), base);

@@ -20,6 +20,88 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/commercial/movements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CommercialController_list"];
+        put?: never;
+        post: operations["CommercialController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/commercial/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Exact VND strings. Period revenue includes noncash deposit retention; deposits are excluded from operating cash flow. Deposit held is cumulative before until, ignoring from. Reversals take effect at correction time. */
+        get: operations["CommercialController_summary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/commercial/movements/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CommercialController_detail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/commercial/movements/{id}/reverse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description One immutable mirror correction per original. A reversal cannot be reversed. Database correction time determines the reporting period. Cannot create a negative deposit balance. */
+        post: operations["CommercialController_reverse"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/rentals/{id}/commercial": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CommercialController_rental"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/platform/me": {
         parameters: {
             query?: never;
@@ -656,6 +738,115 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        Object: Record<string, never>;
+        CommercialMovementResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            businessId: string;
+            /** Format: uuid */
+            vehicleId: string | null;
+            /** Format: uuid */
+            rentalId: string | null;
+            /** @enum {string} */
+            kind: "RENTAL_PAYMENT" | "MISC_INCOME" | "DEPOSIT_RECEIPT" | "DEPOSIT_REFUND" | "DEPOSIT_RETAIN" | "EXPENSE";
+            /** @enum {string} */
+            category: "RENTAL" | "OTHER_INCOME" | "DEPOSIT" | "FUEL" | "MAINTENANCE" | "TOLL" | "INSURANCE" | "OTHER_EXPENSE";
+            /** @description Positive whole VND string. REVERSAL has the opposite effect to its original movement. */
+            amount: string;
+            /** Format: date-time */
+            occurredAt: string;
+            reference: string;
+            notes: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: uuid */
+            createdBy: string;
+            /** Format: uuid */
+            reversalOf: string | null;
+            /** Format: uuid */
+            reversedBy: string | null;
+            /** @enum {string} */
+            status: "POSTED" | "REVERSED" | "REVERSAL";
+        };
+        CommercialMovementPage: {
+            page: number;
+            limit: number;
+            total: number;
+            data: components["schemas"]["CommercialMovementResponse"][];
+        };
+        CommercialSummaryResponse: {
+            /** @enum {string} */
+            currency: "VND";
+            /**
+             * @description Recorded rental payments and miscellaneous income plus noncash deposit retention; excludes contracted/projected amounts.
+             * @enum {string}
+             */
+            basis: "RECORDED_MOVEMENTS";
+            /** Format: date-time */
+            from: string | null;
+            /** Format: date-time */
+            until: string;
+            /** @description Whole VND string: recorded payments, miscellaneous income and deposit retention, net of corrections. */
+            recordedRevenue: string;
+            /** @description Whole VND string: rental payments plus miscellaneous income; excludes deposits and noncash retention. */
+            cashReceived: string;
+            operatingExpenses: string;
+            /** @description Recorded revenue minus recorded operating expenses. Estimate, excludes unrecorded costs. */
+            estimatedProfit: string;
+            /** @description Cash received minus operating expenses; deposit movements excluded. */
+            netOperatingCashFlow: string;
+            /** @description Cumulative deposit receipts minus refunds and retained amounts before until, ignoring from. */
+            depositHeld: string;
+        };
+        CommercialMovementCreate: {
+            /** @enum {string} */
+            kind: "RENTAL_PAYMENT" | "MISC_INCOME" | "DEPOSIT_RECEIPT" | "DEPOSIT_REFUND" | "DEPOSIT_RETAIN" | "EXPENSE";
+            /** @enum {string} */
+            category: "RENTAL" | "OTHER_INCOME" | "DEPOSIT" | "FUEL" | "MAINTENANCE" | "TOLL" | "INSURANCE" | "OTHER_EXPENSE";
+            /** @description Exact whole VND, positive integer string, maximum 999999999999999. */
+            amount: string;
+            /**
+             * Format: date-time
+             * @description Explicit UTC offset; cannot be later than database time.
+             */
+            occurredAt: string;
+            /** Format: uuid */
+            vehicleId?: string;
+            /**
+             * Format: uuid
+             * @description Required for rental payments and deposit movements. Derives vehicleId.
+             */
+            rentalId?: string;
+            /** @default  */
+            reference: string;
+            /** @default  */
+            notes: string;
+        };
+        CommercialMovementReverse: {
+            /** @description Correction reason; saved in reversal notes, never audit metadata. */
+            reason: string;
+        };
+        RentalCommercialResponse: {
+            /** Format: uuid */
+            rentalId: string;
+            /** Format: uuid */
+            vehicleId: string;
+            /** @enum {string} */
+            currency: "VND";
+            /** @description Rental Core amount rounded to whole VND half up; never counted as recorded receipt. */
+            contractedAmount: string;
+            recordedRentalPayments: string;
+            outstandingAmount: string;
+            overpaidAmount: string;
+            /** @description Required deposit rounded to whole VND half up; historical depositReceived boolean is not a payment. */
+            depositRequired: string;
+            depositReceived: string;
+            depositRefunded: string;
+            depositRetained: string;
+            depositBalance: string;
+            summary: components["schemas"]["CommercialSummaryResponse"];
+        };
         PlatformPrincipal: {
             /** Format: uuid */
             id: string;
@@ -707,7 +898,6 @@ export interface components {
             totals: components["schemas"]["PlatformCounts"];
             gps: components["schemas"]["PlatformGpsHealth"];
         };
-        Object: Record<string, never>;
         PlatformBusiness: {
             /** Format: uuid */
             id: string;
@@ -1444,6 +1634,711 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Standard API error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    CommercialController_list: {
+        parameters: {
+            query?: {
+                page?: components["schemas"]["Object"];
+                limit?: components["schemas"]["Object"];
+                from?: string;
+                until?: string;
+                vehicleId?: string;
+                rentalId?: string;
+                kind?: "RENTAL_PAYMENT" | "MISC_INCOME" | "DEPOSIT_RECEIPT" | "DEPOSIT_REFUND" | "DEPOSIT_RETAIN" | "EXPENSE";
+                category?: "RENTAL" | "OTHER_INCOME" | "DEPOSIT" | "FUEL" | "MAINTENANCE" | "TOLL" | "INSURANCE" | "OTHER_EXPENSE";
+                status?: "POSTED" | "REVERSED" | "REVERSAL";
+                /** @description Literal reference/notes substring, maximum 100 characters. */
+                search?: string;
+            };
+            header?: {
+                /** @description Select an active Owner business membership. */
+                "X-Business-Id"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommercialMovementPage"];
+                };
+            };
+            /** @description Standard API error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    CommercialController_create: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Select an active Owner business membership. */
+                "X-Business-Id"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommercialMovementCreate"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommercialMovementResponse"];
+                };
+            };
+            /** @description Standard API error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    CommercialController_summary: {
+        parameters: {
+            query?: {
+                /** @description Inclusive, omitted means all history. Does not bound deposit liability. */
+                from?: string;
+                /** @description Exclusive, defaults to database time. */
+                until?: string;
+                vehicleId?: string;
+                rentalId?: string;
+            };
+            header?: {
+                /** @description Select an active Owner business membership. */
+                "X-Business-Id"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommercialSummaryResponse"];
+                };
+            };
+            /** @description Standard API error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    CommercialController_detail: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Select an active Owner business membership. */
+                "X-Business-Id"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommercialMovementResponse"];
+                };
+            };
+            /** @description Standard API error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    CommercialController_reverse: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Select an active Owner business membership. */
+                "X-Business-Id"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommercialMovementReverse"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommercialMovementResponse"];
+                };
+            };
+            /** @description Standard API error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    CommercialController_rental: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Select an active Owner business membership. */
+                "X-Business-Id"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RentalCommercialResponse"];
+                };
             };
             /** @description Standard API error */
             400: {

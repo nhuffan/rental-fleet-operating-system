@@ -56,6 +56,27 @@ export function VehicleDetail({
           </Link>
         </div>
       )}
+      {context.permissions.includes("commercial.read") && (
+        <Panel>
+          <PanelHeader
+            title="Thu chi theo xe"
+            subtitle="Doanh thu ghi nhận, chi phí vận hành và lợi nhuận ước tính từ giao dịch thực tế"
+            icon="wallet"
+            action={
+              <Link
+                className="button button-secondary"
+                href={`/app/commercial?vehicleId=${vehicle.id}`}
+              >
+                Xem sổ giao dịch của xe
+              </Link>
+            }
+          />
+          <p className="panel-body quiet">
+            Sổ giao dịch áp dụng bộ lọc xe này. Cọc đang giữ được tách khỏi
+            doanh thu; phí đường bộ được nhập thủ công, chưa kết nối VETC.
+          </p>
+        </Panel>
+      )}
       <div className="fleet-profile-grid">
         <Panel>
           <PanelHeader

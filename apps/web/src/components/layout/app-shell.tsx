@@ -188,6 +188,15 @@ export function AppShell({
         ...(!preview && context?.permissions.includes("trip.read")
           ? [{ href: "/app/trips", label: "Hành trình", icon: "trip" as const }]
           : []),
+        ...(!preview && context?.permissions.includes("commercial.read")
+          ? [
+              {
+                href: "/app/commercial",
+                label: "Thương mại",
+                icon: "wallet" as const,
+              },
+            ]
+          : []),
         ...(preview || showPreviews
           ? fleetItems
               .filter(
@@ -199,6 +208,7 @@ export function AppShell({
                     "customers",
                     "fleet-map",
                     "trips",
+                    "commercial",
                   ].includes(path),
               )
               .map(([path, label, icon]) => ({
@@ -238,7 +248,7 @@ export function AppShell({
       <Link
         key={item.href}
         href={item.href}
-        className={`nav-link ${pathname === item.href || (["/app/vehicles", "/app/rentals", "/app/customers", "/app/trips", "/superadmin/businesses", "/superadmin/users"].includes(item.href) && pathname.startsWith(`${item.href}/`)) ? "is-active" : ""}`}
+        className={`nav-link ${pathname === item.href || (["/app/vehicles", "/app/rentals", "/app/customers", "/app/trips", "/app/commercial", "/superadmin/businesses", "/superadmin/users"].includes(item.href) && pathname.startsWith(`${item.href}/`)) ? "is-active" : ""}`}
         aria-current={
           pathname === item.href ||
           ([
@@ -246,6 +256,7 @@ export function AppShell({
             "/app/rentals",
             "/app/customers",
             "/app/trips",
+            "/app/commercial",
             "/superadmin/businesses",
             "/superadmin/users",
           ].includes(item.href) &&

@@ -1,11 +1,12 @@
 import { rentalTripRange } from "@/features/telematics/trips/query";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { api } from "@/lib/api";
+import { api, ApiResponseError } from "@/lib/api";
 import { PageHeader } from "@/components/ui/primitives";
 import { RentalDetail } from "@/features/rentals/rental-detail";
 import { rentalContext } from "@/features/rentals/server";
 import { validId, type SearchParams } from "@/lib/query";
+import type { RentalCommercial } from "@/features/commercial/types";
 import type { Rental } from "@/features/rentals/types";
 export default async function RentalPage({
   params,
@@ -18,6 +19,26 @@ export default async function RentalPage({
   const { id } = await params;
   if (!validId(id)) notFound();
   const rental = await api<Rental>(`/rentals/${id}`, { notFoundOn404: true });
+  let commercial: RentalCommercial | null = null;
+  let commercialIssue: "currency" | "unavailable" | undefined;
+  if (context.permissions.includes("commercial.read")) {
+    if (context.business.currency !== "VND") {
+      commercialIssue = "currency";
+    } else {
+      try {
+        commercial = await api<RentalCommercial>(`/rentals/${id}/commercial`);
+      } catch (error) {
+        if (
+          error instanceof ApiResponseError &&
+          (error.status === 409 || error.status >= 500)
+        ) {
+          commercialIssue = "unavailable";
+        } else {
+          throw error;
+        }
+      }
+    }
+  }
   const tripRange = rentalTripRange(rental.startAt, rental.endAt);
   const saved = (await searchParams).saved;
   const message =
@@ -38,6 +59,8 @@ export default async function RentalPage({
       <RentalDetail
         key={`${context.business.id}:${id}`}
         rental={rental}
+        commercial={commercial}
+        commercialIssue={commercialIssue}
         tripRange={tripRange}
         context={context}
         initialMessage={message}

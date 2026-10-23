@@ -363,8 +363,12 @@ export function RentalActionEditor({
                     type="checkbox"
                     defaultChecked={rental.depositReceived}
                   />
-                  Đã nhận cọc
+                  Xác nhận cọc trên hợp đồng
                 </label>
+                <p className="quiet">
+                  Xác nhận này không tạo giao dịch tiền cọc. Ghi nhận khoản cọc
+                  thực tế tại phần Thu chi của hợp đồng.
+                </p>
                 <label className="form-field">
                   Ghi chú
                   <Textarea

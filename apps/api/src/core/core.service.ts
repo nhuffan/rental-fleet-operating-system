@@ -12,6 +12,7 @@ import {
   auditLogs,
   branches,
   businesses,
+  commercialMovements,
   memberships,
   profiles,
   settings,
@@ -138,6 +139,25 @@ export class CoreService {
       'business.update',
       'business',
       async (tx) => {
+        if (body.currency) {
+          const [business] = await tx
+            .select({ currency: businesses.currency })
+            .from(businesses)
+            .where(eq(businesses.id, c.businessId));
+          if (business && body.currency !== business.currency) {
+            const [movement] = await tx
+              .select({ id: commercialMovements.id })
+              .from(commercialMovements)
+              .where(eq(commercialMovements.businessId, c.businessId))
+              .limit(1);
+            if (movement)
+              throw new ConflictException({
+                code: 'BUSINESS_HAS_COMMERCIAL_HISTORY',
+                message:
+                  'Business currency cannot change after financial movements have been recorded',
+              });
+          }
+        }
         const [value] = await tx
           .update(businesses)
           .set({

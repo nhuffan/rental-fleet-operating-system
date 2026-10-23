@@ -1,0 +1,117 @@
+.commercial-actions,
+.commercial-reference-filters {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.commercial-actions {
+  margin: 0 0 20px;
+}
+.commercial-actions select {
+  width: auto;
+  min-width: 144px;
+}
+.commercial-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin: 0 0 20px;
+}
+.commercial-stat {
+  padding: 22px;
+}
+.commercial-stat > span {
+  font-weight: 600;
+}
+.commercial-stat > small {
+  display: block;
+  margin-top: 3px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.commercial-stat > strong {
+  display: block;
+  margin-top: 18px;
+  font-size: clamp(19px, 1.65vw, 27px);
+  letter-spacing: -0.6px;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.commercial-stat p {
+  margin: 10px 0 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.commercial-basis {
+  padding: 20px 24px;
+}
+.commercial-basis > p {
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin: 8px 0 14px;
+}
+.commercial-cash {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  font-size: 14px;
+}
+.commercial-cash strong {
+  margin-left: 8px;
+  font-variant-numeric: tabular-nums;
+}
+.commercial-reference-filters {
+  padding: 0 24px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.commercial-money {
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.commercial-balance-preview {
+  padding: 14px 16px;
+  margin: 16px 0;
+  border: 1px solid var(--border);
+  background: var(--surface-muted);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+}
+.commercial-balance-preview small {
+  display: block;
+  color: var(--text-secondary);
+  margin-top: 5px;
+}
+.commercial-rental-totals {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 24px;
+}
+.commercial-rental-totals dd {
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 1200px) {
+  .commercial-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 640px) {
+  .commercial-summary-grid,
+  .commercial-rental-totals {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .commercial-stat {
+    padding: 18px;
+  }
+  .commercial-basis {
+    padding: 18px;
+  }
+  .commercial-reference-filters {
+    padding: 0 18px 16px;
+  }
+  .commercial-actions > .button,
+  .commercial-actions > select {
+    flex: 1 1 150px;
+  }
+}

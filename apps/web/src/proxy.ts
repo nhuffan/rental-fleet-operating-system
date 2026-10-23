@@ -34,14 +34,13 @@ export async function proxy(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/app/");
   if ((!user || error) && (tenant || platform)) {
     const target = new URL("/login", request.url);
-    if (platform)
-      target.searchParams.set(
-        "next",
-        safeReturnPath(
-          request.nextUrl.pathname + request.nextUrl.search,
-          "/superadmin",
-        ),
-      );
+    target.searchParams.set(
+      "next",
+      safeReturnPath(
+        request.nextUrl.pathname + request.nextUrl.search,
+        platform ? "/superadmin" : "/app",
+      ),
+    );
     const redirect = NextResponse.redirect(target);
     response.cookies.getAll().forEach((cookie) => redirect.cookies.set(cookie));
     redirect.headers.set("Cache-Control", "private, no-store");

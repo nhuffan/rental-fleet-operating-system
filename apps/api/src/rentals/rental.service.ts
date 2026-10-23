@@ -28,6 +28,7 @@ import {
   auditLogs,
   businesses,
   customers,
+  commercialMovements,
   memberships,
   profiles,
   rentals,
@@ -91,6 +92,14 @@ export function translateRentalConflict(error: unknown): never {
       throw rentalConflict(
         'VEHICLE_RENTED',
         'Vehicle already has an active rental',
+      );
+    if (
+      detail.code === '23503' &&
+      detail.constraint === 'commercial_movements_rental_tenant_fk'
+    )
+      throw rentalConflict(
+        'RENTAL_HAS_COMMERCIAL_HISTORY',
+        'A rental with recorded movements cannot change vehicle',
       );
     current = detail.cause;
   }
@@ -460,6 +469,23 @@ export class RentalService {
             'RENTAL_FIELDS_LOCKED',
             'Only draft rentals may change customer, vehicle or dates; use extend to move a blocking end time',
           );
+        if (body.vehicleId && body.vehicleId !== before.vehicleId) {
+          const [movement] = await tx
+            .select({ id: commercialMovements.id })
+            .from(commercialMovements)
+            .where(
+              and(
+                eq(commercialMovements.businessId, c.businessId),
+                eq(commercialMovements.rentalId, id),
+              ),
+            )
+            .limit(1);
+          if (movement)
+            throw rentalConflict(
+              'RENTAL_HAS_COMMERCIAL_HISTORY',
+              'A rental with recorded movements cannot change vehicle',
+            );
+        }
         const window = rentalWindow(
           body.startAt ?? before.startAt,
           body.endAt ?? before.endAt,

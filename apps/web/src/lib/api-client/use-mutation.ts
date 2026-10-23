@@ -24,7 +24,19 @@ type RentalHandover = Schemas["RentalHandover"];
 type RentalExtend = Schemas["RentalExtend"];
 type RentalReturn = Schemas["RentalReturn"];
 type RentalCancel = Schemas["RentalCancel"];
+type CommercialMovementCreate = Schemas["CommercialMovementCreate"];
+type CommercialMovementReverse = Schemas["CommercialMovementReverse"];
 type Mutation =
+  | {
+      path: "/commercial/movements";
+      body: CommercialMovementCreate;
+      method: "POST";
+    }
+  | {
+      path: `/commercial/movements/${string}/reverse`;
+      body: CommercialMovementReverse;
+      method: "POST";
+    }
   | { path: "/customers"; body: CustomerCreate; method: "POST" }
   | { path: `/customers/${string}`; body: CustomerUpdate; method?: "PATCH" }
   | { path: "/rentals"; body: RentalCreate; method: "POST" }
@@ -95,6 +107,26 @@ export function useMutation(businessId: string) {
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
         const messages: Record<string, string> = {
+          COMMERCIAL_MOVEMENT_NOT_FOUND:
+            "Không tìm thấy giao dịch trong doanh nghiệp hiện tại.",
+          COMMERCIAL_ALREADY_REVERSED:
+            "Giao dịch đã được đảo. Vui lòng tải lại dữ liệu.",
+          COMMERCIAL_REVERSAL_NOT_ALLOWED: "Không thể đảo một bút toán đảo.",
+          INSUFFICIENT_DEPOSIT_BALANCE:
+            "Số dư cọc không đủ tại thời điểm giao dịch hoặc trong lịch sử sau đó. Kiểm tra lại khoản nhận, hoàn và giữ cọc.",
+          COMMERCIAL_RENTAL_REQUIRED:
+            "Chọn hợp đồng trong doanh nghiệp hiện tại.",
+          COMMERCIAL_SCOPE_MISMATCH: "Xe không khớp với hợp đồng đã chọn.",
+          INVALID_COMMERCIAL_DATE:
+            "Thời điểm không được ở tương lai. Hãy kiểm tra giờ Việt Nam.",
+          INVALID_COMMERCIAL_CATEGORY:
+            "Danh mục không khớp với loại giao dịch.",
+          COMMERCIAL_CURRENCY_UNSUPPORTED:
+            "Giao dịch thương mại hiện hỗ trợ doanh nghiệp dùng VND.",
+          BUSINESS_HAS_COMMERCIAL_HISTORY:
+            "Doanh nghiệp đã có lịch sử giao dịch. Không thể đổi đơn vị tiền tệ để bảo toàn ý nghĩa các khoản đã ghi nhận.",
+          RENTAL_HAS_COMMERCIAL_HISTORY:
+            "Hợp đồng đã có giao dịch. Không thể thay xe để giữ nguyên lịch sử tài chính.",
           CUSTOMER_NOT_FOUND:
             "Khách hàng không tồn tại trong doanh nghiệp hiện tại.",
           CUSTOMER_CONTACT_REQUIRED:

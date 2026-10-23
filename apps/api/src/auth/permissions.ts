@@ -19,6 +19,8 @@ export const PERMISSIONS = [
   'rental.read',
   'rental.manage',
   'trip.read',
+  'commercial.read',
+  'commercial.manage',
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 // Supabase supplies identity only. Customer access is deferred and legacy tenant

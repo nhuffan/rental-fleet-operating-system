@@ -373,6 +373,11 @@ export const rentals = pgTable(
       (${table.status} = 'CANCELLED' and ${table.handedOverAt} is null and ${table.returnedAt} is null and ${table.cancelledAt} is not null and ${table.odometerStart} is null and ${table.odometerEnd} is null)
     `,
     ),
+    unique('rentals_business_id_id_vehicle_unique').on(
+      table.businessId,
+      table.id,
+      table.vehicleId,
+    ),
     // Drizzle has no exclusion-constraint mapping. SQL migration is authoritative for
     // rentals_blocking_vehicle_time_exclusion (btree_gist + half-open tstzrange).
     uniqueIndex('rentals_active_vehicle_unique')
@@ -399,6 +404,136 @@ export const rentals = pgTable(
       table.businessId,
       table.vehicleId,
       table.startAt.desc(),
+      table.id,
+    ),
+  ],
+);
+
+export const commercialMovements = pgTable(
+  'commercial_movements',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    businessId: uuid('business_id')
+      .notNull()
+      .references(() => businesses.id, { onDelete: 'restrict' }),
+    vehicleId: uuid('vehicle_id'),
+    rentalId: uuid('rental_id'),
+    kind: text()
+      .notNull()
+      .$type<
+        | 'RENTAL_PAYMENT'
+        | 'MISC_INCOME'
+        | 'DEPOSIT_RECEIPT'
+        | 'DEPOSIT_REFUND'
+        | 'DEPOSIT_RETAIN'
+        | 'EXPENSE'
+      >(),
+    category: text()
+      .notNull()
+      .$type<
+        | 'RENTAL'
+        | 'OTHER_INCOME'
+        | 'DEPOSIT'
+        | 'FUEL'
+        | 'MAINTENANCE'
+        | 'TOLL'
+        | 'INSURANCE'
+        | 'OTHER_EXPENSE'
+      >(),
+    amount: numeric({ precision: 18, scale: 0 }).notNull(),
+    occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull(),
+    reference: text().notNull().default(''),
+    notes: text().notNull().default(''),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    createdBy: uuid('created_by').notNull(),
+    reversalOf: uuid('reversal_of'),
+  },
+  (table) => [
+    unique('commercial_movements_business_id_id_unique').on(
+      table.businessId,
+      table.id,
+    ),
+    unique('commercial_movements_reversal_unique').on(table.reversalOf),
+    foreignKey({
+      name: 'commercial_movements_vehicle_tenant_fk',
+      columns: [table.businessId, table.vehicleId],
+      foreignColumns: [vehicles.businessId, vehicles.id],
+    }).onDelete('restrict'),
+    foreignKey({
+      name: 'commercial_movements_rental_tenant_fk',
+      columns: [table.businessId, table.rentalId, table.vehicleId],
+      foreignColumns: [rentals.businessId, rentals.id, rentals.vehicleId],
+    }).onDelete('restrict'),
+    foreignKey({
+      name: 'commercial_movements_reversal_tenant_fk',
+      columns: [table.businessId, table.reversalOf],
+      foreignColumns: [table.businessId, table.id],
+    }).onDelete('restrict'),
+    check(
+      'commercial_movements_kind_check',
+      sql`${table.kind} in ('RENTAL_PAYMENT', 'MISC_INCOME', 'DEPOSIT_RECEIPT', 'DEPOSIT_REFUND', 'DEPOSIT_RETAIN', 'EXPENSE')`,
+    ),
+    check(
+      'commercial_movements_category_check',
+      sql`
+      (${table.kind} = 'RENTAL_PAYMENT' and ${table.category} = 'RENTAL') or
+      (${table.kind} = 'MISC_INCOME' and ${table.category} = 'OTHER_INCOME') or
+      (${table.kind} in ('DEPOSIT_RECEIPT', 'DEPOSIT_REFUND', 'DEPOSIT_RETAIN') and ${table.category} = 'DEPOSIT') or
+      (${table.kind} = 'EXPENSE' and ${table.category} in ('FUEL', 'MAINTENANCE', 'TOLL', 'INSURANCE', 'OTHER_EXPENSE'))
+    `,
+    ),
+    check(
+      'commercial_movements_amount_check',
+      sql`${table.amount} > 0 and ${table.amount} <= 999999999999999 and ${table.amount} <> 'NaN'::numeric`,
+    ),
+    check(
+      'commercial_movements_time_check',
+      sql`isfinite(${table.occurredAt}) and isfinite(${table.createdAt})`,
+    ),
+    check(
+      'commercial_movements_reference_check',
+      sql`length(${table.reference}) <= 160`,
+    ),
+    check(
+      'commercial_movements_notes_check',
+      sql`length(${table.notes}) <= 2000`,
+    ),
+    check(
+      'commercial_movements_rental_vehicle_check',
+      sql`${table.rentalId} is null or ${table.vehicleId} is not null`,
+    ),
+    check(
+      'commercial_movements_rental_required_check',
+      sql`${table.kind} in ('MISC_INCOME', 'EXPENSE') or ${table.rentalId} is not null`,
+    ),
+    check(
+      'commercial_movements_reversal_self_check',
+      sql`${table.reversalOf} is null or ${table.reversalOf} <> ${table.id}`,
+    ),
+    index('commercial_movements_business_occurred').on(
+      table.businessId,
+      table.occurredAt.desc(),
+      table.id,
+    ),
+    index('commercial_movements_vehicle_occurred').on(
+      table.businessId,
+      table.vehicleId,
+      table.occurredAt.desc(),
+      table.id,
+    ),
+    index('commercial_movements_rental_occurred').on(
+      table.businessId,
+      table.rentalId,
+      table.vehicleId,
+      table.occurredAt.desc(),
+      table.id,
+    ),
+    index('commercial_movements_category_occurred').on(
+      table.businessId,
+      table.category,
+      table.occurredAt.desc(),
       table.id,
     ),
   ],

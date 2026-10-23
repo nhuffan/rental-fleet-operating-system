@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import type { Me } from "@rental-fleet/contracts";
 import { Button, Panel, PanelHeader } from "@/components/ui/primitives";
 import { MutationNotice } from "@/components/feedback/mutation-notice";
@@ -9,17 +10,25 @@ import { formatMoney } from "./query";
 import { RentalStatus } from "./rental-status";
 import { RentalActionEditor, type RentalAction } from "./rental-action-editor";
 import type { Rental } from "./types";
+import { RentalCommercialPanel } from "@/features/commercial/rental-commercial-panel";
+import type { RentalCommercial } from "@/features/commercial/types";
 export function RentalDetail({
   rental,
   context,
   initialMessage = "",
   tripRange,
+  commercial,
+  commercialIssue,
 }: {
   rental: Rental;
   context: Me;
   initialMessage?: string;
   tripRange: { from: string; to: string } | null;
+  commercial: RentalCommercial | null;
+  commercialIssue?: "currency" | "unavailable";
 }) {
+  const router = useRouter();
+  const [commercialRefreshing, startCommercialRefresh] = useTransition();
   const [editor, setEditor] = useState<RentalAction | null>(null);
   const [message, setMessage] = useState(initialMessage);
   const canManage = context.permissions.includes("rental.manage");
@@ -141,7 +150,7 @@ export function RentalDetail({
               </dd>
             </div>
             <div>
-              <dt>Nhận cọc</dt>
+              <dt>Xác nhận cọc trên hợp đồng</dt>
               <dd>{rental.depositReceived ? "Đã nhận" : "Chưa nhận"}</dd>
             </div>
           </dl>
@@ -189,12 +198,40 @@ export function RentalDetail({
                   : "Mỗi thao tác được kiểm tra lại trạng thái và lịch xe tại server."}
             </p>
             <p className="quiet">
-              Cọc chỉ ghi nhận số tiền yêu cầu và trạng thái nhận; chưa có sổ
-              giao dịch hoặc đối soát.
+              Số tiền ở đây là điều khoản hợp đồng. Khoản thu và số dư cọc thực
+              tế được tính riêng từ sổ giao dịch bên dưới.
             </p>
           </div>
         </Panel>
       </div>
+      {commercial && (
+        <RentalCommercialPanel
+          data={commercial}
+          rental={rental}
+          context={context}
+        />
+      )}
+      {commercialIssue && (
+        <Panel>
+          <PanelHeader title="Thu chi & tiền cọc thực tế" icon="wallet" />
+          <div className="panel-body" role="status">
+            <p>
+              {commercialIssue === "currency"
+                ? "Sổ giao dịch hiện hỗ trợ VND. Doanh nghiệp đang dùng đơn vị tiền tệ khác; thông tin và thao tác hợp đồng vẫn khả dụng. Chưa có số liệu thu chi để hiển thị tại đây."
+                : "Chưa thể tải số liệu thu chi của hợp đồng. Thông tin và thao tác hợp đồng vẫn khả dụng; vui lòng thử tải lại số liệu."}
+            </p>
+            {commercialIssue === "unavailable" && (
+              <Button
+                variant="secondary"
+                loading={commercialRefreshing}
+                onClick={() => startCommercialRefresh(() => router.refresh())}
+              >
+                Tải lại số liệu thu chi
+              </Button>
+            )}
+          </div>
+        </Panel>
+      )}
       <div className="fleet-profile-grid">
         <Panel>
           <PanelHeader title="Tiến trình hợp đồng" icon="audit" />

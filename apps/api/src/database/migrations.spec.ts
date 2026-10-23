@@ -14,7 +14,7 @@ it('replays migrations on clean PostgreSQL and enforces RLS on every core table'
     const result = await db.query<{ relrowsecurity: boolean }>(
       "select relrowsecurity from pg_class join pg_namespace n on n.oid=relnamespace where n.nspname='public' and relkind='r'",
     );
-    expect(result.rows).toHaveLength(14);
+    expect(result.rows).toHaveLength(15);
     expect(result.rows.every((r) => r.relrowsecurity)).toBe(true);
     await db.exec(
       `set role authenticated; select * from public.branches; reset role;`,

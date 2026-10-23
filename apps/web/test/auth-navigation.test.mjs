@@ -46,21 +46,39 @@ test("platform login retains a local filtered return path", () => {
   );
 });
 
-test("explicit allowed deep links do not substitute another authorization surface", async () => {
+test("allowed deep links are preserved only after verifying their independent grant", async () => {
   for (const destination of [
     "/app",
     "/app/rentals?status=ACTIVE",
     "/superadmin/users?page=2",
+    "/superadmin?view=overview",
   ]) {
+    const probes = [];
     assert.equal(
-      await resolveLoginDestination(destination, async () => {
-        assert.fail(
-          "An explicit destination must be checked by its protected layout",
-        );
+      await resolveLoginDestination(destination, async (path) => {
+        probes.push(path);
+        return 200;
       }),
       destination,
     );
+    assert.deepEqual(probes, [
+      destination.startsWith("/superadmin") ? "/platform/me" : "/me",
+    ]);
   }
+});
+test("a role-specific stale login hint automatically lands in the granted workspace", async () => {
+  assert.equal(
+    await resolveLoginDestination("/superadmin?view=overview", async (path) =>
+      path === "/me" ? 200 : 403,
+    ),
+    "/app",
+  );
+  assert.equal(
+    await resolveLoginDestination("/app/rentals", async (path) =>
+      path === "/platform/me" ? 200 : 403,
+    ),
+    "/superadmin",
+  );
 });
 
 test("generic Owner login uses the verified tenant grant", async () => {
