@@ -64,3 +64,7 @@ See [Fleet Core architecture](fleet-core.md) and [Stage Output](../STAGE_OUTPUT.
 | `/app` | Live | Real rental schedule and active queue alongside SaaS Core information; no fixture map |
 
 The Customers/Rentals design examples under `/dev-preview` remain synthetic and development-only. New live routes never import those fixtures. See [Rental Core](rental-core.md) and the Stage 4 entry in [Stage Output](../STAGE_OUTPUT.md).
+
+## Stage 5 live GPS and shared typography update
+
+`/app/fleet-map` is a live tenant-authorized location view in production, using Leaflet/OpenStreetMap and GPS API data with explicit TEST FEED labels. `/app` adds real GPS counts/map; `/app/vehicles/:id` adds the current assignment's last-known fix and timestamps. No synthetic design fixture is imported into these live components. Trips/Commercial and global platform design pages retain their development-only boundary. Typography and Login share the updated scale across both live and preview domains. See [GPS PoC](gps-poc.md), [Stage 5 validation](stage-5-validation.md) and [Stage Output](../STAGE_OUTPUT.md).

@@ -1,3 +1,5 @@
+import { LiveFleetMap } from "@/features/gps/live-fleet-map";
+import type { LocationPage } from "@/features/gps/types";
 import Link from "next/link";
 import { RentalDashboard } from "@/features/rentals/rental-dashboard";
 import type { RentalPage } from "@/features/rentals/types";
@@ -41,6 +43,9 @@ export default async function Dashboard({
         ? api<RentalPage>("/rentals?status=ACTIVE&overdue=true&limit=1")
         : Promise.resolve(null),
     ]);
+  const locations = c.permissions.includes("gps.read")
+    ? await api<LocationPage>("/fleet/locations?limit=20")
+    : null;
   return (
     <>
       <PageHeader
@@ -77,6 +82,14 @@ export default async function Dashboard({
           <strong style={{ fontSize: 20 }}>{c.role}</strong>
         </Panel>
       </div>
+      {locations && (
+        <LiveFleetMap
+          key={c.business.id}
+          businessId={c.business.id}
+          initial={locations}
+          compact
+        />
+      )}
       <div className="core-grid">
         <Panel>
           <PanelHeader

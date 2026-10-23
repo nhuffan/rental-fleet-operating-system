@@ -158,8 +158,9 @@ export function VehicleDetail({
             />
           )}
           <p className="quiet fleet-device-note">
-            Mỗi xe có tối đa một thiết bị đang gắn. Chưa tích hợp dữ liệu vị trí
-            hoặc trạng thái kết nối GPS.
+            Mỗi xe có tối đa một thiết bị đang gắn. Trạng thái đăng ký thiết bị
+            tách biệt với tín hiệu GPS; xem thời gian bản tin trong phần vị trí
+            gần nhất.
           </p>
         </Panel>
       </div>

@@ -7,6 +7,7 @@ import {
   jsonb,
   integer,
   numeric,
+  doublePrecision,
   boolean,
   check,
   unique,
@@ -393,3 +394,26 @@ export const rentals = pgTable(
     ),
   ],
 );
+
+// SQL migration owns checks, composite assignment FK and index definitions.
+export const gpsPositions = pgTable('gps_positions', {
+  id: uuid().primaryKey().defaultRandom(),
+  businessId: uuid('business_id').notNull(),
+  assignmentId: uuid('assignment_id').notNull(),
+  deviceId: uuid('device_id').notNull(),
+  vehicleId: uuid('vehicle_id').notNull(),
+  provider: text().notNull(),
+  deviceUid: text('device_uid').notNull(),
+  eventKey: text('event_key').notNull(),
+  sourceEventId: text('source_event_id'),
+  recordedAt: timestamp('recorded_at', { withTimezone: true }).notNull(),
+  receivedAt: timestamp('received_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  latitude: doublePrecision().notNull(),
+  longitude: doublePrecision().notNull(),
+  speedKph: doublePrecision('speed_kph').notNull(),
+  heading: doublePrecision().notNull(),
+  ignition: boolean(),
+  sourceMode: text('source_mode').notNull().default('TEST'),
+});

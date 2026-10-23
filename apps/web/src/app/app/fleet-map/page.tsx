@@ -1,18 +1,24 @@
-import { notFound } from "next/navigation";
-import { currentContext } from "@/lib/api";
-export default async function PreviewPage() {
-  if (process.env.NODE_ENV !== "development") notFound();
-  await currentContext();
-  const { FleetPreview } = await import("@/features/fleet/fleet-preview");
+import { api, currentContext } from "@/lib/api";
+import { PageHeader, EmptyState } from "@/components/ui/primitives";
+import { LiveFleetMap } from "@/features/gps/live-fleet-map";
+import type { LocationPage } from "@/features/gps/types";
+export default async function FleetMapPage() {
+  const c = await currentContext();
+  if (!c.permissions.includes("gps.read"))
+    return <EmptyState title="Bạn không có quyền xem vị trí GPS" />;
+  const initial = await api<LocationPage>("/fleet/locations?limit=20");
   return (
     <>
-      <div className="preview-banner">
-        <strong>
-          Dữ liệu minh họa · Không phải dữ liệu doanh nghiệp hiện tại. Chỉ có
-          trong development.
-        </strong>
-      </div>
-      <FleetPreview screen="fleet-map" />
+      <PageHeader
+        eyebrow="VẬN HÀNH ĐỘI XE"
+        title="Bản đồ đội xe"
+        description="Vị trí gần nhất theo thiết bị đang gắn. TEST feed phục vụ kiểm chứng tích hợp, chưa xác minh thiết bị thực tế."
+      />
+      <LiveFleetMap
+        key={c.business.id}
+        businessId={c.business.id}
+        initial={initial}
+      />
     </>
   );
 }

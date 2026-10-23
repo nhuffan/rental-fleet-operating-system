@@ -1,3 +1,5 @@
+import { VehicleLocationPanel } from "@/features/gps/vehicle-location-panel";
+import type { VehicleLocation } from "@/features/gps/types";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { api } from "@/lib/api";
@@ -22,19 +24,26 @@ export default async function VehiclePage({
   const { id } = await params;
   if (!validId(id)) notFound();
   const page = pageNumber((await searchParams).page);
-  const [vehicle, history, branches, rentalState] = await Promise.all([
-    api<Vehicle>(`/vehicles/${id}`, { notFoundOn404: true }),
-    api<DeviceAssignmentPage>(
-      `/vehicles/${id}/device-assignments?page=${page}&limit=20`,
-      { notFoundOn404: true },
-    ),
-    tenantBranches(),
-    context.permissions.includes("rental.read")
-      ? api<VehicleRentalState>(`/vehicles/${id}/rental-state`, {
-          notFoundOn404: true,
-        })
-      : Promise.resolve(null),
-  ]);
+  const [vehicle, history, branches, location, rentalState] = await Promise.all(
+    [
+      api<Vehicle>(`/vehicles/${id}`, { notFoundOn404: true }),
+      api<DeviceAssignmentPage>(
+        `/vehicles/${id}/device-assignments?page=${page}&limit=20`,
+        { notFoundOn404: true },
+      ),
+      tenantBranches(),
+      context.permissions.includes("gps.read")
+        ? api<VehicleLocation>(`/vehicles/${id}/location`, {
+            notFoundOn404: true,
+          })
+        : Promise.resolve(null),
+      context.permissions.includes("rental.read")
+        ? api<VehicleRentalState>(`/vehicles/${id}/rental-state`, {
+            notFoundOn404: true,
+          })
+        : Promise.resolve(null),
+    ],
+  );
   return (
     <>
       <Link href="/app/vehicles" className="back-link">
@@ -44,6 +53,7 @@ export default async function VehiclePage({
         title={vehicle.licensePlate}
         description={`${vehicle.make} ${vehicle.model}`}
       />
+      {location && <VehicleLocationPanel data={location} />}
       <VehicleDetail
         key={`${context.business.id}:${vehicle.id}`}
         vehicle={vehicle}

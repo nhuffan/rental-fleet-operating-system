@@ -183,3 +183,66 @@ Supabase ban đầu paused, sau Resume có lỗi routing pooler tạm thời r�
 - [Ảnh Rental live desktop](docs/stage-4-screenshots/rental-active-1440.png)
 - [Ảnh Rental live mobile](docs/stage-4-screenshots/rental-active-390.png)
 - [Development guide](docs/development.md)
+
+
+## `Stage_5_GPS_PoC_and_UI_Refinement_Plan_Compact.md`
+
+### 2026-10-23 — Traccar TEST feed, live location và UI refinement
+
+- **File stage đầu vào:** `Stage_5_GPS_PoC_and_UI_Refinement_Plan_Compact.md`.
+- **Bản lưu trong repo:** [docs/stages/Stage_5_GPS_PoC_and_UI_Refinement_Plan_Compact.md](docs/stages/Stage_5_GPS_PoC_and_UI_Refinement_Plan_Compact.md).
+- **Nhánh triển khai:** `main` tại project hiện tại trong `Documents/Projects`.
+- **Commit gốc:** `e892474dcaf45cf67bbbb73cf427959f3a31fbce`, đúng baseline trong file stage.
+- **Trạng thái:** **Hoàn tất phạm vi Stage 5 với Traccar TEST feed trong development**, có bằng chứng API/UI/tests và before/after. Chưa xác minh thiết bị vật lý hay deploy staging/production.
+
+#### Đã implement
+
+| Hạng mục | Kết quả |
+| --- | --- |
+| S5-01 — Integration contract | Traccar 6.16.0 TEST feed được người dùng chọn; adapter JSON → canonical telemetry → ingestion service. Tốc độ knots chuyển km/h; timestamp/coordinates/identity/ignition validate; `sourceMode=TEST` do server cố định. Token tối thiểu 32 ký tự, chỉ ở server. |
+| S5-02 — Schema & ingestion | `gps_positions`, Drizzle mapping, composite tenant/assignment FK, RLS, indexes và semantic dedup. Trusted webhook xác thực token; resolve historical assignment tại `recordedAt` dưới Business lock. Current-state equivalent lấy point mới nhất của current assignment; delayed packet không ghi đè, timestamp bằng nhau giữ point nhận thành công đầu tiên. Retention 30 ngày theo `receivedAt`, giữ latest active-assignment point; CLI dry-run/batch tối đa 1.000. |
+| S5-03 — Live location UI | Tenant-scoped `/vehicles/:id/location`, `/fleet/locations`, pagination/search/GPS filter/stats; live Fleet Map, Dashboard map và Vehicle Detail. Leaflet/OpenStreetMap attribution, marker/list → Vehicle/current Rental, timestamp/TEST labels, loading/error/empty. Poll 20 giây, pause hidden tab, abort obsolete requests; không tải toàn history. |
+| S5-04 — Typography | Semantic scale và component styles cho live + hai preview domains, tăng readability/spacing/table density. DOM QA 8 màn ×5 widths xác nhận không overflow toàn trang; mẫu body15/nav14/table14. |
+| S5-05 — Login | Form/brand panel cùng design tokens cam/xám/trắng, mobile ưu tiên form. Giữ Supabase password auth, pending/error, business cookie reset, SSR session và redirect `/app`; bỏ refresh đồng thời với replace để tránh navigation race. Browser xác minh cả success/error. |
+| S5-06 — Verification/docs | GPS adapter/migration/security/E2E, real Traccar packets, duplicate/out-of-order và same-UID rerun đã đạt. Operation guide, source plan, contracts, 47 ảnh before/after/QA và cleanup đã chốt. |
+| Local runtime | Theo yêu cầu người dùng, toàn bộ Web localhost chuyển sang port **4000**, API giữ **3001**; scripts/env examples/Docker/Compose/Auth redirects/docs đồng bộ trong cùng đợt. |
+| Runtime reliability | Sửa idle PostgreSQL pool error làm API dừng và có nguy cơ log client details; error handler chỉ log event/type. Regression kiểm tra không throw và không log credentials/message/client đã đạt trong bộ 110 tests. |
+
+#### Ranh giới LIVE / TEST FEED / PREVIEW
+
+- **LIVE:** location APIs và Fleet Map/Dashboard/Vehicle Detail dùng pipeline/database thật, tenant auth/RBAC thật. Thiết bị registered/assigned chưa đồng nghĩa đang có GPS. FRESH ≤120s, STALE >120…600s, OFFLINE >600s; UNASSIGNED/NO_DATA được tách riêng.
+- **TEST FEED:** OsmAnd packet → Traccar → authenticated webhook → storage/current projection → API/UI. Official image được pin digest; tất cả points có nhãn TEST, không cho payload chuyển thành REAL. Duplicate/out-of-order và chạy hai lần cùng UID được xác minh.
+- **REAL DEVICE:** chưa xác minh tracker vật lý hoặc provider bên ngoài chạy bền vững; không tuyên bố production readiness.
+- **PREVIEW:** Business/Platform fixtures tiếp tục tách development-only; Superadmin chưa có global production backend. Không đưa mock GPS lên live map.
+- `gps_positions` RLS bật và revoke toàn bộ privileges của anon/authenticated; API chỉ trả authorized current projection. 12 public application tables đều bật RLS.
+
+#### Kết quả xác minh hiện tại
+
+| Kiểm tra | Kết quả |
+| --- | --- |
+| `pnpm build`, `pnpm lint`, `pnpm typecheck` | Đạt cả API/Web, lint không warning; kiểm tra lại sau chỉnh sửa cuối. |
+| `pnpm test` | **110/110**, 11 files; migration replay, adapter/freshness và idle-PG-error regression. |
+| `pnpm test:e2e` | **32/32**, 4 files trên development Supabase thật `eeryymswcufnebibigqf`. |
+| Production HTTP boundaries | **18/18** trên production artifact cuối; 6 preview routes 404, 12 private routes redirect login. |
+| Traccar TEST path | Packet/canonical conversion/dedup/delayed current state đạt; same UID chạy hai lần đạt. |
+| SIGTERM cleanup | Runtime exit **143**, xác minh `containerRemoved=true`, `tempConfigRemoved=true`. |
+| Browser/responsive | Login success/error đạt. **40 DOM checks**: 8 màn ×1440/1280/1024/768/390px, không overflow; body15/nav14/table14. Search/no-result/FRESH filter, marker → Vehicle/ACTIVE Rental và post-cleanup empty state đạt. |
+| Before/after | 6 màn bắt buộc ×1440/768/390, **36 ảnh trước/sau** đúng dimensions; tổng 47 JPEG gồm các bằng chứng bổ sung. |
+| Supabase advisors | RLS-no-policy INFO của GPS có chủ ý vì Data API deny; Auth leaked-password warning Free plan có sẵn. FK covering index đã apply/verify; performance advisor chỉ còn unused-index INFO. |
+| Cleanup / diff | Dọn đúng 11 GPS points +1 Rental/Assignment/Customer/Vehicle/Device; giữ 7 audit events. QA servers 4100/4101 và Traccar 5055 đã dừng, temporary configs đã xóa, viewport reset/tab đóng. Giữ dev Web4000/API3001 theo yêu cầu người dùng. `git diff --check` đạt. |
+
+Không seed/reset hoặc migrate staging/production. Không đưa credentials/token/real env vào báo cáo hoặc commit. Source, log theo đúng filename stage, generated contracts và QA evidence được commit cùng nhau trên `main`.
+
+#### Còn lại / ngoài scope
+
+- Physical GPS device/durable provider deployment, production credential rotation/rate limiting/monitoring, scheduled retention và production map capacity.
+- Trip/replay/geofence/alerts engine, Toll/VETC, accounting/payment, Customer Portal và global Superadmin APIs.
+- Chưa deploy staging/production.
+
+#### Tài liệu và bằng chứng
+
+- [GPS PoC contract, architecture và operation](docs/gps-poc.md)
+- [Báo cáo Stage 5 và bảng ảnh trước/sau](docs/stage-5-validation.md)
+- [40 responsive DOM checks](docs/stage-5-responsive-checks.json)
+- [Traccar feed, signal cleanup và record cleanup evidence](docs/stage-5-poc-evidence.json)
+- [Development guide](docs/development.md)

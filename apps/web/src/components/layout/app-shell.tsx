@@ -116,12 +116,23 @@ export function AppShell({
               },
             ]
           : []),
+        ...(!preview && context?.permissions.includes("gps.read")
+          ? [
+              {
+                href: "/app/fleet-map",
+                label: "Bản đồ đội xe",
+                icon: "map" as const,
+              },
+            ]
+          : []),
         ...(preview || showPreviews
           ? fleetItems
               .filter(
                 ([path]) =>
                   preview ||
-                  !["vehicles", "rentals", "customers"].includes(path),
+                  !["vehicles", "rentals", "customers", "fleet-map"].includes(
+                    path,
+                  ),
               )
               .map(([path, label, icon]) => ({
                 href: `${preview ? prefix : "/app"}/${path}`,

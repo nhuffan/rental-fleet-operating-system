@@ -5,7 +5,7 @@ import { loadConfig } from '../config.js';
 import * as schema from './schema.js';
 export function createPool() {
   const config = loadConfig();
-  return new Pool({
+  const pool = new Pool({
     connectionString: config.databaseUrl,
     ssl: { ca: config.ca, rejectUnauthorized: true },
     max: 5,
@@ -13,6 +13,14 @@ export function createPool() {
     idleTimeoutMillis: 30000,
     statement_timeout: 15000,
   });
+  // Idle disconnections are recoverable. An unhandled Pool error terminates Node
+  // and may serialize the client (including connection credentials) in its log.
+  pool.on('error', (error: Error) => {
+    console.error(
+      JSON.stringify({ event: 'database.pool.error', errorType: error.name }),
+    );
+  });
+  return pool;
 }
 @Injectable()
 export class Database implements OnModuleDestroy {

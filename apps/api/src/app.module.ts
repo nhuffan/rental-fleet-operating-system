@@ -1,3 +1,5 @@
+import { GpsController, TraccarController } from './gps/gps.controller.js';
+import { GpsService } from './gps/gps.service.js';
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller.js';
 import { Database } from './database/database.js';
@@ -14,11 +16,14 @@ import { AuthGuard, TenantGuard, PermissionGuard } from './auth/guards.js';
     CoreController,
     RentalController,
     FleetController,
+    GpsController,
+    TraccarController,
   ],
   providers: [
     Database,
     CoreService,
     FleetService,
+    GpsService,
     RentalService,
     AuthGuard,
     TenantGuard,

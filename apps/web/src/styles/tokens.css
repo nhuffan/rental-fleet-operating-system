@@ -28,9 +28,14 @@
   --info-muted: #eaf2f8;
   --font-sans: Arial, Helvetica, sans-serif;
   --text-xs: 12px;
-  --text-sm: 13px;
-  --text-base: 14px;
+  --text-sm: 14px;
+  --text-base: 15px;
   --text-lg: 18px;
+  --text-nav: 14px;
+  --text-title: 28px;
+  --text-section: 17px;
+  --text-badge: 12px;
+  --leading-body: 1.55;
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;

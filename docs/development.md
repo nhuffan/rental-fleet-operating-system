@@ -6,7 +6,7 @@ Use pnpm 11.19.0; project scripts select Node 24.21.0. Copy apps/web/.env.exampl
 
 ```sh
 pnpm install --frozen-lockfile
-pnpm dev                 # Web :3000, API :3001; Ctrl+C stops both
+pnpm dev                 # Web :4000, API :3001; Ctrl+C stops both
 pnpm build
 pnpm lint
 pnpm typecheck
@@ -14,6 +14,8 @@ pnpm test                # permissions and clean-database migration replay
 pnpm test:e2e            # real dev Auth/API/RLS tests; requires demo seed
 pnpm openapi             # after API build; exports spec and generated types
 ```
+
+Local Web: `http://localhost:4000` (fixed by both `dev` and `start` scripts). Local API: `http://127.0.0.1:3001`; `WEB_ORIGIN=http://localhost:4000`. Keep these values in the local env files aligned with their examples. API and Web use separate ports.
 
 API: /api/v1. Swagger: /api/docs; JSON: /api/openapi.json (disabled in production). API errors contain statusCode, code, message, requestId. Lists accept page (default 1), limit (default 20, maximum 100). Dates are UTC ISO strings.
 
@@ -34,7 +36,7 @@ Production users are created in Supabase Auth by an administrator. An OWNER/ADMI
 - OWNER manages all roles; ADMIN manages operations memberships and business/branch/settings data; OPERATIONS reads business/branches/settings and the Fleet vehicle/device registry; Fleet and Customer/Rental writes require OWNER/ADMIN; OPERATIONS reads customers/rentals/availability. The last active owner cannot be disabled or demoted through the API. Guards and transaction rechecks enforce this independently of the UI.
 - Every tenant query is scoped. Writes and audit events share a transaction; a business row lock serializes tenant admin changes. Audit metadata contains changed field names and request IDs, not passwords/tokens.
 - RLS permits only membership-scoped Data API reads; direct writes by anon/authenticated are revoked. No SECURITY DEFINER helper is used. The API uses a trusted DB connection and must always enforce its own authorization.
-- Shared API contracts are under packages/contracts. Database schema and API env are server-only. Fleet Core implements tenant-scoped vehicles, GPS device registration and assignment history. Customer/Rental Core implements reservations, handover/return, extensions, derived availability and overdue. GPS ingestion/location is not implemented yet.
+- Shared API contracts are under packages/contracts. Database schema and API env are server-only. Fleet Core implements tenant-scoped vehicles, GPS device registration and assignment history. Customer/Rental Core implements reservations, handover/return, extensions, derived availability and overdue. GPS PoC adds authenticated Traccar TEST ingestion and indexed latest-position reads; see [GPS PoC](gps-poc.md).
 
 ## Staging
 
@@ -45,7 +47,7 @@ docker compose --env-file .env.staging.web -f compose.staging.yaml up --build -d
 docker compose --env-file .env.staging.web -f compose.staging.yaml down
 ```
 
-The Dockerfile has separate api/web targets. NEXT_PUBLIC_* values are public build arguments; secrets are runtime env only and excluded from the build context. Put an HTTPS reverse proxy in front of the loopback-bound ports. Configure Supabase Auth Site URL/redirect allowlist for that Web origin. No staging cloud project is created automatically.
+The Dockerfile has separate api/web targets; Web listens on port 4000 and API on 3001. NEXT_PUBLIC_* values are public build arguments; secrets are runtime env only and excluded from the build context. Put an HTTPS reverse proxy in front of the loopback-bound ports. Configure Supabase Auth Site URL/redirect allowlist for that Web origin. No staging cloud project is created automatically.
 
 Supabase leaked-password protection requires Pro or above; it is unavailable on the current Free project ([documentation](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection)).
 
@@ -59,16 +61,16 @@ Production release-boundary regression tests require a temporary production serv
 
 ```sh
 pnpm --filter web build
-# Start a server only with user authorization; stop it after verification.
-pnpm --filter web exec next start --hostname 127.0.0.1 --port 3103
-UI_TEST_BASE_URL=http://127.0.0.1:3103 node --test apps/web/test/preview-boundaries.mjs
+# Stop the dev server first; start a server only with user authorization and stop it after verification.
+pnpm --filter web start --hostname 127.0.0.1
+UI_TEST_BASE_URL=http://localhost:4000 node --test apps/web/test/preview-boundaries.mjs
 ```
 
 If the host sandbox prevents Turbopack's CSS worker from opening its internal port, `pnpm --filter web exec next build --webpack` verifies the production output without changing the pinned Next.js version or default build script. See `docs/ui-screen-inventory.md`, `docs/ui-design-tokens.md` and `docs/ui-backend-readiness.md` for current UI boundaries.
 
 ## Fleet Core
 
-`/app/vehicles`, `/app/vehicles/devices` and `/app/vehicles/:id` are live server-authorized pages in all environments. Vehicle lifecycle is `ACTIVE` / `INACTIVE`; rental availability is derived separately by Rental Core. Devices are registry records, not online/offline telemetry. The existing development-only Fleet dashboard/map/rental previews remain separate.
+`/app/vehicles`, `/app/vehicles/devices` and `/app/vehicles/:id` are live server-authorized pages in all environments. Vehicle lifecycle is `ACTIVE` / `INACTIVE`; rental availability is derived separately by Rental Core. Devices are registry records, not online/offline telemetry. Synthetic development-only Fleet design previews remain separate from live pages.
 
 OWNER/ADMIN have `vehicle.read`, `vehicle.manage`, `gps.read`, `gps.manage`; OPERATIONS has the two read permissions. Device assignment/end requires `vehicle.manage`. Vehicle/device writes and audit events share a transaction after taking the same tenant business-row lock used by SaaS Core and rechecking the current membership/profile/business/permission.
 
@@ -81,7 +83,7 @@ Fleet E2E uses only the existing seeded development project `eeryymswcufnebibigq
 
 ## Customer and Rental Core
 
-`/app/customers`, `/app/customers/:id`, `/app/rentals` and `/app/rentals/:id` are live tenant-authorized pages. Dashboard schedule/active queue and Vehicle Detail current/next rental use real Rental API data. Maps, GPS telemetry, Trips, Commercial and platform administration remain separate development previews.
+`/app/customers`, `/app/customers/:id`, `/app/rentals` and `/app/rentals/:id` are live tenant-authorized pages. Dashboard schedule/active queue and Vehicle Detail current/next rental use real Rental API data. Fleet Map, dashboard GPS and Vehicle Detail use real GPS ingestion data labelled TEST; Trips, Commercial and platform administration remain development previews.
 
 OWNER/ADMIN have `customer.read`, `customer.manage`, `rental.read`, `rental.manage`; OPERATIONS has the two read permissions. All lifecycle actions require `rental.manage` and recheck authorization under the same Business lock used by SaaS/Fleet Core. Customer contact data/notes never enter audit metadata.
 
@@ -90,3 +92,13 @@ Lifecycle: DRAFT → RESERVED → ACTIVE → COMPLETED; DRAFT/RESERVED → CANCE
 Customers need a name and at least phone/email; contacts may be shared and are nonunique. Use disable rather than hard-delete; customers and vehicles with RESERVED/ACTIVE rentals cannot be disabled. Amount/deposit inputs use at most two decimal places; depositReceived is only a simple flag, not a ledger. See [Rental Core policies/API](rental-core.md).
 
 `pnpm test:e2e` includes a separate Customer/Rental suite restricted to `eeryymswcufnebibigqf`. It checks real lifecycle, competing reservation requests, extension conflicts, overdue, cross-tenant IDs, RBAC and direct Data API RLS/write denial. It deletes only recorded suite-owned domain IDs and retains audit records. Never seed or run these tests on staging/production.
+
+## GPS PoC and map
+
+`/app/fleet-map`, dashboard GPS and Vehicle Detail read tenant-authorized current locations in all environments. The only implemented source is Traccar TEST feed, labelled TEST in storage/UI; no physical device is verified. Registry ACTIVE/assignment alone never means online. The current-state equivalent uses the latest recorded fix of the active assignment, with first receipt breaking equal-time ties; historical delayed packets cannot replace a newer fix. Fresh ≤120s, stale ≤600s, then offline; no assignment/no packet have separate states.
+
+Configure optional server-only `GPS_TRACCAR_TOKEN` (at least 32 random characters) in `apps/api/.env`; empty disables ingestion. The authenticated integration endpoint is `/api/v1/integrations/traccar/positions`. Browser code never receives this secret. `GET /fleet/locations` is filtered/paginated and `GET /vehicles/:id/location` returns one current projection; both require `gps.read`. RLS and revoked Data API privileges prevent direct telemetry reads/writes. The map polls every 20s after a request completes, pauses when hidden, and never downloads history. Leaflet 1.9.4/OpenStreetMap needs no token and retains attribution.
+
+The reproducible development-only `pnpm --filter api gps:poc --uid=TEST-your-device` uses official pinned Traccar in Docker, temporary loopback port 5055 and a previously registered/assigned TEST device. It checks duplicate/delayed packets and removes its own container/config on completion, failure, SIGINT or SIGTERM. It retains TEST positions attached to that chosen assignment. Retention is an explicit tenant-bounded command, default dry-run, max 1000 rows: `pnpm --filter api gps:retention --business=<uuid>`; add `--apply` to delete eligible history. Thirty-day history is based on received time, retaining the latest point for each active assignment. See [GPS contract, security, reproduction and limits](gps-poc.md).
+
+Shared typography uses body 15px/1.55, navigation 14px, forms/tables 14px, section titles 17px, page titles 28px, helpers/badges 12px. Login uses the same tokens/components and Supabase password sign-in, then clears the business cookie and replaces `/app` without a competing refresh. Both preview domains share these styles and retain their existing production 404 boundary.

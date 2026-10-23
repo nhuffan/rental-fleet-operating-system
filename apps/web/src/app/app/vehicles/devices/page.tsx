@@ -25,7 +25,7 @@ export default async function DevicesPage({
     <>
       <PageHeader
         title="Thiết bị GPS"
-        description="Đăng ký thiết bị và quản lý trạng thái vòng đời. Chưa có dữ liệu vị trí hoặc kết nối trực tuyến."
+        description="Đăng ký thiết bị và quản lý vòng đời. Theo dõi tín hiệu theo lần gắn tại Bản đồ đội xe."
       />
       <FleetTabs active="devices" />
       <DevicesPanel

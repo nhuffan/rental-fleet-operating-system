@@ -36,6 +36,6 @@ Audit actions: `vehicle.create`, `vehicle.update`, `gps_device.create`, `gps_dev
 
 ## UI boundary
 
-`/app/vehicles`, `/app/vehicles/devices` and `/app/vehicles/:id` use API data, with permission-aware forms, server filtering/pagination, 404/loading/error/empty states and persistent success/error feedback. Tenant switching reloads the document to discard prior tenant client state. Device connection/position is explicitly unavailable: registration/assignment does not imply online GPS. Existing map/rental/platform design previews remain development-only.
+`/app/vehicles`, `/app/vehicles/devices` and `/app/vehicles/:id` use API data, with permission-aware forms, server filtering/pagination, 404/loading/error/empty states and persistent success/error feedback. Tenant switching reloads the document to discard prior tenant client state. Registration/assignment does not imply online GPS. The current [GPS PoC](gps-poc.md) adds TEST-labelled position/freshness in Vehicle Detail and Fleet Map; synthetic design previews remain development-only.
 
 GPS ingestion/Traccar, maps/locations, Rental/Customer, Trips, Commercial and global Superadmin APIs are outside this stage.

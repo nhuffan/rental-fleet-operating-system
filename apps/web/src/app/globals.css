@@ -1,7 +1,10 @@
 @import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
 @import "../styles/tokens.css";
 @import "../styles/base.css";
 @import "../styles/operational.css";
 @import "../styles/fleet-core.css";
 
 @import "../styles/rental-core.css";
+
+@import "../styles/gps.css";

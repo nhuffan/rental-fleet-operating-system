@@ -21,6 +21,6 @@ services:
     env_file: .env.staging.web
     environment:
       API_INTERNAL_URL: http://api:3001
-    ports: ['127.0.0.1:3000:3000']
+    ports: ['127.0.0.1:4000:4000']
     depends_on: [api]
     restart: unless-stopped

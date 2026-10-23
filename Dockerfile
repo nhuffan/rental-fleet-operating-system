@@ -22,5 +22,5 @@ FROM web-build AS web
 ENV NODE_ENV=production
 RUN chown -R node:node /app/apps/web/.next
 USER node
-EXPOSE 3000
+EXPOSE 4000
 CMD ["pnpm", "--filter", "web", "start", "--hostname", "0.0.0.0"]
