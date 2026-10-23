@@ -266,3 +266,69 @@ it('excludes fixes outside their historical assignment interval after future-clo
   expect(trips[0].summary.pointCount).toBe(1);
   expect(trips[0].summary.startedAt).toBe(point(0).recordedAt.toISOString());
 });
+
+it('clips the derivation to the half-open query window independently of candidate retrieval', () => {
+  const window = {
+    from: point(0).recordedAt.toISOString(),
+    to: point(2).recordedAt.toISOString(),
+  };
+  const data = [point(-1), point(0), point(1), point(2)];
+  const trip = deriveTrips(data, window, [], now)[0];
+  expect(trip.points.map((p) => p.recordedAt)).toEqual([
+    window.from,
+    point(1).recordedAt.toISOString(),
+  ]);
+  expect(trip.summary.pointCount).toBe(2);
+  expect(trip.summary.range).toEqual(window);
+});
+it('keeps a ten-minute edge and splits only when the gap exceeds the threshold', () => {
+  const trips = deriveTrips(
+    [point(0), point(10), point(20.001)],
+    range,
+    [],
+    now,
+  );
+  expect(trips.map((t) => t.summary.pointCount)).toEqual([2, 1]);
+  expect(trips[0].points[1].breakBefore).toBe(false);
+  expect(trips[0].summary.partialReasons).toContain('GAP_AFTER');
+  expect(trips[1].summary.partialReasons).toContain('GAP_BEFORE');
+});
+it('uses the ID tie-breaker deterministically when equal-time packets share first receipt', () => {
+  const first = point(0, { id: '00000000-0000-4000-8000-000000000001' });
+  const tied = {
+    ...first,
+    id: '00000000-0000-4000-8000-000000000002',
+    latitude: 30,
+  };
+  const end = point(1);
+  const forward = deriveTrips([tied, end, first], range, [], now);
+  const reverse = deriveTrips([first, end, tied], range, [], now);
+  expect(forward).toEqual(reverse);
+  expect(forward[0].points.map((p) => p.id)).toEqual([first.id, end.id]);
+});
+it('does not carry an observed stop or assignment boundary from one vehicle into another', () => {
+  const secondVehicle = 'ffffffff-ffff-4fff-8fff-ffffffffffff';
+  const trips = deriveTrips(
+    [
+      point(0, { ignition: false, speedKph: 0 }),
+      point(1, { vehicleId: secondVehicle }),
+    ],
+    range,
+    [],
+    now,
+  );
+  expect(trips).toHaveLength(1);
+  expect(trips[0].summary.partialReasons).toContain('START_NOT_OBSERVED');
+  expect(trips[0].summary.partialReasons).not.toContain('ASSIGNMENT_BOUNDARY');
+});
+it('classifies recorded-time freshness at exact 120/600-second boundaries', () => {
+  for (const [age, state] of [
+    [120000, 'FRESH'],
+    [120001, 'STALE'],
+    [600000, 'STALE'],
+    [600001, 'OFFLINE'],
+  ] as const) {
+    const p = point(0, { recordedAt: new Date(now.getTime() - age) });
+    expect(deriveTrips([p], range, [], now)[0].summary.freshness).toBe(state);
+  }
+});

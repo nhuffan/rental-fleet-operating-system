@@ -4,6 +4,7 @@ import {
   Get,
   Headers,
   Inject,
+  HttpException,
   Param,
   ParseUUIDPipe,
   Post,
@@ -27,12 +28,14 @@ import {
   type AuthRequest,
 } from '../../auth/guards.js';
 import { GpsService } from './gps.service.js';
+import { GpsIngress } from './ingress.js';
 import { authenticateTraccar, normalizeTraccar } from './traccar.adapter.js';
 import {
   IngestionResponse,
   LocationPage,
   LocationQuery,
   LocationResponse,
+  TelemetryDiagnosticsResponse,
 } from './dto.js';
 @ApiTags('GPS locations')
 @ApiBearerAuth()
@@ -47,6 +50,12 @@ export class GpsController {
   list(@Req() r: AuthRequest, @Query() q: LocationQuery) {
     return this.gps.list(r.tenant, q);
   }
+  @Get('fleet/telemetry/diagnostics')
+  @RequirePermission('gps.read')
+  @ApiOkResponse({ type: TelemetryDiagnosticsResponse })
+  diagnostics(@Req() r: AuthRequest) {
+    return this.gps.diagnostics(r.tenant);
+  }
   @Get('vehicles/:id/location')
   @RequirePermission('gps.read')
   @ApiOkResponse({ type: LocationResponse })
@@ -57,7 +66,10 @@ export class GpsController {
 @ApiTags('Trusted GPS ingestion')
 @Controller('integrations/traccar')
 export class TraccarController {
-  constructor(@Inject(GpsService) private readonly gps: GpsService) {}
+  constructor(
+    @Inject(GpsService) private readonly gps: GpsService,
+    @Inject(GpsIngress) private readonly ingress: GpsIngress,
+  ) {}
   @Post('positions')
   @ApiHeader({ name: 'X-Traccar-Token', required: true })
   @ApiBody({
@@ -85,11 +97,30 @@ export class TraccarController {
     },
   })
   @ApiCreatedResponse({ type: IngestionResponse })
-  ingest(
+  async ingest(
     @Headers('x-traccar-token') token: string | undefined,
     @Body() body: unknown,
   ) {
     authenticateTraccar(token);
-    return this.gps.ingest(normalizeTraccar(body));
+    let event;
+    try {
+      event = normalizeTraccar(body);
+    } catch (error) {
+      this.ingress.record('invalidPayload');
+      throw error;
+    }
+    this.ingress.consumeDevice(event.provider, event.deviceUid);
+    try {
+      const result = await this.gps.ingest(event);
+      this.ingress.record(result.duplicate ? 'duplicate' : 'accepted');
+      return result;
+    } catch (error) {
+      this.ingress.record(
+        error instanceof HttpException && error.getStatus() < 500
+          ? 'resolutionRejected'
+          : 'internalFailure',
+      );
+      throw error;
+    }
   }
 }

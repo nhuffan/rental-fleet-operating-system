@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Badge, Panel, PanelHeader } from "@/components/ui/primitives";
-import { gpsLabels, type VehicleLocation } from "./types";
+import { gpsDescriptions, gpsLabels, type VehicleLocation } from "./types";
 const date = (s: string) =>
   new Date(s).toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
 export function VehicleLocationPanel({ data }: { data: VehicleLocation }) {
@@ -25,6 +25,9 @@ export function VehicleLocationPanel({ data }: { data: VehicleLocation }) {
         }
       />
       <div className="panel-body">
+        <p className="quiet" role="status">
+          {gpsDescriptions[data.state]}
+        </p>
         {data.location ? (
           <>
             <Badge tone="warning">TEST FEED</Badge>

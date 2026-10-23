@@ -58,3 +58,51 @@ export class IngestionResponse {
   @ApiProperty() duplicate!: boolean;
   @ApiProperty({ format: 'uuid' }) positionId!: string;
 }
+
+export class IngressLimitsResponse {
+  @ApiProperty() bodyBytes!: number;
+  @ApiProperty() windowSeconds!: number;
+  @ApiProperty() globalRequests!: number;
+  @ApiProperty() deviceRequests!: number;
+  @ApiProperty() concurrentRequests!: number;
+  @ApiProperty() trackedDevices!: number;
+}
+export class RecentIngestionResponse {
+  @ApiProperty() windowSeconds!: number;
+  @ApiProperty({
+    description:
+      'Persisted unique fixes received in the last 15 minutes, excluding retransmissions.',
+  })
+  positions!: number;
+  @ApiProperty() devices!: number;
+  @ApiProperty({ type: String, nullable: true, format: 'date-time' })
+  lastReceivedAt!: string | null;
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    format: 'date-time',
+    description: 'Latest recorded fix among positions received in this window.',
+  })
+  lastRecordedAt!: string | null;
+}
+export class TelemetryDiagnosticsResponse {
+  @ApiProperty({ format: 'date-time' }) asOf!: string;
+  @ApiProperty({ enum: ['TEST'] }) sourceMode!: 'TEST';
+  @ApiProperty() ingestionEnabled!: boolean;
+  @ApiProperty({ type: RecentIngestionResponse })
+  recent!: RecentIngestionResponse;
+  @ApiProperty({ type: LocationStats }) freshness!: LocationStats;
+  @ApiProperty({ type: IngressLimitsResponse }) limits!: IngressLimitsResponse;
+  @ApiProperty({
+    enum: ['PROCESS_LOCAL'],
+    description:
+      'Limits apply independently to each API process and reset on restart.',
+  })
+  limiterScope!: 'PROCESS_LOCAL';
+  @ApiProperty({
+    enum: ['INTERNAL_AGGREGATE_LOGS'],
+    description:
+      'Failure counts are process-wide, redacted and never exposed across tenant boundaries.',
+  })
+  failureReporting!: 'INTERNAL_AGGREGATE_LOGS';
+}

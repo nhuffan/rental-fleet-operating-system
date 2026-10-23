@@ -1,3 +1,4 @@
+import { GpsIngress } from './telematics/gps/ingress.js';
 import { TripController } from './telematics/trips/trip.controller.js';
 import { TripService } from './telematics/trips/trip.service.js';
 import {
@@ -30,6 +31,7 @@ import { AuthGuard, TenantGuard, PermissionGuard } from './auth/guards.js';
     CoreService,
     FleetService,
     GpsService,
+    GpsIngress,
     TripService,
     RentalService,
     AuthGuard,

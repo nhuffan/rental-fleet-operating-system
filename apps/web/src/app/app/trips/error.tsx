@@ -1,7 +1,10 @@
 "use client";
+import { useParams } from "next/navigation";
+import { tripHistoryHref } from "@/features/telematics/trips/query";
 import Link from "next/link";
 import { Button, Panel } from "@/components/ui/primitives";
 export default function ErrorPage({ retry }: { retry: () => void }) {
+  const params = useParams();
   return (
     <Panel>
       <div className="panel-body" role="alert">
@@ -12,7 +15,10 @@ export default function ErrorPage({ retry }: { retry: () => void }) {
         </p>
         <div className="inline">
           <Button onClick={retry}>Thử lại</Button>
-          <Link className="button button-secondary" href="/app/trips">
+          <Link
+            className="button button-secondary"
+            href={tripHistoryHref(params.id)}
+          >
             Chọn lại bộ lọc
           </Link>
         </div>

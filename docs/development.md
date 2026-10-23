@@ -7,6 +7,8 @@ Use pnpm 11.19.0; project scripts select Node 24.21.0. Copy `apps/web/.env.examp
 ```sh
 pnpm install --frozen-lockfile
 pnpm dev                 # Web :4000, API :9000; Ctrl+C stops both
+pnpm dev:web             # Web only :4000
+pnpm dev:api             # API only :9000
 pnpm build
 pnpm lint
 pnpm typecheck
@@ -99,6 +101,10 @@ The only verified source is a **Traccar TEST feed** through its real decoder, au
 
 `POST /api/v1/integrations/traccar/positions` accepts the Traccar JSON forwarding envelope (`device`, `position`). Set server-only `GPS_TRACCAR_TOKEN` to at least 32 random characters in the ignored API env; an empty/short value disables ingestion with `GPS_NOT_CONFIGURED`. Traccar sends `X-Traccar-Token`; constant-time hash comparison rejects missing/incorrect credentials with `INVALID_GPS_TOKEN`. This trusted webhook credential is separate from Supabase user auth and never reaches browser env or logs.
 
+Webhook-only controls authenticate before JSON parsing, accept uncompressed JSON up to **16 KiB**, and reject invalid JSON/media/encoding with secret-safe 400/413/415 envelopes. Other API routes retain Nest's normal body-parser settings. Limits are **600 requests / 60 seconds per process**, **120 valid packets / device / window**, **16 concurrent ingress requests**, and at most **1,024 hashed identity buckets** cleared each window. Rejected authentication attempts consume the global quota. Quota errors return 429 `GPS_RATE_LIMITED` with `Retry-After` (1–60 seconds); semantic duplicates still consume capacity and remain idempotent in storage. Provider retries must honor the delay. These fixed-window, process-local controls are not a distributed quota or durable queue.
+
+A `gps_ingress_window` structured event reports only fixed aggregate outcome counters when the next request advances a 60-second window. It contains no raw UID, IP, coordinates, body or token; `LOG_REQUESTS=false` disables these logs. Before external provider exposure, configure gateway per-source connection limits and a shorter body/read timeout: Node's current request deadline is five minutes, so slow authenticated bodies can occupy the bounded ingress slots until then. No external gateway/provider deployment is enabled automatically.
+
 The adapter maps only canonical fields, not raw provider packets:
 
 | Field | Validation/source |
@@ -125,7 +131,9 @@ Unique `(deviceId,eventKey)` makes semantic retransmissions idempotent. Traccar 
 | `STALE` | >120 and ≤600 seconds |
 | `OFFLINE` | >600 seconds; last-known coordinates may remain visible |
 
-`/app/fleet-map`, dashboard GPS and Vehicle Detail use these authorized projections with explicit **TEST FEED** labels. The live map plots/lists its current page of 20 vehicles, with vehicle/current-rental navigation. It polls 20 seconds after completion, pauses hidden tabs and aborts obsolete work on unmount/filter/tenant changes. Failed refresh retains the last response with a warning and load time. Vehicle Detail refreshes on page reload; history is not polled or downloaded by the current-location map.
+`GET /fleet/telemetry/diagnostics` requires `gps.read` and returns only the selected tenant's freshness counts and unique stored fixes/devices received in the last 15 minutes, last received/recorded times, `sourceMode:TEST`, ingestion-enabled state and fixed process limits. Duplicate requests do not increase stored-fix counts or change first receipt time. The response exposes no device/vehicle IDs, coordinates, credentials or cross-tenant failure counters; failure categories remain in aggregate internal logs.
+
+`/app/fleet-map`, dashboard GPS and Vehicle Detail use these authorized projections with explicit **TEST FEED** labels. The live map plots/lists its current page of 20 vehicles, with vehicle/current-rental navigation. It polls 20 seconds after completion, pauses hidden tabs and aborts obsolete work on unmount/filter/tenant changes. Failed refresh retains the last response with a warning, last successful load time and an explicit retry button; 401/403 navigate to Login/access denied. STALE/OFFLINE descriptions identify coordinates as last recorded rather than confirmed current position. Vehicle Detail refreshes on page reload; history is not polled or downloaded by the current-location map.
 
 Leaflet 1.9.4 loads client-side and uses `https://tile.openstreetmap.org/{z}/{x}/{y}.png` with visible attribution. Tile failure preserves the list/coordinates. Public OSM tiles are best-effort: retain Referer/caching behavior and attribution, with no bulk downloading/prefetch. Higher-volume deployments need an appropriate tile service. References: [Leaflet](https://leafletjs.com/reference.html), [OSM tile policy](https://operations.osmfoundation.org/policies/tiles/).
 
@@ -135,15 +143,18 @@ Use only development project `eeryymswcufnebibigqf`, a migrated database, runnin
 
 ```sh
 pnpm --filter api gps:poc --uid=TEST-your-unique-device
-pnpm --filter api gps:retention --business=<verified-tenant-uuid>
-pnpm --filter api gps:retention --business=<verified-tenant-uuid> --apply
+pnpm --filter api gps:retention --business=<verified-tenant-uuid> --dry-run --batch-limit=1000
+pnpm --filter api gps:retention --business=<verified-tenant-uuid> --apply --batch-limit=1000 --max-batches=3
+pnpm --filter api gps:retention --help
+pnpm --filter api gps:plans
+pnpm --filter api gps:retention:verify
 ```
 
 The PoC command refuses another environment/project or ambiguous assignment. It launches a unique official Traccar 6.16.0 Docker container pinned to a digest, with memory storage, OsmAnd only and loopback port **5055**. Its temporary XML token config is mode 0600 and never printed. Port conflicts fail without stopping/reusing another container. On macOS Docker Desktop forwarding uses `host.docker.internal:9000`; check routing/API/token if canonical verification fails. No remote provider listener is deployed.
 
 Synthetic OsmAnd packets pass through Traccar JSON forwarding and canonical ingestion; the script checks 12 knots →22.224 km/h, semantic duplicates and delayed fix ordering. Per-run timestamps allow repeated use of a TEST UID. Its non-secret JSON output is terminal evidence, not a generated repository report. Idempotent cleanup removes its own container/config on completion/failure/SIGINT/SIGTERM; stored points remain on the chosen assignment until owned-data cleanup or retention. References: [Traccar forwarding](https://www.traccar.org/forward/), [forwarder-only configuration](https://www.traccar.org/forwarder-only/), [pinned speed units](https://github.com/traccar/traccar/blob/v6.16.0/src/main/java/org/traccar/model/Position.java).
 
-History expires **30 days after receivedAt**, except the latest point of each active assignment remains as its last-known location, even after 30 days offline. Ended assignments have no exception. This is distinct from ingestion's recorded-time acceptance window. Retention is development-only, tenant-bounded, defaults to dry run and processes at most 1,000 eligible rows per invocation. Review then apply/repeat bounded batches. There is no automatic production scheduler; historical Trip results can become partial or disappear as points expire.
+History expires **30 days after receivedAt**, except the latest point of each active assignment remains as its last-known location, even after 30 days offline. Ended assignments have no exception. This is distinct from ingestion's recorded-time acceptance window. Retention is development-only and requires one explicit tenant. Default dry-run selects one bounded page without deleting. `--batch-limit` is 1–1,000 (default 1,000); `--max-batches` is 1–10 (default 1), used only with explicit `--apply`, so one invocation deletes at most 10,000 rows. Each applied batch locks the same Business row as ingestion/assignment writes before selecting and deleting; it uses a database-clock cutoff, 2-second lock timeout, 10-second statement timeout and actual deleted row counts. Failures produce a redacted event and nonzero exit. A future scheduler may invoke this one-shot bounded command with an explicit tenant; no staging/production cron or automatic scheduler is installed. Review dry-run before any deliberate apply. `gps:plans` measures existing public queries read-only and synthetic temporary indexed tables inside a rollback; `gps:retention:verify` uses exact owned disposable fixtures to verify real PostgreSQL locking/isolation, then removes them. Both commands refuse other projects/environments. Historical Trip results can become partial or disappear as points expire.
 
 ## Derived Trip history and route replay
 
@@ -163,7 +174,7 @@ Each summary includes vehicle/assignment/device identity, optional inferred rent
 
 Rental associations use tenant/vehicle-matching scheduled windows of RESERVED/ACTIVE/COMPLETED rentals. `CONTAINED` means the full derived segment fits the scheduled interval; `OVERLAP` means only a time intersection. Both carry `basis:SCHEDULED_WINDOW` and do not prove actual customer use. A scalar `rentalId` is set only for exactly one containing interval; the association list preserves overlaps. Filtering by Rental uses these associations without inventing a route across a boundary.
 
-IDs encode the vehicle, start-fix ID and exact normalized query window, then detail/route rederive with authorization. Late fixes can change grouping or IDs; retention can remove a Trip or make it partial. Refresh the list when a saved detail returns unavailable. Partial reasons describe observable limits; missing packets cannot be reconstructed.
+IDs encode the vehicle, start-fix ID and exact normalized query window, then detail/route rederive with authorization. Late fixes can change grouping or IDs; retention can remove a Trip or make it partial. Refresh the list when a saved detail returns unavailable. The not-found/error recovery link restores the encoded Vehicle/time filters after validation; these are untrusted navigation hints, and every resulting API request is authorized again. Malformed encoded IDs are shown as unavailable rather than a generic server error. Partial reasons describe observable limits; missing packets cannot be reconstructed.
 
 `/app/trips` uses this live API with Vehicle/Rental/date filters and detail replay; Vehicle/Rental detail link to the corresponding filtered history. Leaflet replay draws only received bounded route points, honors line breaks and provides start/end markers and simple scrub/step controls. It does not poll history or fabricate missing points. Synthetic Trip examples stay under development-only previews.
 
@@ -199,8 +210,10 @@ docker compose --env-file .env.staging.web -f compose.staging.yaml down
 
 Docker has separate api/web targets: Web 4000, API 9000. `NEXT_PUBLIC_*` are public build arguments; secrets stay runtime-only and excluded from the build context. Use an HTTPS reverse proxy over loopback-bound ports and configure Supabase Auth Site URL/redirect allowlist for that Web origin. No staging project/deployment is created automatically. [Leaked-password protection](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection) requires a paid plan and is unavailable on the current Free project.
 
-## Current stage and historical records
+## Stage output and historical records
 
-The current plan and sole implementation output is [Stage 6](stages/Stage_6_Trip_History_and_Codebase_Refactor_Compact.md). Append verified results/limits there in the same implementation commit; later stages use their own current file. Do not create separate output/validation/architecture/recap Markdown, QA JSON manifests or screenshots unless explicitly requested. Runtime source, tests, migrations and generated contracts are unaffected by this documentation rule.
+Root [STAGE_OUTPUT.md](../STAGE_OUTPUT.md) is the sole permanent accumulated implementation log for every stage. Never delete it. Append chronological `## Stage N output` sections containing actual Delivered work, Verification, Boundaries & Remaining, and Next-stage Handoff. Include meaningful API/UI/data behavior, LIVE/TEST/PREVIEW distinctions, exact checks/results, limitations and commit references in the same implementation commit; record the actual SHA in a follow-up touching only this output file when needed. Historical results are recorded facts, not claims that old checks were rerun now; mark missing evidence as not verified.
 
-Historical stage plans, output, validation reports and screenshots remain retrievable from Git commit `85d4f2b4b1d7a75b8a24ec175ea61610b11ba989`, for example `git show 85d4f2b:STAGE_OUTPUT.md` or `git ls-tree -r --name-only 85d4f2b docs`. Current operational policy is consolidated here; historical completion counts are not current verification results. Both `CLAUDE.md` shims continue to reference their adjacent AGENTS rules; Next.js maintains the web shim during development.
+Input stage plans remain task inputs and must not become permanent individual stage reports or copied repository Markdown. Do not create substitute per-stage logs, validation/architecture/recap Markdown, QA JSON manifests or screenshots by default. Visual evidence requires an explicit user request or plan requirement; keep temporary test output outside tracked source. Necessary runtime source, tests, migrations and generated contracts remain allowed.
+
+Older detailed outputs and removed evidence remain retrievable through Git: `git show 85d4f2b:STAGE_OUTPUT.md` recovers the original through-Stage-5 log; `git show a5395ed -- docs` recovers the final Stage 6 output. Current operating policy is consolidated in this runbook. Root/Web AGENTS instructions are maintained manually. `agentRules: false` in `apps/web/next.config.ts` disables automatic agent-file generation; keep the required installed Next.js documentation rule in Web AGENTS without adding instruction shims.

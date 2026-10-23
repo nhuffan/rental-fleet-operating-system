@@ -444,6 +444,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/fleet/telemetry/diagnostics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GpsController_diagnostics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/vehicles/{id}/location": {
         parameters: {
             query?: never;
@@ -1004,6 +1020,47 @@ export interface components {
             /** Format: date-time */
             asOf: string;
             pollAfterSeconds: number;
+        };
+        RecentIngestionResponse: {
+            windowSeconds: number;
+            /** @description Persisted unique fixes received in the last 15 minutes, excluding retransmissions. */
+            positions: number;
+            devices: number;
+            /** Format: date-time */
+            lastReceivedAt: string | null;
+            /**
+             * Format: date-time
+             * @description Latest recorded fix among positions received in this window.
+             */
+            lastRecordedAt: string | null;
+        };
+        IngressLimitsResponse: {
+            bodyBytes: number;
+            windowSeconds: number;
+            globalRequests: number;
+            deviceRequests: number;
+            concurrentRequests: number;
+            trackedDevices: number;
+        };
+        TelemetryDiagnosticsResponse: {
+            /** Format: date-time */
+            asOf: string;
+            /** @enum {string} */
+            sourceMode: "TEST";
+            ingestionEnabled: boolean;
+            recent: components["schemas"]["RecentIngestionResponse"];
+            freshness: components["schemas"]["LocationStats"];
+            limits: components["schemas"]["IngressLimitsResponse"];
+            /**
+             * @description Limits apply independently to each API process and reset on restart.
+             * @enum {string}
+             */
+            limiterScope: "PROCESS_LOCAL";
+            /**
+             * @description Failure counts are process-wide, redacted and never exposed across tenant boundaries.
+             * @enum {string}
+             */
+            failureReporting: "INTERNAL_AGGREGATE_LOGS";
         };
         TripRentalAssociation: {
             /** Format: uuid */
@@ -5777,6 +5834,117 @@ export interface operations {
             };
         };
     };
+    GpsController_diagnostics: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Business-Id"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TelemetryDiagnosticsResponse"];
+                };
+            };
+            /** @description Standard API error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
     GpsController_get: {
         parameters: {
             query?: never;
@@ -6339,6 +6507,51 @@ export interface operations {
             };
             /** @description Standard API error */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };

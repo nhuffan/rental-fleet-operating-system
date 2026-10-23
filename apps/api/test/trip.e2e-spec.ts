@@ -333,3 +333,52 @@ it('enforces the candidate cap on real PostgreSQL and preserves historical assig
   const bounded = await api().get(path).expect(200);
   expect(bounded.body.data[0].pointCount).toBe(1000);
 }, 60000);
+
+it('keeps half-open window boundaries deterministic and makes late/removed start-fix IDs recoverable through filtered history', async () => {
+  const f = await assigned();
+  const clock = Date.now(),
+    from = new Date(clock - 180000),
+    to = new Date(clock - 30000);
+  for (const [age, index] of [
+    [120000, 0],
+    [60000, 1],
+    [30000, 2],
+  ])
+    await ingest(packet(f.uid, new Date(clock - age), index)).expect(201);
+  const path = '/trips?vehicleId=' + f.vehicleId + qs(from, to) + '&sort=asc';
+  const before = (await api().get(path).expect(200)).body.data[0];
+  expect(before.pointCount).toBe(2);
+  const route = (
+    await api()
+      .get('/trips/' + before.id + '/route')
+      .expect(200)
+  ).body;
+  expect(route.data.map((p: { recordedAt: string }) => p.recordedAt)).toEqual([
+    new Date(clock - 120000).toISOString(),
+    new Date(clock - 60000).toISOString(),
+  ]);
+  await ingest(packet(f.uid, from, -1)).expect(201);
+  const after = (await api().get(path).expect(200)).body.data[0];
+  expect(after.pointCount).toBe(3);
+  expect(after.startedAt).toBe(from.toISOString());
+  expect(after.id).not.toBe(before.id);
+  await api()
+    .get('/trips/' + before.id)
+    .expect(404);
+  const startId = JSON.parse(
+    Buffer.from(after.id, 'base64url').toString(),
+  ).startId;
+  // Simulate retention of an exact owned point; never delete tenant data by age/wildcard.
+  await database!.pool.query(
+    'delete from public.gps_positions where business_id=$1 and vehicle_id=$2 and id=$3',
+    [demo.businessA, f.vehicleId, startId],
+  );
+  await api()
+    .get('/trips/' + after.id + '/route')
+    .expect(404);
+  const recovered = (await api().get(path).expect(200)).body.data[0];
+  expect(recovered.id).toBe(before.id);
+  expect(recovered.partial).toBe(true);
+  expect(recovered.distanceKind).toBe('ESTIMATED');
+  expect(recovered.sourceMode).toBe('TEST');
+}, 60000);

@@ -10,6 +10,7 @@ import { randomUUID } from 'node:crypto';
 import type { Request, Response, NextFunction } from 'express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { loadConfig } from './config.js';
+import { GpsIngress } from './telematics/gps/ingress.js';
 @Catch()
 class Errors implements ExceptionFilter {
   catch(error: unknown, host: ArgumentsHost) {
@@ -21,7 +22,11 @@ class Errors implements ExceptionFilter {
     const details = error instanceof HttpException ? error.getResponse() : {};
     const data =
       typeof details === 'object' && details !== null
-        ? (details as { code?: string; message?: string | string[] })
+        ? (details as {
+            code?: string;
+            message?: string | string[];
+            retryAfter?: number;
+          })
         : {};
     const message =
       statusCode >= 500
@@ -36,6 +41,8 @@ class Errors implements ExceptionFilter {
           errorType: error instanceof Error ? error.name : 'UnknownError',
         }),
       );
+    if (statusCode === 429 && Number.isInteger(data.retryAfter))
+      res.setHeader('Retry-After', Math.max(1, Math.min(60, data.retryAfter!)));
     // Never serialize database errors, request bodies, tokens or credentials.
     res.status(statusCode).json({
       statusCode,
@@ -47,6 +54,9 @@ class Errors implements ExceptionFilter {
           403: 'FORBIDDEN',
           404: 'NOT_FOUND',
           409: 'CONFLICT',
+          413: 'PAYLOAD_TOO_LARGE',
+          415: 'UNSUPPORTED_MEDIA_TYPE',
+          429: 'RATE_LIMITED',
         }[statusCode] ??
         'INTERNAL_ERROR',
       message: Array.isArray(message) ? message.join('; ') : message,
@@ -66,7 +76,7 @@ export function configureApp(app: INestApplication) {
       'X-Business-Id',
       'X-Request-Id',
     ],
-    exposedHeaders: ['X-Request-Id'],
+    exposedHeaders: ['X-Request-Id', 'Retry-After'],
   });
   app.use(
     (
@@ -94,6 +104,11 @@ export function configureApp(app: INestApplication) {
       next();
     },
   );
+  // Installed before Nest's default JSON parser; other routes retain their defaults.
+  app.use(
+    '/api/v1/integrations/traccar/positions',
+    app.get(GpsIngress).middleware(),
+  );
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -114,11 +129,14 @@ export function configureApp(app: INestApplication) {
       .addBearerAuth()
       .build(),
   );
-  for (const item of Object.values(document.paths))
+  for (const [path, item] of Object.entries(document.paths))
     for (const verb of ['get', 'post', 'patch'] as const) {
       const operation = item?.[verb];
       if (!operation) continue;
-      for (const status of ['400', '401', '403', '404', '409', '500'])
+      const statuses = ['400', '401', '403', '404', '409', '500'];
+      if (verb === 'post' && path === '/api/v1/integrations/traccar/positions')
+        statuses.push('413', '415', '429');
+      for (const status of statuses)
         operation.responses[status] = {
           description: 'Standard API error',
           content: {

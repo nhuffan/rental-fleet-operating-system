@@ -1,4 +1,10 @@
-import { pageNumber, text, validId, type SearchParams } from "@/lib/query";
+import {
+  pageNumber,
+  queryString,
+  text,
+  validId,
+  type SearchParams,
+} from "@/lib/query";
 const DAY = 24 * 60 * 60 * 1000;
 export function tripFilters(params: SearchParams) {
   const now = new Date();
@@ -61,7 +67,7 @@ export const partialLabels: Record<string, string> = {
   START_NOT_OBSERVED: "Chưa quan sát được điểm bắt đầu hành trình",
   END_NOT_OBSERVED: "Chưa quan sát được điểm kết thúc hành trình",
   RETENTION_WINDOW: "Khoảng tra cứu vượt giới hạn lưu trữ",
-  RANGE_START: "Đầu hành trình nằm sát biên tra cứu",
+  RANGE_START: "Chỉ quan sát được dữ liệu trong cửa sổ tra cứu",
   INSUFFICIENT_POINTS: "Chưa đủ điểm để dựng tuyến",
   POSITION_JUMP: "Bỏ nối đoạn có bước nhảy vị trí",
 };
@@ -69,10 +75,49 @@ export function partialLabel(reason: string) {
   return partialLabels[reason] ?? "Dữ liệu chưa đầy đủ";
 }
 
-export function rentalTripRange(startAt: string, endAt: string, now = new Date()) {
+export function rentalTripRange(
+  startAt: string,
+  endAt: string,
+  now = new Date(),
+) {
   const end = Math.min(Date.parse(endAt), now.getTime());
   const start = Math.max(Date.parse(startAt), end - 7 * DAY);
   return end > start
     ? { from: new Date(start).toISOString(), to: new Date(end).toISOString() }
     : null;
+}
+
+// This only restores user-supplied filters. The API still authorizes every query.
+export function tripHistoryHref(id: unknown) {
+  if (typeof id !== "string" || !/^[A-Za-z0-9_-]{20,600}$/.test(id))
+    return "/app/trips";
+  try {
+    const data: unknown = JSON.parse(
+      atob(id.replaceAll("-", "+").replaceAll("_", "/")),
+    );
+    if (!data || typeof data !== "object") return "/app/trips";
+    const ref = data as Record<string, unknown>;
+    if (
+      ref.v !== 1 ||
+      typeof ref.vehicleId !== "string" ||
+      typeof ref.from !== "string" ||
+      typeof ref.to !== "string"
+    )
+      return "/app/trips";
+    const { filters, error } = tripFilters({
+      vehicleId: ref.vehicleId,
+      from: ref.from,
+      to: ref.to,
+    });
+    if (
+      error ||
+      filters.vehicleId !== ref.vehicleId ||
+      filters.from !== ref.from ||
+      filters.to !== ref.to
+    )
+      return "/app/trips";
+    return `/app/trips?${queryString({ vehicleId: filters.vehicleId, from: filters.from, to: filters.to })}`;
+  } catch {
+    return "/app/trips";
+  }
 }

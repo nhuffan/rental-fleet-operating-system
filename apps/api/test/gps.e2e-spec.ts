@@ -334,3 +334,67 @@ it('serializes concurrent retransmissions without duplicate history', async () =
   expect(responses.filter((x) => !x.body.duplicate)).toHaveLength(1);
   expect(new Set(responses.map((x) => x.body.positionId)).size).toBe(1);
 }, 60000);
+
+it('hardens ingress media/body/auth errors and exposes only authorized tenant aggregate diagnostics', async () => {
+  const path = '/api/v1/integrations/traccar/positions';
+  const bad = await request(app!.getHttpServer())
+    .post(path)
+    .set('X-Traccar-Token', 'wrong-secret')
+    .send({ padding: 'x'.repeat(20000) })
+    .expect(401);
+  expect(bad.body.code).toBe('INVALID_GPS_TOKEN');
+  const large = await request(app!.getHttpServer())
+    .post(path)
+    .set('X-Traccar-Token', process.env.GPS_TRACCAR_TOKEN!)
+    .send({ padding: 'x'.repeat(20000) })
+    .expect(413);
+  expect(large.body.code).toBe('GPS_BODY_TOO_LARGE');
+  expect(large.body.requestId).toBe(large.headers['x-request-id']);
+  const malformed = await request(app!.getHttpServer())
+    .post(path)
+    .set('X-Traccar-Token', process.env.GPS_TRACCAR_TOKEN!)
+    .set('Content-Type', 'application/json')
+    .send('{"private":"do-not-echo",broken')
+    .expect(400);
+  expect(malformed.body.code).toBe('INVALID_GPS_JSON');
+  expect(JSON.stringify(malformed.body)).not.toContain('do-not-echo');
+  await request(app!.getHttpServer())
+    .get('/api/v1/fleet/telemetry/diagnostics')
+    .expect(401);
+  const { v, d } = await assigned();
+  await ingest(packet(d.deviceUid)).expect(201);
+  for (const actor of ['ownerA', 'adminA', 'operationsA']) {
+    const diagnostic = await api(actor)
+      .get('/fleet/telemetry/diagnostics')
+      .expect(200);
+    expect(diagnostic.body).toMatchObject({
+      sourceMode: 'TEST',
+      ingestionEnabled: true,
+      recent: { windowSeconds: 900 },
+      limits: {
+        bodyBytes: 16384,
+        globalRequests: 600,
+        deviceRequests: 120,
+        concurrentRequests: 16,
+      },
+      limiterScope: 'PROCESS_LOCAL',
+      failureReporting: 'INTERNAL_AGGREGATE_LOGS',
+    });
+    expect(diagnostic.body.recent.positions).toBeGreaterThan(0);
+    for (const privateValue of [
+      v.id,
+      d.id,
+      d.deviceUid,
+      process.env.GPS_TRACCAR_TOKEN!,
+    ])
+      expect(JSON.stringify(diagnostic.body)).not.toContain(privateValue);
+  }
+  const other = await api('ownerB', demo.businessB)
+    .get('/fleet/telemetry/diagnostics')
+    .expect(200);
+  const expected = await database!.pool.query(
+    "select count(*)::int as n from public.gps_positions where business_id=$1 and received_at>=statement_timestamp()-interval '15 minutes'",
+    [demo.businessB],
+  );
+  expect(other.body.recent.positions).toBe(expected.rows[0].n);
+}, 60000);

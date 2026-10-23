@@ -12,7 +12,9 @@ import {
   LocationQuery,
   type LocationPage,
   type LocationResponse,
+  type TelemetryDiagnosticsResponse,
 } from './dto.js';
+import { GPS_INGRESS_LIMITS } from './ingress.js';
 const conflict = (code: string) =>
   new ConflictException({ code, message: 'GPS event cannot be resolved' });
 @Injectable()
@@ -134,6 +136,40 @@ export class GpsService {
     );
     const row = result.rows[0];
     return { ...row, page: q.page, limit: q.limit, pollAfterSeconds: 20 };
+  }
+  async diagnostics(c: TenantContext): Promise<TelemetryDiagnosticsResponse> {
+    const [locations, recent] = await Promise.all([
+      this.list(c, Object.assign(new LocationQuery(), { limit: 1 })),
+      this.database.pool.query<{
+        positions: number;
+        devices: number;
+        lastReceivedAt: Date | null;
+        lastRecordedAt: Date | null;
+      }>(
+        `
+        select count(*)::int as positions,count(distinct device_id)::int as devices,
+          max(received_at) as "lastReceivedAt",max(recorded_at) as "lastRecordedAt"
+        from public.gps_positions where business_id=$1 and received_at>=statement_timestamp()-interval '15 minutes'`,
+        [c.businessId],
+      ),
+    ]);
+    const row = recent.rows[0];
+    return {
+      asOf: new Date().toISOString(),
+      sourceMode: 'TEST',
+      ingestionEnabled: (process.env.GPS_TRACCAR_TOKEN?.length ?? 0) >= 32,
+      recent: {
+        windowSeconds: 900,
+        positions: row.positions,
+        devices: row.devices,
+        lastReceivedAt: row.lastReceivedAt?.toISOString() ?? null,
+        lastRecordedAt: row.lastRecordedAt?.toISOString() ?? null,
+      },
+      freshness: locations.stats,
+      limits: { ...GPS_INGRESS_LIMITS },
+      limiterScope: 'PROCESS_LOCAL',
+      failureReporting: 'INTERNAL_AGGREGATE_LOGS',
+    };
   }
   async get(c: TenantContext, id: string) {
     const p = await this.list(

@@ -12,7 +12,7 @@ import {
 import { browserClient } from "@/lib/supabase/client";
 import { publicEnv } from "@/lib/env";
 import { LocationMap } from "./location-map";
-import { gpsLabels, type LocationPage } from "./types";
+import { gpsDescriptions, gpsLabels, type LocationPage } from "./types";
 const date = (v: string | null) =>
   v
     ? new Date(v).toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })
@@ -37,6 +37,7 @@ export function LiveFleetMap({
   const [filters, setFilters] = useState({ search: "", state: "", page: 1 });
   const [selected, setSelected] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
   useEffect(() => {
     let stopped = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -78,6 +79,10 @@ export function LiveFleetMap({
           router.replace("/login");
           return;
         }
+        if (response.status === 403) {
+          router.replace("/access-denied");
+          return;
+        }
         if (!response.ok) throw new Error("API");
         const next = (await response.json()) as LocationPage;
         if (!stopped && !signal.aborted) {
@@ -111,7 +116,7 @@ export function LiveFleetMap({
       controller?.abort();
       document.removeEventListener("visibilitychange", visibility);
     };
-  }, [businessId, filters, router]);
+  }, [businessId, filters, router, refreshKey]);
   const active = payload.data.find((v) => v.vehicleId === selected);
   return (
     <Panel className="gps-panel">
@@ -167,9 +172,16 @@ export function LiveFleetMap({
         </form>
       )}
       {error && (
-        <p role="alert" className="notice error">
-          {error}
-        </p>
+        <div role="alert" className="notice error">
+          <p>{error}</p>
+          <Button
+            variant="secondary"
+            disabled={busy}
+            onClick={() => setRefreshKey((key) => key + 1)}
+          >
+            Thử cập nhật GPS lại
+          </Button>
+        </div>
       )}
       <p className="gps-sync" role="status">
         {busy
@@ -223,6 +235,7 @@ export function LiveFleetMap({
         <div className="gps-selected" aria-live="polite">
           <div>
             <strong>{active.licensePlate}</strong> · {gpsLabels[active.state]}
+            <p>{gpsDescriptions[active.state]}</p>
             {active.location && (
               <>
                 <p>

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { api } from "@/lib/api";
+import { api, ApiResponseError } from "@/lib/api";
 import { pageNumber, type SearchParams } from "@/lib/query";
 import { PageHeader } from "@/components/ui/primitives";
 import { tripContext } from "@/features/telematics/trips/server";
@@ -18,12 +18,24 @@ export default async function TripPage({
   if (!/^[A-Za-z0-9_-]{20,600}$/.test(id)) notFound();
   const page = pageNumber((await searchParams).routePage);
   const path = `/trips/${encodeURIComponent(id)}`;
-  const [trip, route] = await Promise.all([
-    api<Trip>(path, { notFoundOn404: true }),
-    api<TripRoute>(`${path}/route?page=${page}&limit=500`, {
-      notFoundOn404: true,
-    }),
-  ]);
+  let trip: Trip;
+  let route: TripRoute;
+  try {
+    [trip, route] = await Promise.all([
+      api<Trip>(path, { notFoundOn404: true }),
+      api<TripRoute>(`${path}/route?page=${page}&limit=500`, {
+        notFoundOn404: true,
+      }),
+    ]);
+  } catch (cause) {
+    if (
+      cause instanceof ApiResponseError &&
+      cause.status === 400 &&
+      cause.code === "INVALID_TRIP_ID"
+    )
+      notFound();
+    throw cause;
+  }
   return (
     <>
       <Link className="back-link" href="/app/trips">

@@ -9820,6 +9820,227 @@
         ]
       }
     },
+    "/api/v1/fleet/telemetry/diagnostics": {
+      "get": {
+        "operationId": "GpsController_diagnostics",
+        "parameters": [
+          {
+            "name": "X-Business-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelemetryDiagnosticsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "GPS locations"
+        ]
+      }
+    },
     "/api/v1/vehicles/{id}/location": {
       "get": {
         "operationId": "GpsController_get",
@@ -11033,6 +11254,99 @@
             }
           },
           "409": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
             "description": "Standard API error",
             "content": {
               "application/json": {
@@ -12709,6 +13023,121 @@
           "stats",
           "asOf",
           "pollAfterSeconds"
+        ]
+      },
+      "RecentIngestionResponse": {
+        "type": "object",
+        "properties": {
+          "windowSeconds": {
+            "type": "number"
+          },
+          "positions": {
+            "type": "number",
+            "description": "Persisted unique fixes received in the last 15 minutes, excluding retransmissions."
+          },
+          "devices": {
+            "type": "number"
+          },
+          "lastReceivedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "lastRecordedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time",
+            "description": "Latest recorded fix among positions received in this window."
+          }
+        },
+        "required": [
+          "windowSeconds",
+          "positions",
+          "devices",
+          "lastReceivedAt",
+          "lastRecordedAt"
+        ]
+      },
+      "IngressLimitsResponse": {
+        "type": "object",
+        "properties": {
+          "bodyBytes": {
+            "type": "number"
+          },
+          "windowSeconds": {
+            "type": "number"
+          },
+          "globalRequests": {
+            "type": "number"
+          },
+          "deviceRequests": {
+            "type": "number"
+          },
+          "concurrentRequests": {
+            "type": "number"
+          },
+          "trackedDevices": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "bodyBytes",
+          "windowSeconds",
+          "globalRequests",
+          "deviceRequests",
+          "concurrentRequests",
+          "trackedDevices"
+        ]
+      },
+      "TelemetryDiagnosticsResponse": {
+        "type": "object",
+        "properties": {
+          "asOf": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "sourceMode": {
+            "type": "string",
+            "enum": [
+              "TEST"
+            ]
+          },
+          "ingestionEnabled": {
+            "type": "boolean"
+          },
+          "recent": {
+            "$ref": "#/components/schemas/RecentIngestionResponse"
+          },
+          "freshness": {
+            "$ref": "#/components/schemas/LocationStats"
+          },
+          "limits": {
+            "$ref": "#/components/schemas/IngressLimitsResponse"
+          },
+          "limiterScope": {
+            "type": "string",
+            "enum": [
+              "PROCESS_LOCAL"
+            ],
+            "description": "Limits apply independently to each API process and reset on restart."
+          },
+          "failureReporting": {
+            "type": "string",
+            "enum": [
+              "INTERNAL_AGGREGATE_LOGS"
+            ],
+            "description": "Failure counts are process-wide, redacted and never exposed across tenant boundaries."
+          }
+        },
+        "required": [
+          "asOf",
+          "sourceMode",
+          "ingestionEnabled",
+          "recent",
+          "freshness",
+          "limits",
+          "limiterScope",
+          "failureReporting"
         ]
       },
       "TripRentalAssociation": {

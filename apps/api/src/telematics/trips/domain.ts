@@ -138,9 +138,13 @@ export function deriveTrips(
   rentals: RentalInterval[],
   now = new Date(),
 ): DerivedTrip[] {
+  const start = new Date(range.from),
+    end = new Date(range.to);
   const ordered = input
     .filter(
       (p) =>
+        p.recordedAt >= start &&
+        p.recordedAt < end &&
         p.recordedAt >= p.assignedAt &&
         (!p.unassignedAt || p.recordedAt < p.unassignedAt),
     )
@@ -286,7 +290,7 @@ export function deriveTrips(
         reasons = afterObservedStop
           ? []
           : [gap && !different ? 'GAP_BEFORE' : 'START_NOT_OBSERVED'];
-        if (!afterObservedStop && p.assignedAt < new Date(range.from))
+        if (!afterObservedStop && p.assignedAt < start)
           reasons.push('RANGE_START');
       }
       if (p.ignition === false) reasons.push('IGNITION_CONFLICT');
