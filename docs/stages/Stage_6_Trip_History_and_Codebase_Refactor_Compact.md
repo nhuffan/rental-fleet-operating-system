@@ -136,4 +136,4 @@ Biến GPS positions hiện có thành **Trip History / Route Replay cơ bản**
 
 ### Commit
 
-- Implementation commit: sẽ ghi SHA thực tế ngay sau khi commit; chỉ bổ sung reference vào file stage này, không tạo log khác.
+- Implementation commit: **`923c69e775843f4cb8ff399932388d05dd6ff58b`** — `feat: implement Stage 6 trip history and domain refactor` trên `main`. Commit này chứa code, tests, contracts, cleanup và toàn bộ Implementation Output; commit docs tiếp theo chỉ ghi SHA thực tế vào chính file này.
