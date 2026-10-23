@@ -1,7 +1,7 @@
 "use client";
 import type { ReactNode } from "react";
 import { Button, EmptyState } from "@/components/ui/primitives";
-import { Icon } from "@/components/ui/icon";
+import { SearchField } from "@/components/ui/controls";
 export function SearchInput({
   value,
   onChange,
@@ -12,16 +12,13 @@ export function SearchInput({
   placeholder?: string;
 }) {
   return (
-    <label className="search-input">
-      <Icon name="search" />
-      <input
-        type="search"
-        aria-label={placeholder}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-      />
-    </label>
+    <SearchField
+      hideLabel
+      label={placeholder}
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      placeholder={placeholder}
+    />
   );
 }
 export function DataTable<T extends { id: string }>({
@@ -79,7 +76,7 @@ export function Pagination({
   disabled?: boolean;
 }) {
   return (
-    <div className="pagination">
+    <nav className="pagination" aria-label="Phân trang">
       <span>
         {total && (page - 1) * limit < total
           ? `${(page - 1) * limit + 1}–${Math.min(page * limit, total)} / ${total}`
@@ -89,14 +86,16 @@ export function Pagination({
       </span>
       <div className="inline">
         <Button
+          type="button"
           variant="secondary"
           disabled={disabled || page <= 1}
           onClick={() => onPage(page - 1)}
         >
           ← Trước
         </Button>
-        <span>Trang {page}</span>
+        <span aria-live="polite">Trang {page}</span>
         <Button
+          type="button"
           variant="secondary"
           disabled={disabled || page * limit >= total}
           onClick={() => onPage(page + 1)}
@@ -104,6 +103,6 @@ export function Pagination({
           Sau →
         </Button>
       </div>
-    </div>
+    </nav>
   );
 }

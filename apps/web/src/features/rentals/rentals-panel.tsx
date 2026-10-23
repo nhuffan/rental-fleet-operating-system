@@ -1,9 +1,15 @@
 "use client";
 import Link from "next/link";
+import { Combobox, FilterBar, SearchField } from "@/components/ui/controls";
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { Me } from "@rental-fleet/contracts";
-import { Button, Panel, PanelHeader } from "@/components/ui/primitives";
+import {
+  Button,
+  Panel,
+  PanelHeader,
+  RefreshStatus,
+} from "@/components/ui/primitives";
 import { Pagination } from "@/components/data-display/table";
 import { queryString } from "@/lib/query";
 import { rentalStatuses, type RentalFilters } from "./query";
@@ -28,7 +34,9 @@ export function RentalsPanel({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   function navigate(values: Record<string, string | number>) {
-    startTransition(() => router.push(`/app/rentals?${queryString(values)}`));
+    startTransition(() =>
+      router.push(`/app/rentals?${queryString(values)}`, { scroll: false }),
+    );
   }
   return (
     <Panel>
@@ -44,8 +52,10 @@ export function RentalsPanel({
           )
         }
       />
-      <form
-        className="table-toolbar fleet-filters"
+      <FilterBar
+        key={JSON.stringify(filters)}
+        busy={pending}
+        aria-label="Bộ lọc hợp đồng"
         onSubmit={(e) => {
           e.preventDefault();
           const form = new FormData(e.currentTarget);
@@ -59,39 +69,36 @@ export function RentalsPanel({
           });
         }}
       >
-        <label className="search-input">
-          <input
-            name="search"
-            type="search"
-            maxLength={100}
-            defaultValue={filters.search}
-            placeholder="Tên khách, liên hệ hoặc biển số…"
-            aria-label="Tìm hợp đồng"
-          />
-        </label>
-        <select
+        <SearchField
+          name="search"
+          type="search"
+          maxLength={100}
+          defaultValue={filters.search}
+          placeholder="Tên khách, liên hệ hoặc biển số…"
+          label="Tìm hợp đồng"
+        />
+        <Combobox
           name="status"
-          className="filter-select"
-          aria-label="Trạng thái hợp đồng"
+          label="Trạng thái hợp đồng"
           defaultValue={filters.status}
-        >
-          <option value="">Mọi trạng thái</option>
-          {rentalStatuses.map((status) => (
-            <option value={status} key={status}>
-              {names[status]}
-            </option>
-          ))}
-        </select>
-        <select
+          options={[
+            { value: "", label: "Mọi trạng thái" },
+            ...rentalStatuses.map((status) => ({
+              value: status,
+              label: names[status],
+            })),
+          ]}
+        />
+        <Combobox
           name="sort"
-          className="filter-select"
-          aria-label="Sắp xếp hợp đồng"
+          label="Sắp xếp hợp đồng"
           defaultValue={filters.sort}
-        >
-          <option value="createdAt">Ngày tạo</option>
-          <option value="startAt">Ngày nhận</option>
-          <option value="endAt">Ngày trả</option>
-        </select>
+          options={[
+            { value: "createdAt", label: "Ngày tạo" },
+            { value: "startAt", label: "Ngày nhận" },
+            { value: "endAt", label: "Ngày trả" },
+          ]}
+        />
         <label className="rental-checkbox">
           <input
             type="checkbox"
@@ -100,16 +107,31 @@ export function RentalsPanel({
           />
           Quá hạn
         </label>
-        <Button type="submit" variant="secondary" disabled={pending}>
-          Áp dụng
-        </Button>
-      </form>
-      <div aria-busy={pending}>
+        <div className="filter-bar-actions">
+          <Button type="submit" variant="secondary" loading={pending}>
+            Áp dụng
+          </Button>
+          <Button
+            variant="ghost"
+            type="button"
+            disabled={pending}
+            onClick={(event) => {
+              event.currentTarget.form?.reset();
+              navigate({ page: 1 });
+            }}
+          >
+            Xóa bộ lọc
+          </Button>
+        </div>
+      </FilterBar>
+      <div className="pending-region" aria-busy={pending}>
+        <RefreshStatus pending={pending} />
         <RentalTable
           rentals={initial.data}
           currency={context.business.currency}
         />
         <Pagination
+          disabled={pending}
           {...initial}
           onPage={(page) => navigate({ ...filters, page })}
         />

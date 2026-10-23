@@ -7,6 +7,7 @@ import {
   EmptyState,
   Panel,
   PanelHeader,
+  RefreshStatus,
 } from "@/components/ui/primitives";
 import { Pagination } from "@/components/data-display/table";
 import { formatDate, queryString } from "@/lib/query";
@@ -31,11 +32,13 @@ export function RentalDashboard({
     startTransition(() =>
       router.push(
         `/app?${queryString({ schedulePage: schedule.page, queuePage: queue.page, overdue: overdue ? "true" : "", ...values })}`,
+        { scroll: false },
       ),
     );
   }
   return (
-    <div className="rental-dashboard" aria-busy={pending}>
+    <div className="rental-dashboard pending-region" aria-busy={pending}>
+      <RefreshStatus pending={pending} />
       <Panel>
         <PanelHeader
           title="Lịch xe đã đặt"
@@ -77,6 +80,7 @@ export function RentalDashboard({
           )}
         </div>
         <Pagination
+          disabled={pending}
           {...schedule}
           onPage={(schedulePage) => navigate({ schedulePage })}
         />
@@ -108,6 +112,7 @@ export function RentalDashboard({
         </div>
         <RentalTable rentals={queue.data} currency={currency} />
         <Pagination
+          disabled={pending}
           {...queue}
           onPage={(queuePage) => navigate({ queuePage })}
         />

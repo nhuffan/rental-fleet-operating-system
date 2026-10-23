@@ -1,12 +1,14 @@
 "use client";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import {
   Badge,
   Button,
   EmptyState,
   Panel,
   PanelHeader,
+  RefreshStatus,
 } from "@/components/ui/primitives";
 import { formatDate, queryString } from "@/lib/query";
 import { distanceLabel, durationLabel, partialLabel } from "./query";
@@ -21,7 +23,12 @@ export function TripDetail({
   route: TripRoute;
   canReadRental: boolean;
 }) {
-  const [selected, setSelected] = useState(0);
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const [selection, setSelection] = useState({ page: route.page, index: 0 });
+  const selected = selection.page === route.page ? selection.index : 0;
+  const setSelected = (index: number) =>
+    setSelection({ page: route.page, index });
   const points = useMemo(() => route.data.slice(0, 500), [route.data]);
   const index = Math.min(selected, Math.max(0, points.length - 1));
   const point = points[index];
@@ -79,7 +86,11 @@ export function TripDetail({
           </div>
         )}
         {points.length ? (
-          <>
+          <div className="pending-region" aria-busy={pending}>
+            <RefreshStatus
+              pending={pending}
+              label="Đang tải trang tuyến tiếp theo · Giữ tuyến đang xem…"
+            />
             <RouteMap points={points} selected={index} />
             <div className="trip-replay">
               <div className="trip-replay-heading" aria-live="polite">
@@ -175,25 +186,39 @@ export function TripDetail({
                 </span>
                 <div className="inline">
                   {route.page > 1 && (
-                    <Link
-                      className="button button-secondary"
-                      href={`${href}?routePage=${route.page - 1}`}
+                    <Button
+                      variant="secondary"
+                      disabled={pending}
+                      onClick={() =>
+                        startTransition(() =>
+                          router.push(`${href}?routePage=${route.page - 1}`, {
+                            scroll: false,
+                          }),
+                        )
+                      }
                     >
                       ← Trang tuyến trước
-                    </Link>
+                    </Button>
                   )}
                   {route.hasMore && (
-                    <Link
-                      className="button button-secondary"
-                      href={`${href}?routePage=${route.page + 1}`}
+                    <Button
+                      variant="secondary"
+                      disabled={pending}
+                      onClick={() =>
+                        startTransition(() =>
+                          router.push(`${href}?routePage=${route.page + 1}`, {
+                            scroll: false,
+                          }),
+                        )
+                      }
                     >
                       Trang tuyến sau →
-                    </Link>
+                    </Button>
                   )}
                 </div>
               </div>
             </div>
-          </>
+          </div>
         ) : (
           <EmptyState
             icon="map"

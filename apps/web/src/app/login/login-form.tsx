@@ -6,9 +6,11 @@ import { Icon } from "@/components/ui/icon";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { browserClient } from "@/lib/supabase/client";
-export function LoginForm({ destination }: { destination: string }) {
+import { resolveLoginDestination } from "@/lib/auth-navigation";
+import { publicEnv } from "@/lib/env";
+export function LoginForm({ destination }: { destination: string | null }) {
   const platform =
-    destination === "/superadmin" || destination.startsWith("/superadmin/");
+    destination === "/superadmin" || destination?.startsWith("/superadmin/");
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
   const router = useRouter();
@@ -18,21 +20,32 @@ export function LoginForm({ destination }: { destination: string }) {
     setError("");
     const form = new FormData(event.currentTarget);
     try {
-      const { error } = await browserClient().auth.signInWithPassword({
+      const { data, error } = await browserClient().auth.signInWithPassword({
         email: String(form.get("email")).trim(),
         password: String(form.get("password")),
       });
-      if (error) {
+      if (error || !data.session) {
         setError(
           "Email hoặc mật khẩu không đúng, hoặc tài khoản chưa được kích hoạt.",
         );
         return;
       }
       document.cookie = "current-business=; Path=/; Max-Age=0; SameSite=Lax";
+      const token = data.session.access_token;
+      const target = await resolveLoginDestination(
+        destination,
+        async (path) => {
+          const response = await fetch(`${publicEnv().api}/api/v1${path}`, {
+            cache: "no-store",
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          return response.status;
+        },
+      );
       // A concurrent refresh can cancel this transition in Next 16.
-      router.replace(destination);
+      router.replace(target);
     } catch {
-      setError("Không thể kết nối. Vui lòng thử lại.");
+      setError("Không thể xác minh quyền truy cập. Vui lòng thử lại.");
     } finally {
       setPending(false);
     }
@@ -74,7 +87,9 @@ export function LoginForm({ destination }: { destination: string }) {
           <p className="muted">
             {platform
               ? "Đăng nhập bằng tài khoản Superadmin được cấp quyền quản trị nền tảng."
-              : "Tiếp tục công việc trong doanh nghiệp của bạn."}
+              : destination
+                ? "Tiếp tục công việc trong doanh nghiệp của bạn."
+                : "Tiếp tục trong không gian được cấp quyền của bạn."}
           </p>
           <form method="post" onSubmit={submit} aria-busy={pending}>
             <label htmlFor="login-email">
@@ -118,7 +133,7 @@ export function LoginForm({ destination }: { destination: string }) {
           </p>
           <Link
             className="link-brand"
-            href={platform ? "/login" : "/login?next=%2Fsuperadmin"}
+            href={platform ? "/login?next=%2Fapp" : "/login?next=%2Fsuperadmin"}
           >
             {platform
               ? "Đăng nhập không gian doanh nghiệp"

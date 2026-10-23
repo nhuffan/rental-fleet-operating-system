@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import type * as Leaflet from "leaflet";
+import { Skeleton } from "@/components/ui/primitives";
 import type { TripPoint } from "./types";
 export function RouteMap({
   points,
@@ -124,6 +125,12 @@ export function RouteMap({
         role="region"
         aria-label="Tuyến đường lịch sử GPS TEST; đường thẳng nối các điểm đã ghi nhận"
       />
+      {!runtime && !error && (
+        <div className="map-initial-loading" role="status">
+          <Skeleton className="skeleton-panel" />
+          <p>Đang mở bản đồ tuyến đường…</p>
+        </div>
+      )}
       {error && (
         <p className="notice notice-warning" role="status">
           {error}

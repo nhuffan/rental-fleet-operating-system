@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   safeReturnPath,
   platformLoginPath,
+  resolveLoginDestination,
 } from "../src/lib/auth-navigation.ts";
 for (const [index, value] of [
   undefined,
@@ -42,5 +43,88 @@ test("platform login retains a local filtered return path", () => {
       "https://rental.invalid",
     ).searchParams.get("next"),
     "/superadmin",
+  );
+});
+
+test("explicit allowed deep links do not substitute another authorization surface", async () => {
+  for (const destination of [
+    "/app",
+    "/app/rentals?status=ACTIVE",
+    "/superadmin/users?page=2",
+  ]) {
+    assert.equal(
+      await resolveLoginDestination(destination, async () => {
+        assert.fail(
+          "An explicit destination must be checked by its protected layout",
+        );
+      }),
+      destination,
+    );
+  }
+});
+
+test("generic Owner login uses the verified tenant grant", async () => {
+  const probes = [];
+  const destination = await resolveLoginDestination(null, async (path) => {
+    probes.push(path);
+    return 200;
+  });
+  assert.equal(destination, "/app");
+  assert.deepEqual(probes, ["/me"]);
+});
+
+test("generic Superadmin login uses the independent platform grant after tenant denial", async () => {
+  const probes = [];
+  const destination = await resolveLoginDestination(undefined, async (path) => {
+    probes.push(path);
+    return path === "/me" ? 403 : 200;
+  });
+  assert.equal(destination, "/superadmin");
+  assert.deepEqual(probes, ["/me", "/platform/me"]);
+});
+
+test("accounts without either grant receive no administration landing page", async () => {
+  assert.equal(
+    await resolveLoginDestination(null, async () => 403),
+    "/access-denied",
+  );
+});
+
+test("hostile return URLs are ignored before choosing a verified local landing", async () => {
+  for (const next of [
+    "//evil.invalid",
+    "https://evil.invalid/app",
+    "/app/../../login",
+    ["/superadmin"],
+  ]) {
+    assert.equal(await resolveLoginDestination(next, async () => 200), "/app");
+  }
+});
+
+test("unexpected tenant failures do not fall back to platform access", async () => {
+  for (const status of [401, 429, 500]) {
+    const probes = [];
+    await assert.rejects(
+      resolveLoginDestination(null, async (path) => {
+        probes.push(path);
+        return status;
+      }),
+    );
+    assert.deepEqual(probes, ["/me"]);
+  }
+});
+
+test("unexpected platform failures and network errors fail closed", async () => {
+  for (const status of [401, 429, 500]) {
+    await assert.rejects(
+      resolveLoginDestination(null, async (path) =>
+        path === "/me" ? 403 : status,
+      ),
+    );
+  }
+  await assert.rejects(
+    resolveLoginDestination(null, async () => {
+      throw new Error("Network unavailable");
+    }),
   );
 });

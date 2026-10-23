@@ -8,6 +8,7 @@
 /* Approved Canva DAHY0Bey5gc page 5: #E9702E, #AD4511, #2E3540,
    #F4F4F3, #FFFFFF. Other tones are derived UI roles, not Canva swatches. */
 :root {
+  color-scheme: light;
   --canvas: #f4f4f3;
   --surface: #fff;
   --surface-muted: #f8f8f7;
@@ -15,10 +16,13 @@
   --border: #dededb;
   --text-primary: #2e3540;
   --text-secondary: #606973;
-  --text-muted: #707982;
+  --text-muted: #68727b;
   --brand: #e9702e;
   --brand-strong: #ad4511;
   --brand-hover: #90380e;
+  --brand-solid: #ad4511;
+  --brand-solid-hover: #90380e;
+  --brand-border: #f2c9aa;
   --brand-subtle: #fff0e6;
   --on-brand: #fff;
   --interactive-hover: #f8f8f7;
@@ -39,12 +43,17 @@
   --info: #356482;
   --info-border: #d2e0ea;
   --info-muted: #eaf2f8;
-  --font-sans: Arial, Helvetica, sans-serif;
+  --font-sans: var(--font-inter), system-ui, sans-serif;
   --text-xs: 12px;
   --text-sm: 14px;
   --text-base: 15px;
   --text-lg: 18px;
-  --text-nav: 14px;
+  --text-nav: 16px;
+  --text-category: 14px;
+  --icon-sidebar: 20px;
+  --icon-control: 18px;
+  --icon-status: 16px;
+  --icon-empty: 32px;
   --text-title: 28px;
   --text-section: 17px;
   --text-badge: 12px;
@@ -60,6 +69,64 @@
   --radius-md: 8px;
   --radius-card: 12px;
   --shadow: 0 2px 4px #242e3904;
-  --sidebar-width: 248px;
+  --shadow-popover: 0 12px 32px #2e354018;
+  --shadow-drawer: -10px 0 40px #18212d15;
+  --scrim: #18232b55;
+  --avatar-background: #e6e8e8;
+  --avatar-foreground: #516067;
+  --neutral-muted: #f0f1f1;
+  --neutral: #5d6670;
+  --map-canvas: #e8ede7;
+  --skeleton-base: #eeeeeb;
+  --skeleton-highlight: #f9f9f7;
+  --sidebar-width: 372px;
   --topbar-height: 68px;
+}
+
+/* Theme preference changes presentation only; the approved orange stays the accent. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --canvas: #171c23;
+  --surface: #202731;
+  --surface-muted: #262e39;
+  --sidebar: #1b222b;
+  --border: #3b4552;
+  --text-primary: #edf0f4;
+  --text-secondary: #b9c1cb;
+  --text-muted: #9ba5b1;
+  --brand: #f18a52;
+  --brand-strong: #ffa773;
+  --brand-hover: #ffb78c;
+  --brand-solid: #ad4511;
+  --brand-solid-hover: #90380e;
+  --brand-border: #805033;
+  --brand-subtle: #3e2d25;
+  --interactive-hover: #2d3743;
+  --interactive-active: #3e2d25;
+  --interactive-disabled: #343e4a;
+  --border-hover: #657383;
+  --focus: #ffa773;
+  --success: #83d2a5;
+  --success-border: #3b6650;
+  --success-muted: #243c31;
+  --warning: #e9c27b;
+  --warning-border: #6c5732;
+  --warning-muted: #3c3424;
+  --danger: #ff9ba1;
+  --danger-border: #75444c;
+  --danger-muted: #422a32;
+  --info: #9bc5e3;
+  --info-border: #3d607c;
+  --info-muted: #253747;
+  --shadow: 0 2px 4px #00000026;
+  --shadow-popover: 0 12px 32px #00000045;
+  --shadow-drawer: -10px 0 40px #00000045;
+  --scrim: #080c13aa;
+  --avatar-background: #343e4a;
+  --avatar-foreground: #c4cdd6;
+  --neutral-muted: #303944;
+  --neutral: #bdc6d0;
+  --map-canvas: #24302e;
+  --skeleton-base: #2e3743;
+  --skeleton-highlight: #3b4654;
 }

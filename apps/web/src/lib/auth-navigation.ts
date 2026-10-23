@@ -27,3 +27,20 @@ export function safeReturnPath(value: unknown, fallback = "/app") {
 export function platformLoginPath(returnPath = "/superadmin") {
   return `/login?${new URLSearchParams({ next: safeReturnPath(returnPath, "/superadmin") })}`;
 }
+
+// This selects a landing page only. Each destination still verifies its own
+// independent backend grant in its protected layout.
+export async function resolveLoginDestination(
+  requested: unknown,
+  grantStatus: (path: "/me" | "/platform/me") => Promise<number>,
+) {
+  const explicit = safeReturnPath(requested, "");
+  if (explicit) return explicit;
+  const tenant = await grantStatus("/me");
+  if (tenant === 200) return "/app";
+  if (tenant !== 403) throw new Error("Cannot verify workspace access");
+  const platform = await grantStatus("/platform/me");
+  if (platform === 200) return "/superadmin";
+  if (platform === 403) return "/access-denied";
+  throw new Error("Cannot verify workspace access");
+}

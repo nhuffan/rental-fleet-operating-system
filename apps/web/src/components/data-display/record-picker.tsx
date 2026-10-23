@@ -3,7 +3,13 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { browserClient } from "@/lib/supabase/client";
 import { publicEnv } from "@/lib/env";
-import { Button, EmptyState } from "@/components/ui/primitives";
+import {
+  Button,
+  EmptyState,
+  RefreshStatus,
+  Skeleton,
+} from "@/components/ui/primitives";
+import { SearchField } from "@/components/ui/controls";
 import { Pagination } from "@/components/data-display/table";
 import { queryString } from "@/lib/query";
 type Page<T> = { data: T[]; page: number; limit: number; total: number };
@@ -26,12 +32,21 @@ export function RecordPicker<T extends { id: string }>({
 }) {
   const router = useRouter();
   const [query, setQuery] = useState({ search: "", page: 1, retry: 0 });
-  const [result, setResult] = useState<Page<T> | null>(null);
-  const [error, setError] = useState("");
+  const scope = `${businessId}:${path}`;
+  const [snapshot, setSnapshot] = useState<{
+    scope: string;
+    data: Page<T>;
+  } | null>(null);
+  const result = snapshot?.scope === scope ? snapshot.data : null;
+  const [failure, setFailure] = useState<{
+    scope: string;
+    message: string;
+  } | null>(null);
+  const error = failure?.scope === scope ? failure.message : "";
   const [loading, setLoading] = useState(true);
   function change(next: typeof query) {
     setLoading(true);
-    setError("");
+    setFailure(null);
     onSelect(null);
     setQuery(next);
   }
@@ -75,21 +90,27 @@ export function RecordPicker<T extends { id: string }>({
           );
         const data: Page<T> = await response.json();
         if (!controller.signal.aborted) {
-          setResult(data);
+          setSnapshot({ scope, data });
+          setFailure(null);
           setLoading(false);
         }
       } catch (cause) {
         if (!controller.signal.aborted) {
-          setError(
-            cause instanceof Error ? cause.message : "Không thể tải danh mục.",
-          );
+          setFailure({
+            scope,
+            message:
+              cause instanceof Error
+                ? cause.message
+                : "Không thể tải danh mục.",
+          });
           setLoading(false);
         }
       }
     }
     void load();
     return () => controller.abort();
-  }, [businessId, path, query, router]);
+  }, [businessId, path, query, router, scope]);
+  const pending = loading || (!result && !error);
   return (
     <div className="rental-picker">
       <form
@@ -103,24 +124,40 @@ export function RecordPicker<T extends { id: string }>({
           });
         }}
       >
-        <label className="form-field">
-          Tìm {title.toLowerCase()}
-          <input
-            name="search"
-            type="search"
-            maxLength={100}
-            disabled={disabled}
-            placeholder="Tìm trong toàn bộ danh mục…"
-          />
-        </label>
-        <Button type="submit" variant="secondary" disabled={disabled}>
+        <SearchField
+          label={`Tìm ${title.toLowerCase()}`}
+          name="search"
+          maxLength={100}
+          disabled={disabled || pending}
+          placeholder="Tìm trong toàn bộ danh mục…"
+        />
+        <Button
+          type="submit"
+          variant="secondary"
+          disabled={disabled || pending}
+        >
           Tìm kiếm
         </Button>
       </form>
-      {loading && <p role="status">Đang tải {title.toLowerCase()}…</p>}
+      <RefreshStatus
+        pending={pending}
+        label={
+          result
+            ? `Đang cập nhật ${title.toLowerCase()} · Giữ kết quả lần tải trước…`
+            : `Đang tải ${title.toLowerCase()}…`
+        }
+      />
+      {!result && pending && (
+        <div aria-hidden="true" className="panel-body">
+          <Skeleton className="skeleton-panel" />
+        </div>
+      )}
       {error && (
         <div role="alert">
-          <p className="notice notice-danger">{error}</p>
+          <p className="notice notice-danger">
+            {error}
+            {result && " Kết quả bên dưới thuộc lần tải thành công trước đó."}
+          </p>
           <Button
             variant="secondary"
             onClick={() => change({ ...query, retry: query.retry + 1 })}
@@ -129,9 +166,12 @@ export function RecordPicker<T extends { id: string }>({
           </Button>
         </div>
       )}
-      {!loading && !error && result && (
-        <>
-          <fieldset className="fleet-device-options" disabled={disabled}>
+      {result && (
+        <div className="pending-region" aria-busy={pending}>
+          <fieldset
+            className="fleet-device-options"
+            disabled={disabled || pending || !!error}
+          >
             <legend>{title}</legend>
             {result.data.map((item) => (
               <label className="fleet-device-option" key={item.id}>
@@ -152,12 +192,13 @@ export function RecordPicker<T extends { id: string }>({
             )}
           </fieldset>
           <Pagination
+            disabled={disabled || pending || !!error}
             {...result}
             onPage={(page) => {
               if (!disabled) change({ ...query, page });
             }}
           />
-        </>
+        </div>
       )}
     </div>
   );

@@ -1,13 +1,19 @@
 "use client";
 import Link from "next/link";
+import {
+  Combobox,
+  DateInput,
+  FilterBar,
+  SearchField,
+} from "@/components/ui/controls";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   Button,
   Panel,
   PanelHeader,
+  RefreshStatus,
   Input,
-  Select,
   FormField,
   StatusBadge,
   Badge,
@@ -22,13 +28,11 @@ import type {
   PlatformUserDetail,
 } from "./types";
 type Filters = Record<string, string | number>;
-const statuses = (
-  <>
-    <option value="">Mọi trạng thái</option>
-    <option value="ACTIVE">Hoạt động</option>
-    <option value="DISABLED">Đã vô hiệu hóa</option>
-  </>
-);
+const statuses = [
+  { value: "", label: "Mọi trạng thái" },
+  { value: "ACTIVE", label: "Hoạt động" },
+  { value: "DISABLED", label: "Đã vô hiệu hóa" },
+];
 export function SupportPanel({
   mode,
   data,
@@ -41,7 +45,9 @@ export function SupportPanel({
   const [error, setError] = useState("");
   const go = (values: Filters) =>
     startTransition(() =>
-      router.push(`/superadmin/${mode}?${queryString(values)}`),
+      router.push(`/superadmin/${mode}?${queryString(values)}`, {
+        scroll: false,
+      }),
     );
   return (
     <Panel>
@@ -50,8 +56,10 @@ export function SupportPanel({
         icon={mode === "audit" ? "audit" : "users"}
         subtitle={`${data.total} ${mode === "audit" ? "sự kiện phù hợp" : "hồ sơ duy nhất phù hợp"} · LIVE · Chỉ đọc`}
       />
-      <form
-        className="platform-support-filters panel-body"
+      <FilterBar
+        key={`${mode}-${JSON.stringify(filters)}`}
+        busy={pending}
+        className="platform-support-filters"
         aria-label={
           mode === "audit" ? "Lọc nhật ký nền tảng" : "Lọc người dùng"
         }
@@ -80,53 +88,45 @@ export function SupportPanel({
       >
         {mode === "users" ? (
           <>
-            <FormField id="support-search" label="Tên hiển thị">
-              <Input
-                id="support-search"
-                type="search"
-                name="search"
-                maxLength={120}
-                defaultValue={filters.search}
-              />
-            </FormField>
-            <FormField id="support-status" label="Trạng thái hồ sơ">
-              <Select
-                id="support-status"
-                name="status"
-                defaultValue={filters.status}
-              >
-                {statuses}
-              </Select>
-            </FormField>
-            <FormField
+            <SearchField
+              id="support-search"
+              label="Tên hiển thị"
+              name="search"
+              maxLength={120}
+              defaultValue={filters.search}
+              placeholder="Tìm tên người dùng…"
+            />
+            <Combobox
+              id="support-status"
+              label="Trạng thái hồ sơ"
+              name="status"
+              defaultValue={filters.status}
+              options={statuses}
+            />
+            <Combobox
               id="support-membership"
               label="Trạng thái truy cập doanh nghiệp"
-            >
-              <Select
-                id="support-membership"
-                name="membershipStatus"
-                defaultValue={filters.membershipStatus}
-              >
-                {statuses}
-              </Select>
-            </FormField>
+              name="membershipStatus"
+              defaultValue={filters.membershipStatus}
+              options={statuses}
+            />
           </>
         ) : (
           <>
-            <FormField id="support-action" label="Hành động">
-              <Select
-                id="support-action"
-                name="action"
-                defaultValue={filters.action}
-              >
-                <option value="">Mọi hành động</option>
-                {Object.entries(auditLabels).map(([key, label]) => (
-                  <option key={key} value={key}>
-                    {label}
-                  </option>
-                ))}
-              </Select>
-            </FormField>
+            <Combobox
+              id="support-action"
+              label="Hành động"
+              name="action"
+              defaultValue={filters.action}
+              options={[
+                { value: "", label: "Mọi hành động" },
+                ...Object.entries(auditLabels).map(([value, label]) => ({
+                  value,
+                  label,
+                })),
+              ]}
+              searchable
+            />
             {(["from", "until"] as const).map((key) => (
               <FormField
                 key={key}
@@ -135,7 +135,7 @@ export function SupportPanel({
                   key === "from" ? "Từ (UTC, bao gồm)" : "Đến (UTC, không gồm)"
                 }
               >
-                <Input
+                <DateInput
                   id={`support-${key}`}
                   type="datetime-local"
                   name={key}
@@ -158,36 +158,60 @@ export function SupportPanel({
             pattern="[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
           />
         </FormField>
-        <FormField id="support-sort" label="Sắp xếp">
-          <Select id="support-sort" name="sort" defaultValue={filters.sort}>
-            <option value="createdAt">Thời gian tạo</option>
-            <option value={mode === "audit" ? "action" : "name"}>
-              {mode === "audit" ? "Hành động" : "Tên hiển thị"}
-            </option>
-          </Select>
-        </FormField>
-        <FormField id="support-order" label="Chiều">
-          <Select id="support-order" name="order" defaultValue={filters.order}>
-            <option value="desc">Giảm dần</option>
-            <option value="asc">Tăng dần</option>
-          </Select>
-        </FormField>
-        <FormField id="support-limit" label="Mỗi trang">
-          <Select id="support-limit" name="limit" defaultValue={filters.limit}>
-            {[20, 50, 100].map((n) => (
-              <option key={n}>{n}</option>
-            ))}
-          </Select>
-        </FormField>
-        <Button type="submit" variant="secondary" loading={pending}>
-          {pending ? "Đang tải…" : "Áp dụng"}
-        </Button>
-        <Link className="button button-ghost" href={`/superadmin/${mode}`}>
-          Xóa bộ lọc
-        </Link>
+        <Combobox
+          id="support-sort"
+          label="Sắp xếp"
+          name="sort"
+          defaultValue={filters.sort}
+          options={[
+            { value: "createdAt", label: "Thời gian tạo" },
+            {
+              value: mode === "audit" ? "action" : "name",
+              label: mode === "audit" ? "Hành động" : "Tên hiển thị",
+            },
+          ]}
+        />
+        <Combobox
+          id="support-order"
+          label="Chiều sắp xếp"
+          name="order"
+          defaultValue={filters.order}
+          options={[
+            { value: "desc", label: "Giảm dần" },
+            { value: "asc", label: "Tăng dần" },
+          ]}
+        />
+        <Combobox
+          id="support-limit"
+          label="Mỗi trang"
+          name="limit"
+          defaultValue={filters.limit}
+          options={[20, 50, 100].map((value) => ({
+            value: String(value),
+            label: `${value} / trang`,
+          }))}
+        />
+        <div className="filter-bar-actions">
+          <Button type="submit" variant="secondary" loading={pending}>
+            {pending ? "Đang tải…" : "Áp dụng"}
+          </Button>
+          <Button
+            variant="ghost"
+            type="button"
+            disabled={pending}
+            onClick={(event) => {
+              event.currentTarget.form?.reset();
+              setError("");
+              go({});
+            }}
+          >
+            Xóa bộ lọc
+          </Button>
+        </div>
         {error && <Notice tone="danger">{error}</Notice>}
-      </form>
-      <div aria-busy={pending}>
+      </FilterBar>
+      <div className="pending-region" aria-busy={pending}>
+        <RefreshStatus pending={pending} />
         {mode === "audit" ? (
           <DataTable
             caption="Sự kiện platform, độc lập với nhật ký doanh nghiệp"
@@ -399,7 +423,8 @@ export function UserDetailPanel({ data }: { data: PlatformUserDetail }) {
           icon="business"
           subtitle="Trạng thái truy cập Owner và doanh nghiệp được hiển thị riêng."
         />
-        <div aria-busy={pending}>
+        <div className="pending-region" aria-busy={pending}>
+          <RefreshStatus pending={pending} />
           <DataTable
             caption="Quyền Owner của hồ sơ, có phân trang từ API"
             rows={data.memberships.data}
@@ -438,6 +463,7 @@ export function UserDetailPanel({ data }: { data: PlatformUserDetail }) {
               startTransition(() =>
                 router.push(
                   `/superadmin/users/${u.id}?${queryString({ page, limit: data.memberships.limit })}`,
+                  { scroll: false },
                 ),
               )
             }

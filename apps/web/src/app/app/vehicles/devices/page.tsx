@@ -26,7 +26,7 @@ export default async function DevicesPage({
       />
       <FleetTabs active="devices" />
       <DevicesPanel
-        key={`${context.business.id}:${queryString(filters)}`}
+        key={context.business.id}
         initial={initial}
         context={context}
         filters={filters}

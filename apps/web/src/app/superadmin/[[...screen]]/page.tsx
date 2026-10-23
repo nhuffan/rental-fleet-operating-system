@@ -77,12 +77,7 @@ export default async function Superadmin({
           description="Theo dõi sự kiện platform với bộ lọc được xử lý ở backend."
           action={<Badge tone="info">LIVE · Chỉ đọc</Badge>}
         />
-        <SupportPanel
-          mode="audit"
-          key={queryString(resolved)}
-          data={data}
-          filters={resolved}
-        />
+        <SupportPanel mode="audit" key="audit" data={data} filters={resolved} />
       </>
     );
   }
@@ -106,7 +101,7 @@ export default async function Superadmin({
             title="Chi tiết người dùng"
             description="Hồ sơ hỗ trợ tối thiểu và liên kết doanh nghiệp; không có thao tác quản trị tài khoản."
           />
-          <UserDetailPanel data={data} />
+          <UserDetailPanel key={data.profile.id} data={data} />
         </>
       );
     }
@@ -123,12 +118,7 @@ export default async function Superadmin({
           description="Tra cứu hồ sơ duy nhất trên toàn nền tảng bằng quyền platform độc lập."
           action={<Badge tone="info">LIVE · Chỉ đọc</Badge>}
         />
-        <SupportPanel
-          mode="users"
-          key={queryString(filters)}
-          data={data}
-          filters={filters}
-        />
+        <SupportPanel mode="users" key="users" data={data} filters={filters} />
       </>
     );
   }
@@ -167,11 +157,7 @@ export default async function Superadmin({
           title="Doanh nghiệp"
           description="Tìm kiếm và tra cứu doanh nghiệp bằng dữ liệu thật, có phân trang và quyền platform riêng."
         />
-        <BusinessesPanel
-          key={queryString(filters)}
-          initial={data}
-          filters={filters}
-        />
+        <BusinessesPanel key="businesses" initial={data} filters={filters} />
       </>
     );
   }

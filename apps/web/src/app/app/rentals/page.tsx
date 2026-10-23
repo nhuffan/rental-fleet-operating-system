@@ -20,7 +20,7 @@ export default async function RentalsPage({
         description="Đặt xe, bàn giao, gia hạn và nhận trả trên dữ liệu thật."
       />
       <RentalsPanel
-        key={`${context.business.id}:${queryString(filters)}`}
+        key={context.business.id}
         initial={initial}
         context={context}
         filters={filters}

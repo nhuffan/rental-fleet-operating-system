@@ -20,7 +20,7 @@ export default async function CustomersPage({
         description="Thông tin liên hệ và lịch sử hợp đồng theo doanh nghiệp."
       />
       <CustomersPanel
-        key={`${context.business.id}:${queryString(filters)}`}
+        key={context.business.id}
         initial={initial}
         context={context}
         filters={filters}

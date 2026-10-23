@@ -74,9 +74,9 @@
   font-weight: 600;
 }
 .rental-steps li[aria-current] span {
-  color: white;
-  background: var(--brand);
-  border-color: var(--brand);
+  color: var(--on-brand);
+  background: var(--brand-solid);
+  border-color: var(--brand-solid);
 }
 .rental-review {
   padding: 18px;

@@ -1,0 +1,295 @@
+/* Shared tenant/platform shell; role and membership checks remain server-owned. */
+/* The viewport is the frame; content has the only normal page scrollbar. */
+body:has(.workspace) {
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+.workspace {
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  grid-template-rows: minmax(0, 1fr);
+  --topbar-height: 88px;
+}
+.app-sidebar {
+  position: relative;
+  top: auto;
+  padding: 0;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  align-self: stretch;
+}
+.sidebar-brand-area {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  min-height: var(--topbar-height);
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.app-sidebar .brand {
+  margin: 0;
+  padding: 0;
+}
+.sidebar-menu {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 8px 14px 12px;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+.sidebar-group + .sidebar-group {
+  margin-top: 12px;
+}
+.sidebar-nav {
+  gap: 3px;
+  margin: 0;
+}
+.sidebar-nav[hidden] {
+  display: none;
+}
+.nav-link {
+  padding: 13.5px 18px;
+  min-height: 54px;
+  gap: 12px;
+  font-size: var(--text-nav);
+  border-radius: var(--radius-md);
+}
+.nav-link span {
+  min-width: 0;
+}
+.sidebar-bottom {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 4px 16px 10px;
+}
+.sidebar-bottom:empty {
+  display: none;
+}
+.sidebar-bottom .preview-entry {
+  padding: 8px 12px;
+}
+.workspace-main {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+.workspace-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior-y: contain;
+  scrollbar-gutter: stable;
+}
+.workspace-scroll:focus-visible {
+  outline-offset: -3px;
+}
+.workspace-content:focus {
+  outline: none;
+}
+.topbar {
+  min-height: var(--topbar-height);
+  flex-shrink: 0;
+  background: var(--surface);
+  gap: 20px;
+  padding: 15px 28px;
+}
+.topbar-context {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.platform-context {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+.platform-context > span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.platform-context > svg {
+  flex-shrink: 0;
+  color: var(--brand-strong);
+}
+.platform-context small {
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+.business-switcher {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  max-width: 380px;
+  flex: 1 1 auto;
+}
+.business-switcher-icon {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+}
+.business-switcher .control-combobox {
+  min-width: 0;
+  flex: 1;
+  margin: 0;
+}
+.business-switcher .combobox-trigger {
+  font-weight: 600;
+}
+@media (min-width: 1101px) and (max-width: 1439px) {
+  .workspace {
+    --sidebar-width: 280px;
+  }
+  .sidebar-brand-area {
+    padding-inline: 20px;
+  }
+  .sidebar-menu {
+    padding-inline: 10px;
+  }
+}
+@media (max-width: 1023px) {
+  .app-sidebar {
+    position: fixed;
+    top: 0;
+    height: 100dvh;
+    min-height: 0;
+    width: min(340px, calc(100vw - 40px));
+    left: -360px;
+    padding: 0;
+  }
+  .sidebar-brand-area {
+    padding: 14px 54px 14px 20px;
+  }
+  .sidebar-brand-area .sidebar-close {
+    top: calc(var(--topbar-height) / 2);
+    right: 12px;
+    transform: translateY(-50%);
+    min-height: 36px;
+    padding: 8px;
+  }
+  .topbar {
+    padding-inline: 20px;
+  }
+}
+@media (max-width: 640px) {
+  .topbar {
+    min-height: var(--topbar-height);
+    padding: 10px 12px;
+    gap: 8px;
+  }
+  .topbar-context {
+    gap: 6px;
+  }
+  .topbar .mobile-menu {
+    padding: 8px;
+    min-width: 40px;
+  }
+  .business-switcher {
+    gap: 0;
+  }
+  .business-switcher-icon {
+    display: none;
+  }
+  .business-switcher .combobox-trigger {
+    font-size: 13px;
+  }
+  .platform-context {
+    font-size: 13px;
+    gap: 6px;
+  }
+  .platform-context small {
+    display: none;
+  }
+}
+
+.ui-icon {
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+.nav-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  margin: 0;
+  padding: 12px 18px;
+  font-size: var(--text-category);
+  letter-spacing: 0.65px;
+  line-height: 1.4;
+}
+.nav-group-toggle {
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: var(--text-category);
+  font-weight: 650;
+  cursor: pointer;
+  text-align: left;
+}
+.nav-group-toggle:hover {
+  background: var(--interactive-hover);
+}
+.nav-group-toggle > svg {
+  transition: transform 0.15s;
+}
+.nav-group-toggle[aria-expanded="true"] > svg {
+  transform: rotate(90deg);
+}
+.nav-link > .ui-icon {
+  width: var(--icon-sidebar);
+  height: var(--icon-sidebar);
+}
+.nav-link span {
+  overflow-wrap: anywhere;
+}
+@media (max-height: 960px) {
+  .sidebar-group + .sidebar-group {
+    margin-top: 4px;
+  }
+  .sidebar-nav {
+    gap: 2px;
+  }
+}
+@media (max-width: 640px) {
+  .workspace {
+    --topbar-height: 76px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-group-toggle > svg {
+    transition: none;
+  }
+}
+
+body {
+  font-variant-numeric: tabular-nums;
+}
+
+.empty-icon > .ui-icon {
+  width: var(--icon-empty);
+  height: var(--icon-empty);
+}

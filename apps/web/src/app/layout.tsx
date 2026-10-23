@@ -1,5 +1,15 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
+import { ThemeSync } from "@/components/theme/theme-toggle";
+import { themeInitScript } from "@/lib/theme-init";
+
+const inter = Inter({
+  subsets: ["latin", "vietnamese"],
+  display: "swap",
+  variable: "--font-inter",
+});
+
 export const metadata: Metadata = {
   title: "Rental Fleet OS",
   description:
@@ -12,8 +22,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="vi">
-      <body className="min-h-screen antialiased">{children}</body>
+    <html lang="vi" className={inter.variable} suppressHydrationWarning>
+      <head>
+        <script
+          id="theme-init"
+          dangerouslySetInnerHTML={{ __html: themeInitScript }}
+        />
+      </head>
+      <body className="min-h-screen antialiased">
+        <ThemeSync />
+        {children}
+      </body>
     </html>
   );
 }

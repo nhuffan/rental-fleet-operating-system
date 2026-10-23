@@ -2,12 +2,29 @@
 import Link from "next/link";
 import { BrandLockup } from "@/components/ui/brand-lockup";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from "react";
 import type { PlatformMe } from "@/features/platform/live/types";
 import type { Me } from "@rental-fleet/contracts";
-import { BusinessPicker, Logout } from "@/app/app/shell-controls";
+import { BusinessSwitcher } from "@/app/app/shell-controls";
+import { UserAccountMenu } from "./user-account-menu";
 import { Icon, type IconName } from "@/components/ui/icon";
-import { Badge, Button } from "@/components/ui/primitives";
+import { Button } from "@/components/ui/primitives";
+const compactNavigationQuery = "(max-height: 960px)";
+function subscribeNavigationSize(onChange: () => void) {
+  const query = window.matchMedia(compactNavigationQuery);
+  query.addEventListener("change", onChange);
+  return () => query.removeEventListener("change", onChange);
+}
+const navigationIsCompact = () =>
+  window.matchMedia(compactNavigationQuery).matches;
+const serverNavigationIsCompact = () => false;
+
 type NavItem = {
   href: string;
   label: string;
@@ -30,7 +47,6 @@ const platformItems: [string, string, IconName][] = [
   ["features", "Tính năng", "grid"],
   ["integrations", "Tích hợp & GPS", "signal"],
   ["audit", "Nhật ký nền tảng", "audit"],
-  ["settings", "Cài đặt hệ thống", "settings"],
 ];
 export function AppShell({
   children,
@@ -38,16 +54,31 @@ export function AppShell({
   previewDomain,
   platformContext,
   showPreviews = false,
+  accountEmail,
 }: {
   children: ReactNode;
   context?: Me;
   platformContext?: PlatformMe;
   previewDomain?: "business" | "platform";
   showPreviews?: boolean;
+  accountEmail?: string;
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const compactNavigation = useSyncExternalStore(
+    subscribeNavigationSize,
+    navigationIsCompact,
+    serverNavigationIsCompact,
+  );
+  const [navigationChoice, setNavigationChoice] = useState<{
+    path: string;
+    group: string | null;
+  } | null>(null);
   const sidebarRef = useRef<HTMLElement>(null);
+  const contentScrollRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    contentScrollRef.current?.scrollTo({ top: 0 });
+  }, [pathname]);
   useEffect(() => {
     const desktop = window.matchMedia("(min-width: 1024px)");
     const resetNavigation = () => {
@@ -96,10 +127,6 @@ export function AppShell({
     : platform
       ? "/superadmin"
       : "/app";
-  const displayName =
-    platformContext?.principal.displayName ||
-    context?.user.displayName ||
-    "Design workspace";
   const core: NavItem[] = platform
     ? platformItems
         .filter(
@@ -206,28 +233,6 @@ export function AppShell({
             ]
           : []),
       ];
-  const settings = {
-    href: `${prefix}/settings`,
-    label: "Cài đặt",
-    icon: "settings" as const,
-  };
-  const all = [...core, ...management, settings];
-  const current =
-    all.find((i) => i.href === pathname)?.label ??
-    (pathname.startsWith("/app/vehicles/")
-      ? "Đội xe"
-      : pathname.startsWith("/app/rentals/")
-        ? "Hợp đồng thuê"
-        : pathname.startsWith("/app/trips/")
-          ? "Hành trình"
-          : pathname.startsWith("/app/customers/")
-            ? "Khách hàng"
-            : undefined) ??
-    (pathname.includes("users/")
-      ? "Chi tiết người dùng"
-      : pathname.includes("businesses/")
-        ? "Chi tiết doanh nghiệp"
-        : "Không gian làm việc");
   function nav(items: NavItem[]) {
     return items.map((item) => (
       <Link
@@ -257,6 +262,54 @@ export function AppShell({
       </Link>
     ));
   }
+  const activeNavigationGroup = management.some(
+    (item) => pathname === item.href || pathname.startsWith(`${item.href}/`),
+  )
+    ? "management"
+    : "core";
+  const expandedNavigationGroup =
+    navigationChoice?.path === pathname
+      ? navigationChoice.group
+      : activeNavigationGroup;
+  function navigationGroup(
+    group: string,
+    title: string,
+    label: string,
+    items: NavItem[],
+  ) {
+    const expanded = !compactNavigation || expandedNavigationGroup === group;
+    return (
+      <section className="sidebar-group" key={group}>
+        {compactNavigation ? (
+          <button
+            className="nav-label nav-group-toggle"
+            type="button"
+            aria-expanded={expanded}
+            aria-controls={`sidebar-group-${group}`}
+            onClick={() =>
+              setNavigationChoice({
+                path: pathname,
+                group: expanded ? null : group,
+              })
+            }
+          >
+            <span>{title}</span>
+            <Icon name="chevron" size={14} />
+          </button>
+        ) : (
+          <div className="nav-label">{title}</div>
+        )}
+        <nav
+          id={`sidebar-group-${group}`}
+          aria-label={label}
+          className="sidebar-nav"
+          hidden={!expanded}
+        >
+          {nav(items)}
+        </nav>
+      </section>
+    );
+  }
   return (
     <div className={`workspace ${open ? "nav-open" : ""}`}>
       <a className="skip-link" href="#main-content">
@@ -275,75 +328,35 @@ export function AppShell({
         id="workspace-navigation"
         aria-label="Điều hướng không gian làm việc"
       >
-        <Button
-          className="sidebar-close"
-          variant="ghost"
-          onClick={() => setOpen(false)}
-          aria-label="Đóng menu điều hướng"
-        >
-          <Icon name="close" />
-        </Button>
-        <Link href={prefix} className="brand">
-          <BrandLockup />
-        </Link>
-        {!preview && context?.permissions.includes("rental.manage") ? (
-          <Link
-            className="button button-primary create-action"
-            href="/app/rentals/new"
-          >
-            <Icon name="plus" /> Tạo hợp đồng
+        <div className="sidebar-brand-area">
+          <Link href={prefix} className="brand">
+            <BrandLockup />
           </Link>
-        ) : preview ? (
           <Button
-            className="create-action"
-            disabled
-            title="Thao tác không khả dụng trong bản thiết kế"
+            className="sidebar-close"
+            variant="ghost"
+            onClick={() => setOpen(false)}
+            aria-label="Đóng menu điều hướng"
           >
-            <Icon name="plus" />
-            {platform ? "Tạo doanh nghiệp" : "Tạo hợp đồng"}
-            <small>Preview</small>
+            <Icon name="close" />
           </Button>
-        ) : null}
-        <div className="business-context">
-          <span className="context-avatar">
-            <Icon name={platform ? "globe" : "business"} />
-          </span>
-          {context ? (
-            <BusinessPicker
-              businesses={context.businesses}
-              selected={context.business.id}
-            />
-          ) : (
-            <div>
-              <strong>
-                {platform ? "Rental Fleet OS" : "Minh An Mobility"}
-              </strong>
-              <small>
-                {platformContext
-                  ? "Quyền platform độc lập · Chỉ đọc"
-                  : platform
-                    ? "Môi trường thiết kế"
-                    : "Doanh nghiệp minh họa"}
-              </small>
-            </div>
+        </div>
+        <div className="sidebar-menu">
+          {navigationGroup(
+            "core",
+            platform ? "NỀN TẢNG" : "KHÔNG GIAN VẬN HÀNH",
+            "Điều hướng chính",
+            core,
           )}
+          {!!management.length &&
+            navigationGroup(
+              "management",
+              "QUẢN LÝ",
+              "Quản lý doanh nghiệp",
+              management,
+            )}
         </div>
-        <div className="nav-label">
-          {platform ? "NỀN TẢNG" : "KHÔNG GIAN VẬN HÀNH"}
-        </div>
-        <nav aria-label="Điều hướng chính" className="sidebar-nav">
-          {nav(core)}
-        </nav>
-        {!!management.length && (
-          <>
-            <div className="nav-label">QUẢN LÝ</div>
-            <nav aria-label="Quản lý doanh nghiệp" className="sidebar-nav">
-              {nav(management)}
-            </nav>
-          </>
-        )}
         <div className="sidebar-bottom">
-          {!platform && nav([settings])}
           {showPreviews && !preview && (
             <Link className="preview-entry" href="/dev-preview/business">
               Khám phá giao diện mới <Icon name="arrow" size={14} />
@@ -360,33 +373,11 @@ export function AppShell({
               <Icon name="arrow" size={14} />
             </Link>
           )}
-          <div className="user-block">
-            <span className="avatar">
-              {(
-                platformContext?.principal.displayName ||
-                context?.user.displayName ||
-                "UI"
-              )
-                .slice(0, 2)
-                .toUpperCase()}
-            </span>
-            <div>
-              <strong>{displayName}</strong>
-              <small>
-                {platformContext
-                  ? "Superadmin"
-                  : context
-                    ? "Owner"
-                    : "Dữ liệu minh họa"}
-              </small>
-            </div>
-          </div>
-          {(context || platformContext) && <Logout />}
         </div>
       </aside>
       <div className="workspace-main" inert={open}>
         <header className="topbar">
-          <div className="inline">
+          <div className="topbar-context">
             <Button
               variant="ghost"
               className="mobile-menu"
@@ -397,57 +388,68 @@ export function AppShell({
             >
               <Icon name="menu" />
             </Button>
-            <span className="topbar-identity">
-              <BrandLockup compact />
-            </span>
-            <Icon name="chevron" size={13} />
-            <strong>{current}</strong>
-          </div>
-          <div className="topbar-meta">
-            {preview ? (
-              <Badge tone="warning">Design preview</Badge>
+            {platform ? (
+              <div className="platform-context">
+                <Icon name="globe" />
+                <span>Platform Console</span>
+                {preview && <small>Preview</small>}
+              </div>
+            ) : context ? (
+              <BusinessSwitcher
+                businesses={context.businesses}
+                selected={context.business.id}
+              />
             ) : (
-              <Badge tone="success">
-                {platformContext ? "Superadmin" : "Owner"}
-              </Badge>
+              <div className="platform-context" title="Doanh nghiệp minh họa">
+                <Icon name="business" />
+                <span>Minh An Mobility</span>
+                <small>Preview</small>
+              </div>
             )}
-            <span className="topbar-email">
-              {platformContext
-                ? "Chỉ đọc"
-                : context?.user.email || "Development only"}
-            </span>
-            <span className="avatar avatar-small">
-              {(
-                platformContext?.principal.displayName ||
-                context?.user.displayName ||
-                "UI"
-              )
-                .slice(0, 2)
-                .toUpperCase()}
-            </span>
           </div>
+          <UserAccountMenu
+            email={accountEmail}
+            role={
+              platformContext
+                ? "Superadmin"
+                : context
+                  ? "Owner"
+                  : "Dữ liệu minh họa"
+            }
+            settingsHref={`${prefix}/settings`}
+            preview={preview}
+          />
         </header>
-        <main
-          id="main-content"
-          className="workspace-content"
-          key={context?.business.id ?? prefix}
+        <div
+          ref={contentScrollRef}
+          className="workspace-scroll"
+          role="region"
+          aria-label="Nội dung không gian làm việc"
+          tabIndex={0}
         >
-          {children}
-        </main>
-        <footer className="workspace-footer">
-          <span>Rental Fleet OS</span>
-          <span>
-            {platform
-              ? "Quản trị nền tảng"
-              : "Không gian vận hành doanh nghiệp"}{" "}
-            ·{" "}
-            {preview
-              ? "Design preview"
-              : platform
-                ? "Dữ liệu trực tiếp · Chỉ đọc"
-                : "SaaS Core"}
-          </span>
-        </footer>
+          <main
+            tabIndex={-1}
+            id="main-content"
+            className="workspace-content"
+            key={context?.business.id ?? prefix}
+          >
+            {children}
+          </main>
+          <footer className="workspace-footer">
+            <span>Rental Fleet OS</span>
+            <span>
+              {platform
+                ? "Quản trị nền tảng"
+                : "Không gian vận hành doanh nghiệp"}{" "}
+              ·{" "}
+              {preview
+                ? "Design preview"
+                : platform
+                  ? "Dữ liệu trực tiếp · Chỉ đọc"
+                  : "SaaS Core"}
+            </span>
+          </footer>
+        </div>
       </div>
     </div>
   );

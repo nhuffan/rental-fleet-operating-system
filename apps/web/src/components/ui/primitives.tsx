@@ -201,14 +201,88 @@ export function Notice({
 }
 export function LoadingState({
   label = "Đang tải dữ liệu…",
+  variant = "list",
+  statCount = 3,
 }: {
+  label?: string;
+  variant?: "dashboard" | "list" | "detail" | "map";
+  statCount?: 3 | 4;
+}) {
+  return (
+    <div
+      role="status"
+      aria-busy="true"
+      className={`loading-state loading-${variant}`}
+    >
+      <span className="sr-only">{label}</span>
+      <div className="loading-heading" aria-hidden="true">
+        <Skeleton className="loading-title" />
+        <Skeleton className="loading-description" />
+      </div>
+      {(variant === "dashboard" || variant === "detail") && (
+        <div
+          className={`loading-stat-grid loading-stats-${statCount}`}
+          aria-hidden="true"
+        >
+          {Array.from({ length: statCount }, (_, item) => (
+            <div className="panel loading-stat" key={item}>
+              <Skeleton className="loading-short" />
+              <Skeleton className="loading-value" />
+              <Skeleton className="loading-line" />
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="panel loading-panel" aria-hidden="true">
+        <div className="loading-toolbar">
+          <Skeleton className="loading-control" />
+          <Skeleton className="loading-control" />
+          <Skeleton className="loading-short" />
+        </div>
+        {variant === "map" ? (
+          <div className="loading-map-grid">
+            <Skeleton className="loading-map" />
+            <div className="loading-map-list">
+              {[0, 1, 2].map((item) => (
+                <Skeleton className="loading-map-row" key={item} />
+              ))}
+            </div>
+          </div>
+        ) : variant === "detail" ? (
+          <div className="loading-detail-grid">
+            {[0, 1, 2, 3, 4, 5].map((item) => (
+              <Skeleton className="loading-detail-row" key={item} />
+            ))}
+          </div>
+        ) : (
+          <div className="loading-table">
+            <Skeleton className="loading-table-heading" />
+            {[0, 1, 2, 3, 4].map((item) => (
+              <div className="loading-table-row" key={item}>
+                <Skeleton />
+                <Skeleton />
+                <Skeleton />
+                <Skeleton />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+// Keep one reserved status line so pending feedback never shifts retained rows.
+export function RefreshStatus({
+  pending,
+  label = "Đang cập nhật kết quả…",
+}: {
+  pending: boolean;
   label?: string;
 }) {
   return (
-    <div role="status" aria-busy="true" className="panel-body">
-      <Skeleton />
-      <p>{label}</p>
-    </div>
+    <p className="refresh-status" role="status" aria-live="polite">
+      {pending ? label : ""}
+    </p>
   );
 }
 export function ErrorState({

@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { Combobox, DateInput, FilterBar } from "@/components/ui/controls";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { Me } from "@rental-fleet/contracts";
@@ -9,6 +10,7 @@ import {
   EmptyState,
   Panel,
   PanelHeader,
+  RefreshStatus,
 } from "@/components/ui/primitives";
 import { DataTable, Pagination } from "@/components/data-display/table";
 import { RecordPicker } from "@/components/data-display/record-picker";
@@ -54,9 +56,24 @@ export function TripsPanel({
     id: filters.rentalId,
     label: rentalLabel || filters.rentalId,
   });
+  const filterScope = queryString(filters);
+  const [appliedScope, setAppliedScope] = useState(filterScope);
+  // Reset URL-backed picker drafts only after the new filter response commits.
+  // The panel and last good rows stay mounted while the transition is pending.
+  if (appliedScope !== filterScope) {
+    setAppliedScope(filterScope);
+    setVehicle({
+      id: filters.vehicleId,
+      label: vehicleLabel || filters.vehicleId,
+    });
+    setRental({ id: filters.rentalId, label: rentalLabel || filters.rentalId });
+    setError("");
+  }
   function navigate(values: Record<string, string | number>) {
     setError("");
-    startTransition(() => router.push(`/app/trips?${queryString(values)}`));
+    startTransition(() =>
+      router.push(`/app/trips?${queryString(values)}`, { scroll: false }),
+    );
   }
   return (
     <>
@@ -71,8 +88,10 @@ export function TripsPanel({
           }
           action={<Badge tone="warning">Traccar TEST</Badge>}
         />
-        <form
+        <FilterBar
+          key={filterScope}
           className="trip-filters"
+          busy={pending}
           aria-label="Bộ lọc hành trình"
           onSubmit={(event) => {
             event.preventDefault();
@@ -148,7 +167,7 @@ export function TripsPanel({
           </div>
           <label className="form-field">
             Từ lúc (giờ Việt Nam)
-            <input
+            <DateInput
               required
               type="datetime-local"
               name="from"
@@ -157,35 +176,40 @@ export function TripsPanel({
           </label>
           <label className="form-field">
             Đến lúc (giờ Việt Nam)
-            <input
+            <DateInput
               required
               type="datetime-local"
               name="to"
               defaultValue={localInput(filters.to)}
             />
           </label>
-          <label className="form-field">
-            Thứ tự
-            <select name="sort" defaultValue={filters.sort}>
-              <option value="desc">Mới nhất trước</option>
-              <option value="asc">Cũ nhất trước</option>
-            </select>
-          </label>
-          <label className="form-field">
-            Số dòng
-            <select name="limit" defaultValue={filters.limit}>
-              <option value="20">20 / trang</option>
-              <option value="50">50 / trang</option>
-              <option value="100">100 / trang</option>
-            </select>
-          </label>
-          <Button type="submit" disabled={pending}>
-            {pending ? "Đang tải…" : "Áp dụng bộ lọc"}
-          </Button>
-          <Link className="button button-ghost" href="/app/trips">
-            24 giờ gần nhất
-          </Link>
-        </form>
+          <Combobox
+            label="Thứ tự"
+            name="sort"
+            defaultValue={filters.sort}
+            options={[
+              { value: "desc", label: "Mới nhất trước" },
+              { value: "asc", label: "Cũ nhất trước" },
+            ]}
+          />
+          <Combobox
+            label="Mỗi trang"
+            name="limit"
+            defaultValue={filters.limit}
+            options={[20, 50, 100].map((value) => ({
+              value: String(value),
+              label: `${value} / trang`,
+            }))}
+          />
+          <div className="filter-bar-actions">
+            <Button type="submit" loading={pending}>
+              {pending ? "Đang tải…" : "Áp dụng bộ lọc"}
+            </Button>
+            <Link className="button button-ghost" href="/app/trips">
+              24 giờ gần nhất
+            </Link>
+          </div>
+        </FilterBar>
         {(error || filterError) && (
           <p className="notice notice-danger" role="alert">
             {error || filterError}
@@ -198,7 +222,8 @@ export function TripsPanel({
           thuộc hợp đồng.
         </p>
         {initial && (
-          <div aria-busy={pending}>
+          <div className="pending-region" aria-busy={pending}>
+            <RefreshStatus pending={pending} />
             {initial.data.length ? (
               <DataTable
                 caption="Hành trình từ GPS TEST của doanh nghiệp"
@@ -282,6 +307,7 @@ export function TripsPanel({
               />
             )}
             <Pagination
+              disabled={pending}
               {...initial}
               onPage={(page) => navigate({ ...filters, page })}
             />

@@ -25,7 +25,7 @@ export default async function VehiclesPage({
       />
       <FleetTabs active="vehicles" />
       <VehiclesPanel
-        key={`${context.business.id}:${queryString(filters)}`}
+        key={context.business.id}
         initial={initial}
         context={context}
         branches={branches}

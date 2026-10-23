@@ -11,6 +11,7 @@ import {
   EmptyState,
   Panel,
   PanelHeader,
+  RefreshStatus,
 } from "@/components/ui/primitives";
 import { DataTable, Pagination } from "@/components/data-display/table";
 import { FleetStatus } from "./fleet-status";
@@ -47,7 +48,12 @@ export function VehicleDetail({
       <MutationNotice error="" message={message} />
       {context.permissions.includes("trip.read") && (
         <div className="rental-form-actions">
-          <Link className="button button-secondary" href={`/app/trips?vehicleId=${vehicle.id}`}>Xem lịch sử hành trình của xe</Link>
+          <Link
+            className="button button-secondary"
+            href={`/app/trips?vehicleId=${vehicle.id}`}
+          >
+            Xem lịch sử hành trình của xe
+          </Link>
         </div>
       )}
       <div className="fleet-profile-grid">
@@ -177,7 +183,8 @@ export function VehicleDetail({
           subtitle={`${history.total} lần gắn · Thời gian theo giờ Việt Nam`}
           icon="audit"
         />
-        <div aria-busy={pending}>
+        <div className="pending-region" aria-busy={pending}>
+          <RefreshStatus pending={pending} />
           <DataTable
             caption="Lịch sử gắn thiết bị của xe"
             rows={history.data}
@@ -226,10 +233,13 @@ export function VehicleDetail({
             ]}
           />
           <Pagination
+            disabled={pending}
             {...history}
             onPage={(page) =>
               startTransition(() =>
-                router.push(`/app/vehicles/${vehicle.id}?page=${page}`),
+                router.push(`/app/vehicles/${vehicle.id}?page=${page}`, {
+                  scroll: false,
+                }),
               )
             }
           />

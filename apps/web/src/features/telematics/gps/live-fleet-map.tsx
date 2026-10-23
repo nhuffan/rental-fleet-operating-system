@@ -118,6 +118,7 @@ export function LiveFleetMap({
     };
   }, [businessId, filters, router, refreshKey]);
   const active = payload.data.find((v) => v.vehicleId === selected);
+  const pagePending = busy || snapshot.scope !== JSON.stringify(filters);
   return (
     <Panel className="gps-panel">
       <PanelHeader
@@ -185,12 +186,15 @@ export function LiveFleetMap({
       )}
       <p className="gps-sync" role="status">
         {busy
-          ? "Đang cập nhật…"
+          ? `Đang cập nhật GPS… · Đang hiển thị lần tải ${date(payload.asOf)} (giờ VN)`
           : `Lần tải: ${date(payload.asOf)} · giờ VN · cập nhật mỗi 20 giây khi mở trang`}
       </p>
-      <div className={`gps-content ${compact ? "gps-compact" : ""}`}>
+      <div
+        className={`gps-content pending-region ${compact ? "gps-compact" : ""}`}
+        aria-busy={busy}
+      >
         <LocationMap
-          key={`${businessId}:${snapshot.scope}`}
+          fitKey={snapshot.scope}
           data={payload.data}
           onSelect={setSelected}
         />
@@ -285,7 +289,7 @@ export function LiveFleetMap({
           <div className="inline">
             <Button
               variant="secondary"
-              disabled={busy || filters.page <= 1}
+              disabled={pagePending || filters.page <= 1}
               onClick={() => {
                 setFilters((f) => ({ ...f, page: f.page - 1 }));
                 setSelected(null);
@@ -293,10 +297,10 @@ export function LiveFleetMap({
             >
               ← Trước
             </Button>
-            <span>Trang {filters.page}</span>
+            <span>Trang {payload.page}</span>
             <Button
               variant="secondary"
-              disabled={busy || filters.page * 20 >= payload.total}
+              disabled={pagePending || filters.page * 20 >= payload.total}
               onClick={() => {
                 setFilters((f) => ({ ...f, page: f.page + 1 }));
                 setSelected(null);

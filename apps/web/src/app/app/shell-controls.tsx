@@ -2,18 +2,34 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Me } from "@rental-fleet/contracts";
+import { Combobox } from "@/components/ui/controls";
+import { Icon } from "@/components/ui/icon";
 import { browserClient } from "@/lib/supabase/client";
-export function Logout() {
+export function Logout({
+  menuItem = false,
+  onPendingChange,
+}: {
+  menuItem?: boolean;
+  onPendingChange?: (pending: boolean) => void;
+}) {
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
   const router = useRouter();
   return (
     <div>
       <button
-        className="button button-secondary logout-button"
+        className={
+          menuItem
+            ? "account-menu-item account-menu-logout"
+            : "button button-secondary logout-button"
+        }
+        role={menuItem ? "menuitem" : undefined}
+        aria-busy={pending || undefined}
         disabled={pending}
         onClick={async () => {
           setPending(true);
+          onPendingChange?.(true);
+          setError("");
           try {
             const { error } = await browserClient().auth.signOut();
             if (error) throw error;
@@ -25,16 +41,24 @@ export function Logout() {
             setError("Đăng xuất chưa thành công. Vui lòng thử lại.");
           } finally {
             setPending(false);
+            onPendingChange?.(false);
           }
         }}
       >
-        {pending ? "Đang đăng xuất…" : "Đăng xuất"}
+        {menuItem && (
+          <span className="account-item-icon">
+            <Icon name="logout" size={18} />
+          </span>
+        )}
+        <span className={menuItem ? "account-item-label" : undefined}>
+          {pending ? "Đang đăng xuất…" : "Đăng xuất"}
+        </span>
       </button>
       {error && <p role="alert">{error}</p>}
     </div>
   );
 }
-export function BusinessPicker({
+export function BusinessSwitcher({
   businesses,
   selected,
 }: {
@@ -42,23 +66,31 @@ export function BusinessPicker({
   selected: string;
 }) {
   return (
-    <label className="business-picker">
-      Doanh nghiệp
-      <select
-        aria-label="Doanh nghiệp hiện tại"
+    <div className="business-switcher">
+      <span className="business-switcher-icon">
+        <Icon name="business" />
+      </span>
+      <Combobox
+        id="current-business"
+        label="Doanh nghiệp hiện tại"
+        hideLabel
+        options={businesses.map((business) => ({
+          value: business.id,
+          label: business.name,
+        }))}
         value={selected}
-        onChange={(e) => {
-          document.cookie = `current-business=${encodeURIComponent(e.target.value)}; Path=/; SameSite=Lax${location.protocol === "https:" ? "; Secure" : ""}`;
-          // A full reload drops all client state from the previous verified tenant.
+        searchable={businesses.length > 6}
+        onValueChange={(id) => {
+          if (
+            id === selected ||
+            !businesses.some((business) => business.id === id)
+          )
+            return;
+          document.cookie = `current-business=${encodeURIComponent(id)}; Path=/; SameSite=Lax${location.protocol === "https:" ? "; Secure" : ""}`;
+          // A full reload drops every previous tenant's client state. NestJS validates the membership again.
           window.location.reload();
         }}
-      >
-        {businesses.map((b) => (
-          <option value={b.id} key={b.id}>
-            {b.name}
-          </option>
-        ))}
-      </select>
-    </label>
+      />
+    </div>
   );
 }

@@ -2,7 +2,12 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { Me } from "@rental-fleet/contracts";
-import { Button, Panel, PanelHeader } from "@/components/ui/primitives";
+import {
+  Button,
+  Panel,
+  PanelHeader,
+  RefreshStatus,
+} from "@/components/ui/primitives";
 import { DataTable, Pagination } from "@/components/data-display/table";
 import { Icon } from "@/components/ui/icon";
 import { MutationNotice } from "@/components/feedback/mutation-notice";
@@ -28,7 +33,9 @@ export function DevicesPanel({
   const editable = context.permissions.includes("gps.manage");
   const navigate = (values: Record<string, string | number>) =>
     startTransition(() =>
-      router.push(`/app/vehicles/devices?${queryString(values)}`),
+      router.push(`/app/vehicles/devices?${queryString(values)}`, {
+        scroll: false,
+      }),
     );
   return (
     <>
@@ -53,7 +60,8 @@ export function DevicesPanel({
           pending={pending}
           onApply={navigate}
         />
-        <div aria-busy={pending}>
+        <div className="pending-region" aria-busy={pending}>
+          <RefreshStatus pending={pending} />
           <DataTable
             caption="Danh mục thiết bị GPS của doanh nghiệp"
             rows={initial.data}
@@ -102,6 +110,7 @@ export function DevicesPanel({
             ]}
           />
           <Pagination
+            disabled={pending}
             {...initial}
             onPage={(page) => navigate({ ...filters, page })}
           />

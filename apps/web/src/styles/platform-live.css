@@ -28,20 +28,3 @@
 .platform-support-filters .notice {
   flex-basis: 100%;
 }
-.topbar-identity {
-  display: inline-flex;
-  align-items: center;
-}
-
-.topbar > .inline {
-  min-width: 0;
-}
-.topbar > .inline > strong {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.topbar-identity,
-.topbar-meta {
-  flex-shrink: 0;
-}

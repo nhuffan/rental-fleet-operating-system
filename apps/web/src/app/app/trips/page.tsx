@@ -52,7 +52,7 @@ export default async function TripsPage({
         description="Tra cứu và xem lại các điểm GPS đã nhận. Hành trình được suy ra từ Traccar TEST feed, khoảng cách là ước tính."
       />
       <TripsPanel
-        key={`${context.business.id}:${queryString(filters)}`}
+        key={context.business.id}
         initial={initial}
         filters={filters}
         context={context}

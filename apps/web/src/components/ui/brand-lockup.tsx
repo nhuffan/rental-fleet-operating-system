@@ -1,16 +1,26 @@
 import Image from "next/image";
+
 export function BrandLockup({ compact = false }: { compact?: boolean }) {
   return (
-    <span className={`brand-lockup ${compact ? "brand-lockup-compact" : ""}`}>
+    <span
+      className={`brand-lockup${compact ? " brand-lockup-compact" : ""}`}
+      role="img"
+      aria-label="Rental Fleet OS"
+    >
       <Image
         src="/brand/mark.png"
         width={199}
         height={172}
-        alt={compact ? "Rental Fleet OS" : ""}
+        alt=""
         priority
         className="brand-logo"
       />
-      {!compact && <strong>Rental Fleet OS</strong>}
+      {!compact && (
+        <span className="brand-wordmark" aria-hidden="true">
+          <strong>Rental Fleet</strong>
+          <span>Operating System</span>
+        </span>
+      )}
     </span>
   );
 }

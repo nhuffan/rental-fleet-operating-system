@@ -83,7 +83,7 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  background: white;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 7px;
   padding: 8px 10px;
@@ -113,7 +113,7 @@
 .fleet-map-canvas {
   position: relative;
   height: 289px;
-  background: #e8ede7;
+  background: var(--map-canvas);
   overflow: hidden;
 }
 .map-drawing {
@@ -126,12 +126,12 @@
   position: absolute;
   left: 10px;
   top: 10px;
-  background: #fffffff0;
-  color: #5e6e66;
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  color: var(--text-secondary);
   font-size: var(--text-xs);
   border-radius: 4px;
   padding: 4px 7px;
-  border: 1px solid #dce1d9;
+  border: 1px solid var(--border);
 }
 .map-scale {
   position: absolute;
@@ -139,8 +139,8 @@
   right: 10px;
   font-size: var(--text-xs);
   letter-spacing: 0.5px;
-  color: #5a6c62;
-  background: #ffffffbb;
+  color: var(--text-secondary);
+  background: color-mix(in srgb, var(--surface) 85%, transparent);
   padding: 3px 5px;
   border-radius: 3px;
 }
@@ -152,8 +152,8 @@
   width: 35px;
   border-radius: 7px;
   color: var(--success);
-  background: white;
-  border: 1px solid #ccd5cd;
+  background: var(--surface);
+  border: 1px solid var(--border);
   box-shadow: 0 3px 7px #3b494a20;
   cursor: pointer;
   transform: translate(-50%, -50%);
@@ -168,14 +168,14 @@
   bottom: -3px;
   left: 14px;
   transform: rotate(45deg);
-  border-right: 1px solid #ccd5cd;
-  border-bottom: 1px solid #ccd5cd;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
 }
 .fleet-marker.selected {
-  background: var(--brand);
-  color: white;
+  background: var(--brand-solid);
+  color: var(--on-brand);
   z-index: 4;
-  border-color: var(--brand);
+  border-color: var(--brand-solid);
   box-shadow:
     0 0 0 5px #e9702e24,
     0 3px 5px #3b494a20;
@@ -187,7 +187,7 @@
   color: var(--text-secondary);
 }
 .fleet-marker.selected:after {
-  border-color: var(--brand);
+  border-color: var(--brand-solid);
 }
 .fleet-marker:hover {
   box-shadow: 0 0 0 5px #e9702e24;
@@ -198,15 +198,15 @@
   left: 22px;
   width: 190px;
   border-radius: 9px;
-  background: white;
-  border: 1px solid #d9dfd9;
-  box-shadow: 0 7px 20px #23323118;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-popover);
   z-index: 5;
   overflow: hidden;
 }
 .map-popover-car {
   position: relative;
-  background: #f4f6f3;
+  background: var(--surface-muted);
   height: 65px;
   display: flex;
   justify-content: center;
@@ -225,7 +225,7 @@
   right: 5px;
   top: 5px;
   border: 0;
-  background: #ffffffcc;
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
   border-radius: 50%;
   padding: 4px;
   color: var(--text-secondary);
@@ -264,7 +264,7 @@
   width: 100%;
   background: transparent;
   border: 0;
-  border-top: 1px solid #eee;
+  border-top: 1px solid var(--border);
   margin-top: 9px;
   padding: 8px 0 0;
   font-size: var(--text-xs);
@@ -303,10 +303,10 @@
   background: var(--success);
 }
 .warning-dot {
-  background: #c28b29;
+  background: var(--warning);
 }
 .neutral-dot {
-  background: #7b858a;
+  background: var(--text-muted);
 }
 .brand-dot {
   background: var(--brand);
@@ -317,7 +317,7 @@
 .map-empty {
   position: absolute;
   inset: 35px 0;
-  background: #ffffffc0;
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
 }
 .expanded-map .fleet-map-canvas {
   height: 620px;
@@ -343,7 +343,7 @@
   padding: 13px 12px;
   border: 0;
   border-bottom: 1px solid var(--border);
-  background: white;
+  background: var(--surface);
   cursor: pointer;
 }
 .map-vehicle-row .car-art {
@@ -388,8 +388,8 @@
   cursor: pointer;
 }
 .segmented button[aria-pressed="true"] {
-  background: white;
-  box-shadow: 0 1px 3px #172d4310;
+  background: var(--surface);
+  box-shadow: var(--shadow);
   color: var(--text-primary);
   font-weight: 600;
 }
@@ -423,7 +423,7 @@
   align-items: center;
   justify-content: center;
   padding: 12px 0;
-  border-left: 1px solid #e9ebe6;
+  border-left: 1px solid var(--border);
   font-size: var(--text-sm);
   color: var(--text-secondary);
 }
@@ -434,7 +434,7 @@
 }
 .schedule-row {
   height: 76px;
-  border-bottom: 1px solid #eeefed;
+  border-bottom: 1px solid var(--border);
 }
 .schedule-row:last-child {
   border: 0;
@@ -454,7 +454,11 @@
 }
 .schedule-track {
   position: relative;
-  background-image: linear-gradient(to right, #eaece7 1px, transparent 1px);
+  background-image: linear-gradient(
+    to right,
+    var(--border) 1px,
+    transparent 1px
+  );
   overflow: hidden;
 }
 .today-line {
@@ -490,18 +494,18 @@
 }
 .booking-reserved {
   color: var(--brand-strong);
-  background: #fce8da;
-  border-color: #f2c9aa;
+  background: var(--brand-muted);
+  border-color: var(--brand-border);
 }
 .booking-active {
-  color: #286d55;
-  background: #e4f0e7;
-  border-color: #c7e0ce;
+  color: var(--success);
+  background: var(--success-muted);
+  border-color: var(--success-border);
 }
 .booking-overdue {
   color: var(--danger);
-  background: #f9e4e5;
-  border-color: #edc0c3;
+  background: var(--danger-muted);
+  border-color: var(--danger-border);
 }
 .booking:hover {
   filter: brightness(0.97);
@@ -554,16 +558,16 @@
   display: block;
   width: 100%;
   text-align: left;
-  border: 1px solid #e5e6e2;
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background: white;
+  background: var(--surface);
   padding: 11px;
   cursor: pointer;
   color: var(--text-primary);
 }
 .queue-card:hover {
-  border-color: #e9a27c;
-  background: #fffcf9;
+  border-color: var(--brand-border);
+  background: var(--brand-muted);
 }
 .queue-card-top {
   display: flex;
@@ -605,7 +609,7 @@
   align-items: center;
   color: var(--text-secondary);
   font-size: var(--text-xs);
-  border-top: 1px solid #f0f0ed;
+  border-top: 1px solid var(--border);
   padding-top: 9px;
 }
 .queue-due.is-overdue {
@@ -667,8 +671,8 @@
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  border: 2px solid #cbd0d1;
-  background: white;
+  border: 2px solid var(--border-hover);
+  background: var(--surface);
 }
 .lifecycle li:after {
   content: "";
@@ -738,7 +742,7 @@
 .tenant-avatar {
   width: 34px;
   height: 34px;
-  border: 1px solid #00000008;
+  border: 1px solid var(--border);
   border-radius: 9px;
   display: grid;
   place-items: center;
@@ -767,7 +771,7 @@
 .health-bar {
   display: block;
   height: 5px;
-  background: #e8ebe7;
+  background: var(--interactive-disabled);
   border-radius: 4px;
   width: 47px;
   overflow: hidden;
@@ -775,7 +779,7 @@
 .health-bar i {
   display: block;
   height: 100%;
-  background: #4a956c;
+  background: var(--success);
   border-radius: 4px;
 }
 .activity-feed {
@@ -790,7 +794,7 @@
   padding: 20px 0;
   background: transparent;
   border: 0;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--border);
   color: var(--text-primary);
   cursor: pointer;
 }
@@ -836,7 +840,7 @@
   align-items: center;
   gap: 11px;
   padding: 19px 16px;
-  border-bottom: 1px solid #eeefed;
+  border-bottom: 1px solid var(--border);
 }
 .attention-item:last-child {
   border: 0;

@@ -3,7 +3,12 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { Branch, Me } from "@rental-fleet/contracts";
-import { Button, Panel, PanelHeader } from "@/components/ui/primitives";
+import {
+  Button,
+  Panel,
+  PanelHeader,
+  RefreshStatus,
+} from "@/components/ui/primitives";
 import { DataTable, Pagination } from "@/components/data-display/table";
 import { Icon } from "@/components/ui/icon";
 import { MutationNotice } from "@/components/feedback/mutation-notice";
@@ -33,7 +38,9 @@ export function VehiclesPanel({
     branches.map((branch) => [branch.id, branch.name]),
   );
   const navigate = (values: Record<string, string | number>) =>
-    startTransition(() => router.push(`/app/vehicles?${queryString(values)}`));
+    startTransition(() =>
+      router.push(`/app/vehicles?${queryString(values)}`, { scroll: false }),
+    );
   return (
     <>
       <MutationNotice error="" message={message} />
@@ -58,7 +65,8 @@ export function VehiclesPanel({
           pending={pending}
           onApply={navigate}
         />
-        <div aria-busy={pending}>
+        <div className="pending-region" aria-busy={pending}>
+          <RefreshStatus pending={pending} />
           <DataTable
             caption="Danh sách xe trong doanh nghiệp"
             rows={initial.data}
@@ -139,6 +147,7 @@ export function VehiclesPanel({
             ]}
           />
           <Pagination
+            disabled={pending}
             {...initial}
             onPage={(page) => navigate({ ...filters, page })}
           />

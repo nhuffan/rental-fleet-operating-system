@@ -1,3 +1,4 @@
+import { verifiedAccountEmail } from "@/lib/account-identity";
 import { AppShell } from "@/components/layout/app-shell";
 import { platformContext } from "@/features/platform/live/server";
 export const dynamic = "force-dynamic";
@@ -8,7 +9,11 @@ export default async function PlatformLayout({
 }) {
   const context = await platformContext();
   return (
-    <AppShell key={context.principal.id} platformContext={context}>
+    <AppShell
+      key={context.principal.id}
+      platformContext={context}
+      accountEmail={await verifiedAccountEmail()}
+    >
       {children}
     </AppShell>
   );

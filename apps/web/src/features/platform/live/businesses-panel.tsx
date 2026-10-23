@@ -1,15 +1,15 @@
 "use client";
 import Link from "next/link";
+import { Combobox, FilterBar, SearchField } from "@/components/ui/controls";
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   Button,
   Panel,
   PanelHeader,
+  RefreshStatus,
   Badge,
   EmptyState,
-  Input,
-  Select,
   StatusBadge,
 } from "@/components/ui/primitives";
 import { DataTable, Pagination } from "@/components/data-display/table";
@@ -27,7 +27,9 @@ export function BusinessesPanel({
   const [pending, startTransition] = useTransition();
   function navigate(values: Record<string, string | number>) {
     startTransition(() =>
-      router.push(`/superadmin/businesses?${queryString(values)}`),
+      router.push(`/superadmin/businesses?${queryString(values)}`, {
+        scroll: false,
+      }),
     );
   }
   return (
@@ -37,8 +39,9 @@ export function BusinessesPanel({
         subtitle={`${initial.total} doanh nghiệp phù hợp · Dữ liệu trực tiếp, chỉ đọc`}
         icon="business"
       />
-      <form
-        className="table-toolbar fleet-filters"
+      <FilterBar
+        key={JSON.stringify(filters)}
+        busy={pending}
         aria-label="Bộ lọc doanh nghiệp nền tảng"
         onSubmit={(event) => {
           event.preventDefault();
@@ -54,59 +57,70 @@ export function BusinessesPanel({
           });
         }}
       >
-        <label className="search-input">
-          <Input
-            type="search"
-            name="search"
-            maxLength={120}
-            defaultValue={filters.search}
-            placeholder="Tìm tên doanh nghiệp…"
-            aria-label="Tìm doanh nghiệp"
-          />
-        </label>
-        <Select
-          className="filter-select"
+        <SearchField
+          type="search"
+          name="search"
+          maxLength={120}
+          defaultValue={filters.search}
+          placeholder="Tìm tên doanh nghiệp…"
+          label="Tìm doanh nghiệp"
+        />
+        <Combobox
           name="status"
+          label="Trạng thái doanh nghiệp"
           defaultValue={filters.status}
-          aria-label="Trạng thái doanh nghiệp"
-        >
-          <option value="">Mọi trạng thái</option>
-          <option value="ACTIVE">Hoạt động</option>
-          <option value="DISABLED">Đã vô hiệu hóa</option>
-        </Select>
-        <Select
-          className="filter-select"
+          options={[
+            { value: "", label: "Mọi trạng thái" },
+            { value: "ACTIVE", label: "Hoạt động" },
+            { value: "DISABLED", label: "Đã vô hiệu hóa" },
+          ]}
+        />
+        <Combobox
           name="sort"
+          label="Sắp xếp doanh nghiệp"
           defaultValue={filters.sort}
-          aria-label="Sắp xếp doanh nghiệp"
-        >
-          <option value="createdAt">Ngày tạo</option>
-          <option value="name">Tên doanh nghiệp</option>
-        </Select>
-        <Select
-          className="filter-select"
+          options={[
+            { value: "createdAt", label: "Ngày tạo" },
+            { value: "name", label: "Tên doanh nghiệp" },
+          ]}
+        />
+        <Combobox
           name="order"
+          label="Chiều sắp xếp"
           defaultValue={filters.order}
-          aria-label="Chiều sắp xếp"
-        >
-          <option value="desc">Giảm dần</option>
-          <option value="asc">Tăng dần</option>
-        </Select>
-        <Select
-          className="filter-select"
+          options={[
+            { value: "desc", label: "Giảm dần" },
+            { value: "asc", label: "Tăng dần" },
+          ]}
+        />
+        <Combobox
           name="limit"
+          label="Mỗi trang"
           defaultValue={filters.limit}
-          aria-label="Số doanh nghiệp mỗi trang"
-        >
-          <option value="20">20 / trang</option>
-          <option value="50">50 / trang</option>
-          <option value="100">100 / trang</option>
-        </Select>
-        <Button type="submit" variant="secondary" disabled={pending}>
-          {pending ? "Đang tải…" : "Áp dụng"}
-        </Button>
-      </form>
-      <div aria-busy={pending}>
+          options={[20, 50, 100].map((value) => ({
+            value: String(value),
+            label: `${value} / trang`,
+          }))}
+        />
+        <div className="filter-bar-actions">
+          <Button type="submit" variant="secondary" loading={pending}>
+            {pending ? "Đang tải…" : "Áp dụng"}
+          </Button>
+          <Button
+            variant="ghost"
+            type="button"
+            disabled={pending}
+            onClick={(event) => {
+              event.currentTarget.form?.reset();
+              navigate({ page: 1 });
+            }}
+          >
+            Xóa bộ lọc
+          </Button>
+        </div>
+      </FilterBar>
+      <div className="pending-region" aria-busy={pending}>
+        <RefreshStatus pending={pending} />
         {initial.data.length ? (
           <DataTable
             caption="Doanh nghiệp nền tảng từ API được phân quyền"
@@ -194,6 +208,7 @@ export function BusinessesPanel({
           />
         )}
         <Pagination
+          disabled={pending}
           {...initial}
           onPage={(page) => navigate({ ...filters, page })}
         />

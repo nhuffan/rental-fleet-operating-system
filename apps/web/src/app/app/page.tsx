@@ -84,7 +84,7 @@ export default async function Dashboard({
       </div>
       {locations && (
         <LiveFleetMap
-          key={c.business.id}
+          key={`dashboard-map:${c.business.id}`}
           businessId={c.business.id}
           initial={locations}
           compact
@@ -171,7 +171,7 @@ export default async function Dashboard({
       </div>
       {schedule && queue && overdueRentals && (
         <RentalDashboard
-          key={`${c.business.id}:${schedulePage}:${queuePage}:${overdue}`}
+          key={`rental-dashboard:${c.business.id}`}
           schedule={schedule}
           queue={queue}
           overdueTotal={overdueRentals.total}

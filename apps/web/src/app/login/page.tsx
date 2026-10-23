@@ -5,6 +5,6 @@ export default async function Login({
 }: {
   searchParams: Promise<{ next?: string | string[] }>;
 }) {
-  const destination = safeReturnPath((await searchParams).next);
+  const destination = safeReturnPath((await searchParams).next, "") || null;
   return <LoginForm destination={destination} />;
 }

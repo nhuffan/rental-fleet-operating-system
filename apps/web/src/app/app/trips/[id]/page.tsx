@@ -46,7 +46,7 @@ export default async function TripPage({
         description="Xem lại lịch sử GPS TEST theo thời gian ghi nhận. Các điểm được giới hạn và phân trang; lịch sử không tự tải lại liên tục."
       />
       <TripDetail
-        key={`${context.business.id}:${trip.id}:${page}`}
+        key={`${context.business.id}:${trip.id}`}
         trip={trip}
         route={route}
         canReadRental={context.permissions.includes("rental.read")}

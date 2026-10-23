@@ -1,13 +1,15 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import type * as Leaflet from "leaflet";
-import { EmptyState } from "@/components/ui/primitives";
+import { EmptyState, Skeleton } from "@/components/ui/primitives";
 import type { VehicleLocation } from "./types";
 export function LocationMap({
   data,
+  fitKey = "initial",
   onSelect,
 }: {
   data: VehicleLocation[];
+  fitKey?: string;
   onSelect: (id: string) => void;
 }) {
   const container = useRef<HTMLDivElement>(null);
@@ -15,7 +17,7 @@ export function LocationMap({
   useEffect(() => {
     select.current = onSelect;
   }, [onSelect]);
-  const fitted = useRef(false);
+  const fitted = useRef<string | null>(null);
   const [runtime, setRuntime] = useState<{
     L: typeof Leaflet;
     map: Leaflet.Map;
@@ -59,7 +61,7 @@ export function LocationMap({
       cancelled = true;
       cleanupObserver();
       map?.remove();
-      fitted.current = false;
+      fitted.current = null;
     };
   }, []);
   useEffect(() => {
@@ -87,11 +89,11 @@ export function LocationMap({
       marker.on("click", () => select.current(v.vehicleId));
       marker.addTo(markers);
     });
-    if (bounds.length && !fitted.current) {
+    if (bounds.length && fitted.current !== fitKey) {
       map.fitBounds(bounds, { padding: [45, 45], maxZoom: 14 });
-      fitted.current = true;
+      fitted.current = fitKey;
     }
-  }, [runtime, data]);
+  }, [runtime, data, fitKey]);
   return (
     <div className="gps-map-wrap">
       <div
@@ -100,7 +102,13 @@ export function LocationMap({
         role="region"
         aria-label="Bản đồ vị trí xe · Traccar TEST"
       />
-      {!data.some((v) => v.location) && (
+      {!runtime && !error && (
+        <div className="map-initial-loading" role="status">
+          <Skeleton className="skeleton-panel" />
+          <p>Đang mở bản đồ…</p>
+        </div>
+      )}
+      {runtime && !data.some((v) => v.location) && (
         <div className="gps-map-empty">
           <EmptyState
             title="Chưa có dữ liệu vị trí"

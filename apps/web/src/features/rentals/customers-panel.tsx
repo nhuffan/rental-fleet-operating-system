@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { Combobox, FilterBar, SearchField } from "@/components/ui/controls";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { Me } from "@rental-fleet/contracts";
@@ -7,6 +8,7 @@ import {
   Button,
   Panel,
   PanelHeader,
+  RefreshStatus,
   StatusBadge,
 } from "@/components/ui/primitives";
 import { DataTable, Pagination } from "@/components/data-display/table";
@@ -30,7 +32,9 @@ export function CustomersPanel({
   const [pending, startTransition] = useTransition();
   const canEdit = context.permissions.includes("customer.manage");
   function navigate(values: Record<string, string | number>) {
-    startTransition(() => router.push(`/app/customers?${queryString(values)}`));
+    startTransition(() =>
+      router.push(`/app/customers?${queryString(values)}`, { scroll: false }),
+    );
   }
   return (
     <>
@@ -46,8 +50,10 @@ export function CustomersPanel({
             )
           }
         />
-        <form
-          className="table-toolbar fleet-filters"
+        <FilterBar
+          key={JSON.stringify(filters)}
+          busy={pending}
+          aria-label="Bộ lọc khách hàng"
           onSubmit={(e) => {
             e.preventDefault();
             const form = new FormData(e.currentTarget);
@@ -60,40 +66,52 @@ export function CustomersPanel({
             });
           }}
         >
-          <label className="search-input">
-            <input
-              type="search"
-              name="search"
-              aria-label="Tìm khách hàng"
-              placeholder="Tên, điện thoại hoặc email…"
-              maxLength={100}
-              defaultValue={filters.search}
-            />
-          </label>
-          <select
-            className="filter-select"
+          <SearchField
+            type="search"
+            name="search"
+            label="Tìm khách hàng"
+            placeholder="Tên, điện thoại hoặc email…"
+            maxLength={100}
+            defaultValue={filters.search}
+          />
+          <Combobox
             name="status"
-            aria-label="Trạng thái khách hàng"
+            label="Trạng thái khách hàng"
             defaultValue={filters.status}
-          >
-            <option value="">Mọi trạng thái</option>
-            <option value="ACTIVE">Hoạt động</option>
-            <option value="INACTIVE">Ngưng hoạt động</option>
-          </select>
-          <select
-            className="filter-select"
+            options={[
+              { value: "", label: "Mọi trạng thái" },
+              { value: "ACTIVE", label: "Hoạt động" },
+              { value: "INACTIVE", label: "Ngưng hoạt động" },
+            ]}
+          />
+          <Combobox
             name="sort"
-            aria-label="Sắp xếp khách hàng"
+            label="Sắp xếp khách hàng"
             defaultValue={filters.sort}
-          >
-            <option value="createdAt">Ngày tạo</option>
-            <option value="name">Tên khách hàng</option>
-          </select>
-          <Button type="submit" variant="secondary" disabled={pending}>
-            Áp dụng
-          </Button>
-        </form>
-        <div aria-busy={pending}>
+            options={[
+              { value: "createdAt", label: "Ngày tạo" },
+              { value: "name", label: "Tên khách hàng" },
+            ]}
+          />
+          <div className="filter-bar-actions">
+            <Button type="submit" variant="secondary" loading={pending}>
+              Áp dụng
+            </Button>
+            <Button
+              variant="ghost"
+              type="button"
+              disabled={pending}
+              onClick={(event) => {
+                event.currentTarget.form?.reset();
+                navigate({ page: 1 });
+              }}
+            >
+              Xóa bộ lọc
+            </Button>
+          </div>
+        </FilterBar>
+        <div className="pending-region" aria-busy={pending}>
+          <RefreshStatus pending={pending} />
           <DataTable
             caption="Khách hàng của doanh nghiệp"
             rows={initial.data}
@@ -150,6 +168,7 @@ export function CustomersPanel({
             ]}
           />
           <Pagination
+            disabled={pending}
             {...initial}
             onPage={(page) => navigate({ ...filters, page })}
           />

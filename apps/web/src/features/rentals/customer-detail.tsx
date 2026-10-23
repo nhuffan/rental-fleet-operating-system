@@ -6,6 +6,7 @@ import {
   Button,
   Panel,
   PanelHeader,
+  RefreshStatus,
   StatusBadge,
 } from "@/components/ui/primitives";
 import { Pagination } from "@/components/data-display/table";
@@ -80,16 +81,20 @@ export function CustomerDetail({
             subtitle={`${rentals.total} hợp đồng`}
             icon="rental"
           />
-          <div aria-busy={pending}>
+          <div className="pending-region" aria-busy={pending}>
+            <RefreshStatus pending={pending} />
             <RentalTable
               rentals={rentals.data}
               currency={context.business.currency}
             />
             <Pagination
+              disabled={pending}
               {...rentals}
               onPage={(page) =>
                 startTransition(() =>
-                  router.push(`/app/customers/${customer.id}?page=${page}`),
+                  router.push(`/app/customers/${customer.id}?page=${page}`, {
+                    scroll: false,
+                  }),
                 )
               }
             />

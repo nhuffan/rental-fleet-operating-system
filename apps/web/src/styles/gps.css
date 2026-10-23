@@ -51,7 +51,7 @@
 .gps-live-canvas {
   height: 460px;
   z-index: 0;
-  background: #edf0ed;
+  background: var(--map-canvas);
 }
 .gps-map-empty {
   position: absolute;
@@ -62,7 +62,7 @@
   align-content: center;
 }
 .gps-map-empty .empty-state {
-  background: #ffffffed;
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
   max-width: 380px;
   margin: auto;
   border: 1px solid var(--border);
@@ -73,8 +73,8 @@
   display: grid;
   place-items: center;
   background: var(--success);
-  color: white;
-  border: 3px solid white;
+  color: var(--surface);
+  border: 3px solid var(--surface);
   border-radius: 50%;
   box-shadow: 0 2px 8px #0004;
 }
