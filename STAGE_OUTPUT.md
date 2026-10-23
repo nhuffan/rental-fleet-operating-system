@@ -177,7 +177,7 @@ History sources: Stage 1 completion record at `6619a21`; Auth/SaaS source at `59
 
 **Status:** COMPLETE for the development/TEST-feed scope, verified 23/10/2026.
 **Input:** `Stage_7_Telematics_Hardening_and_Stage_Output_Consolidation.md`.
-**Implementation commit:** pending; baseline `a5395edb5723f2626093a0289043958ef7275949` on `main`.
+**Implementation commit:** `9345e9d299cd656f6c72d479f3469de07fd83eea` — `feat: harden telematics and consolidate stage outputs` on `main`, baseline `a5395edb5723f2626093a0289043958ef7275949`. This implementation commit includes the output; the following output-only commit records its actual SHA.
 
 ### Delivered
 
