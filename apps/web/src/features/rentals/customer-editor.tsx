@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { Drawer } from "@/components/ui/drawer";
-import { Button } from "@/components/ui/primitives";
+import { Button, Input, Select, Textarea } from "@/components/ui/primitives";
 import { MutationNotice } from "@/components/feedback/mutation-notice";
 import { useMutation } from "@/lib/api-client/use-mutation";
 import type { Customer, CustomerCreate } from "./types";
@@ -20,6 +20,7 @@ export function CustomerEditor({
   const [validation, setValidation] = useState("");
   return (
     <Drawer
+      busy={mutation.busy}
       title={customer ? "Chỉnh sửa khách hàng" : "Thêm khách hàng"}
       onClose={() => {
         if (!mutation.busy) onClose();
@@ -73,7 +74,7 @@ export function CustomerEditor({
           <fieldset disabled={mutation.busy} className="form-fieldset">
             <label className="form-field">
               Tên khách hàng
-              <input
+              <Input
                 name="name"
                 required
                 maxLength={120}
@@ -82,7 +83,7 @@ export function CustomerEditor({
             </label>
             <label className="form-field">
               Số điện thoại
-              <input
+              <Input
                 name="phone"
                 type="tel"
                 maxLength={32}
@@ -95,7 +96,7 @@ export function CustomerEditor({
             </label>
             <label className="form-field">
               Email
-              <input
+              <Input
                 name="email"
                 type="email"
                 maxLength={254}
@@ -104,14 +105,14 @@ export function CustomerEditor({
             </label>
             <label className="form-field">
               Trạng thái
-              <select name="status" defaultValue={customer?.status ?? "ACTIVE"}>
+              <Select name="status" defaultValue={customer?.status ?? "ACTIVE"}>
                 <option value="ACTIVE">Hoạt động</option>
                 <option value="INACTIVE">Ngưng hoạt động</option>
-              </select>
+              </Select>
             </label>
             <label className="form-field">
               Ghi chú
-              <textarea
+              <Textarea
                 name="notes"
                 rows={4}
                 maxLength={2000}
@@ -119,7 +120,7 @@ export function CustomerEditor({
               />
             </label>
             <div className="inline">
-              <Button type="submit">
+              <Button type="submit" loading={mutation.busy}>
                 {mutation.busy ? "Đang lưu…" : "Lưu khách hàng"}
               </Button>
               <Button type="button" variant="secondary" onClick={onClose}>

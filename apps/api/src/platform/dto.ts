@@ -1,6 +1,14 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsIn, IsString, Length, ValidateIf } from 'class-validator';
+import {
+  IsIn,
+  IsString,
+  IsUUID,
+  IsISO8601,
+  Matches,
+  Length,
+  ValidateIf,
+} from 'class-validator';
 import { PageQuery } from '../core/dto.js';
 import { PageMeta } from '../core/responses.js';
 export class PlatformBusinessQuery extends PageQuery {
@@ -90,4 +98,121 @@ export class PlatformOverview {
   })
   totals!: PlatformCounts;
   @ApiProperty({ type: PlatformGpsHealth }) gps!: PlatformGpsHealth;
+}
+
+export const PLATFORM_AUDIT_ACTIONS = [
+  'platform.me.read',
+  'platform.overview.read',
+  'platform.businesses.read',
+  'platform.business.read',
+  'platform.audit.read',
+  'platform.users.read',
+  'platform.user.read',
+  'platform_membership.create',
+  'other',
+] as const;
+export class PlatformAuditQuery extends PageQuery {
+  @ApiPropertyOptional({ enum: PLATFORM_AUDIT_ACTIONS })
+  @ValidateIf((_o, v) => v !== undefined)
+  @IsIn(PLATFORM_AUDIT_ACTIONS)
+  action?: string;
+  @ApiPropertyOptional({ format: 'uuid' })
+  @ValidateIf((_o, v) => v !== undefined)
+  @IsUUID()
+  businessId?: string;
+  @ApiPropertyOptional({
+    format: 'date-time',
+    description:
+      'Inclusive; UTC offset required. Defaults to 30 days before until. Range at most 366 days.',
+  })
+  @ValidateIf((_o, v) => v !== undefined)
+  @IsISO8601({ strict: true })
+  @Matches(/(?:Z|[+-]\d{2}:\d{2})$/)
+  from?: string;
+  @ApiPropertyOptional({
+    format: 'date-time',
+    description: 'Exclusive; defaults to current time.',
+  })
+  @ValidateIf((_o, v) => v !== undefined)
+  @IsISO8601({ strict: true })
+  @Matches(/(?:Z|[+-]\d{2}:\d{2})$/)
+  until?: string;
+  @ApiPropertyOptional({ enum: ['createdAt', 'action'], default: 'createdAt' })
+  @IsIn(['createdAt', 'action'])
+  sort: 'createdAt' | 'action' = 'createdAt';
+  @ApiPropertyOptional({ enum: ['asc', 'desc'], default: 'desc' })
+  @IsIn(['asc', 'desc'])
+  order: 'asc' | 'desc' = 'desc';
+}
+export class PlatformAuditEntry {
+  @ApiProperty({ format: 'uuid' }) id!: string;
+  @ApiProperty({ format: 'uuid' }) actorId!: string;
+  @ApiProperty({ enum: PLATFORM_AUDIT_ACTIONS }) action!: string;
+  @ApiProperty({
+    enum: ['platform', 'business', 'user', 'platform_membership', 'other'],
+  })
+  entityType!: string;
+  @ApiProperty({ type: String, format: 'uuid', nullable: true }) entityId!:
+    string | null;
+  @ApiProperty({ type: String, format: 'uuid', nullable: true }) requestId!:
+    string | null;
+  @ApiProperty({ format: 'date-time' }) createdAt!: string;
+}
+export class PlatformAuditPage extends PageMeta {
+  @ApiProperty({ type: [PlatformAuditEntry] }) data!: PlatformAuditEntry[];
+  @ApiProperty({ format: 'date-time' }) from!: string;
+  @ApiProperty({ format: 'date-time' }) until!: string;
+}
+export class PlatformUserQuery extends PlatformBusinessQuery {
+  @ApiPropertyOptional({ format: 'uuid' })
+  @ValidateIf((_o, v) => v !== undefined)
+  @IsUUID()
+  businessId?: string;
+  @ApiPropertyOptional({ enum: ['OWNER', 'ADMIN', 'OPERATIONS'] })
+  @ValidateIf((_o, v) => v !== undefined)
+  @IsIn(['OWNER', 'ADMIN', 'OPERATIONS'])
+  roleKey?: string;
+  @ApiPropertyOptional({ enum: ['ACTIVE', 'DISABLED'] })
+  @ValidateIf((_o, v) => v !== undefined)
+  @IsIn(['ACTIVE', 'DISABLED'])
+  membershipStatus?: string;
+}
+export class PlatformUser {
+  @ApiProperty({ format: 'uuid' }) id!: string;
+  @ApiProperty() displayName!: string;
+  @ApiProperty({ enum: ['ACTIVE', 'DISABLED'] }) status!: string;
+  @ApiProperty({ enum: ['ACTIVE', 'DISABLED', 'NONE'] })
+  platformStatus!: string;
+  @ApiProperty({ format: 'date-time' }) createdAt!: string;
+  @ApiProperty({ format: 'date-time' }) updatedAt!: string;
+  @ApiProperty() membershipCount!: number;
+  @ApiProperty({
+    description: 'Membership, business and profile must all be ACTIVE.',
+  })
+  activeMembershipCount!: number;
+  @ApiProperty({ type: [String] }) roles!: string[];
+}
+export class PlatformUserPage extends PageMeta {
+  @ApiProperty({
+    type: [PlatformUser],
+    description: 'One row per unique profile, never one row per membership.',
+  })
+  data!: PlatformUser[];
+}
+export class PlatformUserMembership {
+  @ApiProperty({ format: 'uuid' }) id!: string;
+  @ApiProperty({ format: 'uuid' }) businessId!: string;
+  @ApiProperty() businessName!: string;
+  @ApiProperty({ enum: ['ACTIVE', 'DISABLED'] }) businessStatus!: string;
+  @ApiProperty({ enum: ['OWNER', 'ADMIN', 'OPERATIONS'] }) roleKey!: string;
+  @ApiProperty({ enum: ['ACTIVE', 'DISABLED'] }) status!: string;
+}
+export class PlatformUserMembershipPage extends PageMeta {
+  @ApiProperty({ type: [PlatformUserMembership] })
+  data!: PlatformUserMembership[];
+}
+export class PlatformUserDetail {
+  @ApiProperty({ type: PlatformUser }) profile!: PlatformUser;
+  @ApiProperty({ type: PlatformUserMembershipPage })
+  memberships!: PlatformUserMembershipPage;
 }

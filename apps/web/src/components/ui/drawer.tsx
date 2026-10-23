@@ -6,10 +6,12 @@ export function Drawer({
   title,
   children,
   onClose,
+  busy = false,
 }: {
   title: string;
   children: ReactNode;
   onClose: () => void;
+  busy?: boolean;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
@@ -30,12 +32,13 @@ export function Drawer({
       ref={ref}
       className="drawer"
       aria-labelledby={titleId}
+      aria-busy={busy || undefined}
       onCancel={(e) => {
         e.preventDefault();
-        onClose();
+        if (!busy) onClose();
       }}
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (!busy && e.target === e.currentTarget) onClose();
       }}
     >
       <div className="drawer-inner">
@@ -46,6 +49,7 @@ export function Drawer({
             type="button"
             aria-label="Đóng bảng chi tiết"
             onClick={onClose}
+            disabled={busy}
           >
             <Icon name="close" />
           </Button>

@@ -1,6 +1,6 @@
 "use client";
 import { Drawer } from "@/components/ui/drawer";
-import { Button } from "@/components/ui/primitives";
+import { Button, Input, Select } from "@/components/ui/primitives";
 import { MutationNotice } from "@/components/feedback/mutation-notice";
 import { useMutation } from "@/lib/api-client/use-mutation";
 import type { GpsDevice, GpsDeviceCreate, GpsDeviceUpdate } from "./types";
@@ -18,6 +18,7 @@ export function DeviceEditor({
   const mutation = useMutation(businessId);
   return (
     <Drawer
+      busy={mutation.busy}
       title={device ? "Chỉnh sửa thiết bị GPS" : "Đăng ký thiết bị GPS"}
       onClose={() => {
         if (!mutation.busy) onClose();
@@ -61,7 +62,7 @@ export function DeviceEditor({
           <fieldset disabled={mutation.busy}>
             <label className="form-field">
               Nhà cung cấp
-              <input
+              <Input
                 name="provider"
                 defaultValue={device?.provider ?? ""}
                 readOnly={!!device}
@@ -77,7 +78,7 @@ export function DeviceEditor({
             </label>
             <label className="form-field">
               UID thiết bị
-              <input
+              <Input
                 name="deviceUid"
                 defaultValue={device?.deviceUid ?? ""}
                 readOnly={!!device}
@@ -93,7 +94,7 @@ export function DeviceEditor({
             </label>
             <label className="form-field">
               Nhãn thiết bị
-              <input
+              <Input
                 name="label"
                 defaultValue={device?.label ?? ""}
                 maxLength={120}
@@ -101,17 +102,17 @@ export function DeviceEditor({
             </label>
             <label className="form-field">
               Trạng thái vòng đời
-              <select name="status" defaultValue={device?.status ?? "ACTIVE"}>
+              <Select name="status" defaultValue={device?.status ?? "ACTIVE"}>
                 <option value="ACTIVE">Hoạt động</option>
                 <option value="INACTIVE">Ngưng hoạt động</option>
-              </select>
+              </Select>
               <small>
                 Thiết bị đang gắn phải được tháo khỏi xe trước khi ngưng hoạt
                 động.
               </small>
             </label>
             <div className="inline">
-              <Button type="submit">
+              <Button type="submit" loading={mutation.busy}>
                 {mutation.busy ? "Đang lưu…" : "Lưu thiết bị"}
               </Button>
               <Button type="button" variant="secondary" onClick={onClose}>

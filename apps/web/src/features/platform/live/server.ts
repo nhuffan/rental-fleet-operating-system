@@ -41,7 +41,11 @@ export const platformContext = cache(() =>
   platformApi<PlatformMe>("/platform/me"),
 );
 export async function requirePlatformPermission(
-  permission: "platform.overview.read" | "platform.business.read",
+  permission:
+    | "platform.overview.read"
+    | "platform.business.read"
+    | "platform.audit.read"
+    | "platform.user.read",
 ) {
   const context = await platformContext();
   if (!context.permissions.includes(permission))

@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
-import { Button } from "@/components/ui/primitives";
+import { BrandLockup } from "@/components/ui/brand-lockup";
+import { Button, Input } from "@/components/ui/primitives";
 import { Icon } from "@/components/ui/icon";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -40,22 +41,14 @@ export function LoginForm({ destination }: { destination: string }) {
     <main className="login">
       <section className="login-story">
         <div className="login-brand">
-          <span className="brand-mark">
-            <Icon name="car" size={23} />
-          </span>
-          <strong>
-            Rental Fleet<span>Operating System</span>
-          </strong>
+          <BrandLockup />
         </div>
         <div className="login-story-copy">
-          <span className="eyebrow">KHÔNG GIAN VẬN HÀNH</span>
-          <h1>
-            Cùng quản lý.
-            <br />
-            Cùng chuyển động.
-          </h1>
+          <span className="eyebrow">RENTAL FLEET OS</span>
+          <h1>All Your Fleet Operations. One Platform.</h1>
           <p>
-            Đội xe, hợp đồng và đội ngũ của bạn trong một không gian làm việc.
+            Manage vehicles, rentals, customers, and GPS tracking from one
+            connected workspace.
           </p>
           <div className="login-capabilities">
             <span>
@@ -72,7 +65,7 @@ export function LoginForm({ destination }: { destination: string }) {
             </span>
           </div>
         </div>
-        <small>Rental Fleet OS · Dành cho đội ngũ vận hành</small>
+        <small>One connected workspace for smarter fleet operations.</small>
       </section>
       <section className="login-form" aria-labelledby="login-title">
         <div className="login-card">
@@ -86,7 +79,7 @@ export function LoginForm({ destination }: { destination: string }) {
           <form method="post" onSubmit={submit} aria-busy={pending}>
             <label htmlFor="login-email">
               Email
-              <input
+              <Input
                 id="login-email"
                 name="email"
                 type="email"
@@ -98,7 +91,7 @@ export function LoginForm({ destination }: { destination: string }) {
             </label>
             <label htmlFor="login-password">
               Mật khẩu
-              <input
+              <Input
                 id="login-password"
                 name="password"
                 type="password"
@@ -113,7 +106,7 @@ export function LoginForm({ destination }: { destination: string }) {
                 {error}
               </p>
             )}
-            <Button disabled={pending} type="submit">
+            <Button loading={pending} type="submit">
               {pending ? "Đang đăng nhập…" : "Đăng nhập"}
               {!pending && <Icon name="arrow" size={16} />}
             </Button>

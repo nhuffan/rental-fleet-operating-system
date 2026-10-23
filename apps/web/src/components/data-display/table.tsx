@@ -70,23 +70,27 @@ export function Pagination({
   limit,
   total,
   onPage,
+  disabled = false,
 }: {
   page: number;
   limit: number;
   total: number;
   onPage: (page: number) => void;
+  disabled?: boolean;
 }) {
   return (
     <div className="pagination">
       <span>
-        {total
+        {total && (page - 1) * limit < total
           ? `${(page - 1) * limit + 1}–${Math.min(page * limit, total)} / ${total}`
-          : "0 kết quả"}
+          : total
+            ? `${total} kết quả · Trang này không có dữ liệu`
+            : "0 kết quả"}
       </span>
       <div className="inline">
         <Button
           variant="secondary"
-          disabled={page <= 1}
+          disabled={disabled || page <= 1}
           onClick={() => onPage(page - 1)}
         >
           ← Trước
@@ -94,7 +98,7 @@ export function Pagination({
         <span>Trang {page}</span>
         <Button
           variant="secondary"
-          disabled={page * limit >= total}
+          disabled={disabled || page * limit >= total}
           onClick={() => onPage(page + 1)}
         >
           Sau →

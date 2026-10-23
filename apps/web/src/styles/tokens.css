@@ -5,6 +5,8 @@
   --color-foreground: var(--text-primary);
   --color-border: var(--border);
 }
+/* Approved Canva DAHY0Bey5gc page 5: #E9702E, #AD4511, #2E3540,
+   #F4F4F3, #FFFFFF. Other tones are derived UI roles, not Canva swatches. */
 :root {
   --canvas: #f4f4f3;
   --surface: #fff;
@@ -16,15 +18,26 @@
   --text-muted: #707982;
   --brand: #e9702e;
   --brand-strong: #ad4511;
-  --brand-muted: #fff0e6;
+  --brand-hover: #90380e;
+  --brand-subtle: #fff0e6;
+  --on-brand: #fff;
+  --interactive-hover: #f8f8f7;
+  --interactive-active: #fff0e6;
+  --interactive-disabled: #dededb;
+  --border-hover: #b6b9bc;
+  --brand-muted: var(--brand-subtle);
   --focus: #ad4511;
   --success: #24734e;
+  --success-border: #cce5d7;
   --success-muted: #eaf5ee;
   --warning: #885b12;
+  --warning-border: #e7d5ae;
   --warning-muted: #fff5df;
   --danger: #b63d42;
+  --danger-border: #ecc6c9;
   --danger-muted: #fcecee;
   --info: #356482;
+  --info-border: #d2e0ea;
   --info-muted: #eaf2f8;
   --font-sans: Arial, Helvetica, sans-serif;
   --text-xs: 12px;

@@ -1,5 +1,11 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import type { PoolClient } from 'pg';
+import { PageQuery } from '../core/dto.js';
 import { Database } from '../database/database.js';
 import {
   findPlatformPrincipal,
@@ -12,6 +18,14 @@ import {
 } from './permissions.js';
 import {
   PlatformBusinessQuery,
+  PlatformAuditQuery,
+  PlatformUserQuery,
+  PLATFORM_AUDIT_ACTIONS,
+  type PlatformAuditPage,
+  type PlatformUserPage,
+  type PlatformUser,
+  type PlatformUserDetail,
+  type PlatformUserMembership,
   type PlatformBusiness,
   type PlatformBusinessPage,
   type PlatformMe,
@@ -33,6 +47,8 @@ const aggregates = `
  gps_agg as(select business_id,count(*) filter(where state='FRESH')::int fresh,count(*) filter(where state='STALE')::int stale,count(*) filter(where state='OFFLINE')::int offline,count(*) filter(where state='NO_DATA')::int no_data,count(*) filter(where state='UNASSIGNED')::int unassigned from locations group by business_id)`;
 const joins = `left join branches_agg br on br.business_id=b.id left join memberships_agg m on m.business_id=b.id left join vehicles_agg v on v.business_id=b.id left join rentals_agg r on r.business_id=b.id left join gps_agg g on g.business_id=b.id`;
 const projection = `b.id,b.name,b.status,b.timezone,b.currency,b.created_at as "createdAt",b.updated_at as "updatedAt",${counts('counts')},${gps}`;
+const userProjection = `p.user_id as id,p.display_name as "displayName",p.status,p.created_at as "createdAt",p.updated_at as "updatedAt",coalesce(pm.status,'NONE') as "platformStatus",coalesce(m.n,0)::int as "membershipCount",coalesce(m.active,0)::int as "activeMembershipCount",coalesce(m.roles,'[]'::jsonb) roles`;
+const userJoins = `left join public.platform_memberships pm on pm.user_id=p.user_id left join lateral(select count(*)::int n,count(*) filter(where bm.status='ACTIVE' and b.status='ACTIVE' and p.status='ACTIVE')::int active,jsonb_agg(distinct bm.role_key order by bm.role_key) roles from public.business_memberships bm join public.businesses b on b.id=bm.business_id where bm.user_id=p.user_id)m on true`;
 @Injectable()
 export class PlatformService {
   constructor(@Inject(Database) private readonly database: Database) {}
@@ -43,6 +59,7 @@ export class PlatformService {
     action: string,
     entityId: string | null,
     operation: (tx: PoolClient, principal: PlatformContext) => Promise<T>,
+    entityType: string = entityId ? 'business' : 'platform',
   ): Promise<T> {
     const tx = await this.database.pool.connect();
     try {
@@ -61,7 +78,7 @@ export class PlatformService {
         [
           principal.userId,
           action,
-          entityId ? 'business' : 'platform',
+          entityType,
           entityId,
           JSON.stringify({ requestId }),
         ],
@@ -143,6 +160,148 @@ export class PlatformService {
           });
         return result.rows[0];
       },
+    );
+  }
+  async audit(
+    c: PlatformContext,
+    q: PlatformAuditQuery,
+    requestId: string,
+  ): Promise<PlatformAuditPage> {
+    const until = q.until ? new Date(q.until) : new Date();
+    const from = q.from
+      ? new Date(q.from)
+      : new Date(until.getTime() - 30 * 86400000);
+    if (
+      !Number.isFinite(from.getTime()) ||
+      !Number.isFinite(until.getTime()) ||
+      from >= until ||
+      until.getTime() - from.getTime() > 366 * 86400000
+    )
+      throw new BadRequestException({
+        code: 'INVALID_AUDIT_RANGE',
+        message: 'Audit range must be positive and at most 366 days',
+      });
+    return this.read(
+      c,
+      'platform.audit.read',
+      requestId,
+      'platform.audit.read',
+      q.businessId ?? null,
+      async (tx) => {
+        const column = q.sort === 'action' ? 'action' : '"createdAt"';
+        const order = q.order === 'asc' ? 'asc' : 'desc';
+        const result = await tx.query<{
+          data: PlatformAuditPage['data'];
+          total: number;
+        }>(
+          `
+        with reviewed as(select id,actor_user_id as "actorId",
+          case when action=any($1::text[]) then action else 'other' end action,
+          case when entity_type in('platform','business','user','platform_membership') then entity_type else 'other' end as "entityType",
+          case when entity_type in('platform','business','user','platform_membership') then entity_id else null end as "entityId",
+          case when jsonb_typeof(metadata->'requestId')='string' and metadata->>'requestId' ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' then metadata->>'requestId' else null end as "requestId",
+          created_at as "createdAt" from public.platform_audit_logs
+          where created_at >= $2 and created_at < $3 and ($4::uuid is null or (entity_type='business' and entity_id=$4))),
+        filtered as(select * from reviewed where ($5::text is null or action=$5)),
+        selected as(select * from filtered order by ${column} ${order},id ${order} limit $6 offset $7)
+        select coalesce((select jsonb_agg(selected order by ${column} ${order},id ${order}) from selected),'[]'::jsonb) data,(select count(*)::int from filtered) total`,
+          [
+            PLATFORM_AUDIT_ACTIONS,
+            from.toISOString(),
+            until.toISOString(),
+            q.businessId ?? null,
+            q.action ?? null,
+            q.limit,
+            (q.page - 1) * q.limit,
+          ],
+        );
+        return {
+          ...result.rows[0],
+          page: q.page,
+          limit: q.limit,
+          from: from.toISOString(),
+          until: until.toISOString(),
+        };
+      },
+    );
+  }
+  users(
+    c: PlatformContext,
+    q: PlatformUserQuery,
+    requestId: string,
+  ): Promise<PlatformUserPage> {
+    return this.read(
+      c,
+      'platform.user.read',
+      requestId,
+      'platform.users.read',
+      null,
+      async (tx) => {
+        const column = q.sort === 'name' ? 'display_name' : 'created_at';
+        const outputColumn =
+          q.sort === 'name' ? '"displayName"' : '"createdAt"';
+        const direction = q.order === 'asc' ? 'asc' : 'desc';
+        const pattern = '%' + (q.search ?? '').replace(/[\\%_]/g, '\\$&') + '%';
+        const result = await tx.query<{ data: PlatformUser[]; total: number }>(
+          `
+        with filtered as(select p.* from public.user_profiles p where ($1::text is null or p.status=$1) and p.display_name ilike $2
+          and (($3::uuid is null and $4::text is null and $5::text is null) or exists(select 1 from public.business_memberships bm where bm.user_id=p.user_id and ($3::uuid is null or bm.business_id=$3) and ($4::text is null or bm.role_key=$4) and ($5::text is null or bm.status=$5)))),
+        selected as(select * from filtered order by ${column} ${direction},user_id ${direction} limit $6 offset $7),
+        result as(select ${userProjection} from selected p ${userJoins})
+        select coalesce((select jsonb_agg(result order by ${outputColumn} ${direction},id ${direction}) from result),'[]'::jsonb) data,(select count(*)::int from filtered) total`,
+          [
+            q.status ?? null,
+            pattern,
+            q.businessId ?? null,
+            q.roleKey ?? null,
+            q.membershipStatus ?? null,
+            q.limit,
+            (q.page - 1) * q.limit,
+          ],
+        );
+        return { ...result.rows[0], page: q.page, limit: q.limit };
+      },
+    );
+  }
+  user(
+    c: PlatformContext,
+    id: string,
+    q: PageQuery,
+    requestId: string,
+  ): Promise<PlatformUserDetail> {
+    return this.read(
+      c,
+      'platform.user.read',
+      requestId,
+      'platform.user.read',
+      id,
+      async (tx) => {
+        const profile = (
+          await tx.query<PlatformUser>(
+            `select ${userProjection} from public.user_profiles p ${userJoins} where p.user_id=$1`,
+            [id],
+          )
+        ).rows[0];
+        if (!profile)
+          throw new NotFoundException({
+            code: 'PLATFORM_USER_NOT_FOUND',
+            message: 'User profile not found',
+          });
+        const rows = await tx.query<PlatformUserMembership>(
+          `select m.id,m.business_id as "businessId",b.name as "businessName",b.status as "businessStatus",m.role_key as "roleKey",m.status from public.business_memberships m join public.businesses b on b.id=m.business_id where m.user_id=$1 order by b.name,m.id limit $2 offset $3`,
+          [id, q.limit, (q.page - 1) * q.limit],
+        );
+        return {
+          profile,
+          memberships: {
+            data: rows.rows,
+            total: profile.membershipCount,
+            page: q.page,
+            limit: q.limit,
+          },
+        };
+      },
+      'user',
     );
   }
   overview(c: PlatformContext, requestId: string): Promise<PlatformOverview> {

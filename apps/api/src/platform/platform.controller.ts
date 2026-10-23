@@ -9,6 +9,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { PageQuery } from '../core/dto.js';
 import { AuthGuard } from '../auth/guards.js';
 import {
   PlatformGuard,
@@ -16,6 +17,11 @@ import {
   type PlatformRequest,
 } from './guards.js';
 import {
+  PlatformAuditPage,
+  PlatformAuditQuery,
+  PlatformUserPage,
+  PlatformUserQuery,
+  PlatformUserDetail,
   PlatformBusiness,
   PlatformBusinessPage,
   PlatformBusinessQuery,
@@ -47,6 +53,28 @@ export class PlatformController {
   @ApiOkResponse({ type: PlatformBusinessPage })
   businesses(@Req() r: PlatformRequest, @Query() q: PlatformBusinessQuery) {
     return this.platform.businesses(r.platform, q, r.requestId);
+  }
+  @Get('audit')
+  @RequirePlatformPermission('platform.audit.read')
+  @ApiOkResponse({ type: PlatformAuditPage })
+  audit(@Req() r: PlatformRequest, @Query() q: PlatformAuditQuery) {
+    return this.platform.audit(r.platform, q, r.requestId);
+  }
+  @Get('users')
+  @RequirePlatformPermission('platform.user.read')
+  @ApiOkResponse({ type: PlatformUserPage })
+  users(@Req() r: PlatformRequest, @Query() q: PlatformUserQuery) {
+    return this.platform.users(r.platform, q, r.requestId);
+  }
+  @Get('users/:id')
+  @RequirePlatformPermission('platform.user.read')
+  @ApiOkResponse({ type: PlatformUserDetail })
+  user(
+    @Req() r: PlatformRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query() q: PageQuery,
+  ) {
+    return this.platform.user(r.platform, id, q, r.requestId);
   }
   @Get('businesses/:id')
   @RequirePlatformPermission('platform.business.read')

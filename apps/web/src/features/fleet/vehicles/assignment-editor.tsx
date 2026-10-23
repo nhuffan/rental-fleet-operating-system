@@ -5,7 +5,7 @@ import { browserClient } from "@/lib/supabase/client";
 import { publicEnv } from "@/lib/env";
 import { useMutation } from "@/lib/api-client/use-mutation";
 import { Drawer } from "@/components/ui/drawer";
-import { Button, EmptyState } from "@/components/ui/primitives";
+import { Button, EmptyState, Input } from "@/components/ui/primitives";
 import { Pagination } from "@/components/data-display/table";
 import { MutationNotice } from "@/components/feedback/mutation-notice";
 import type { DeviceAssignment, GpsDevicePage, Vehicle } from "./types";
@@ -26,6 +26,7 @@ export function AssignmentEditor({
   const mutation = useMutation(businessId);
   return (
     <Drawer
+      busy={mutation.busy}
       title={ending ? "Tháo thiết bị khỏi xe" : "Gắn thiết bị GPS"}
       onClose={() => {
         if (!mutation.busy) onClose();
@@ -188,7 +189,7 @@ function AvailableDevicePicker({
       >
         <label className="form-field">
           Tìm thiết bị
-          <input
+          <Input
             type="search"
             name="search"
             maxLength={100}
@@ -218,7 +219,7 @@ function AvailableDevicePicker({
             <legend>Chọn thiết bị</legend>
             {result.data.map((device) => (
               <label className="fleet-device-option" key={device.id}>
-                <input
+                <Input
                   type="radio"
                   name="selectedDevice"
                   checked={selected === device.id}

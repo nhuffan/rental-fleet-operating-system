@@ -8,6 +8,9 @@ import {
   PanelHeader,
   Badge,
   EmptyState,
+  Input,
+  Select,
+  StatusBadge,
 } from "@/components/ui/primitives";
 import { DataTable, Pagination } from "@/components/data-display/table";
 import { formatDate, queryString } from "@/lib/query";
@@ -52,7 +55,7 @@ export function BusinessesPanel({
         }}
       >
         <label className="search-input">
-          <input
+          <Input
             type="search"
             name="search"
             maxLength={120}
@@ -61,7 +64,7 @@ export function BusinessesPanel({
             aria-label="Tìm doanh nghiệp"
           />
         </label>
-        <select
+        <Select
           className="filter-select"
           name="status"
           defaultValue={filters.status}
@@ -70,8 +73,8 @@ export function BusinessesPanel({
           <option value="">Mọi trạng thái</option>
           <option value="ACTIVE">Hoạt động</option>
           <option value="DISABLED">Đã vô hiệu hóa</option>
-        </select>
-        <select
+        </Select>
+        <Select
           className="filter-select"
           name="sort"
           defaultValue={filters.sort}
@@ -79,8 +82,8 @@ export function BusinessesPanel({
         >
           <option value="createdAt">Ngày tạo</option>
           <option value="name">Tên doanh nghiệp</option>
-        </select>
-        <select
+        </Select>
+        <Select
           className="filter-select"
           name="order"
           defaultValue={filters.order}
@@ -88,8 +91,8 @@ export function BusinessesPanel({
         >
           <option value="desc">Giảm dần</option>
           <option value="asc">Tăng dần</option>
-        </select>
-        <select
+        </Select>
+        <Select
           className="filter-select"
           name="limit"
           defaultValue={filters.limit}
@@ -98,7 +101,7 @@ export function BusinessesPanel({
           <option value="20">20 / trang</option>
           <option value="50">50 / trang</option>
           <option value="100">100 / trang</option>
-        </select>
+        </Select>
         <Button type="submit" variant="secondary" disabled={pending}>
           {pending ? "Đang tải…" : "Áp dụng"}
         </Button>
@@ -127,11 +130,7 @@ export function BusinessesPanel({
               {
                 key: "status",
                 label: "Trạng thái",
-                render: (b) => (
-                  <Badge tone={b.status === "ACTIVE" ? "success" : "neutral"}>
-                    {b.status === "ACTIVE" ? "Hoạt động" : "Đã vô hiệu hóa"}
-                  </Badge>
-                ),
+                render: (b) => <StatusBadge status={b.status} />,
               },
               {
                 key: "branches",

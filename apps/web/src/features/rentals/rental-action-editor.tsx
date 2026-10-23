@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { Drawer } from "@/components/ui/drawer";
-import { Button } from "@/components/ui/primitives";
+import { Button, Input, Textarea } from "@/components/ui/primitives";
 import { MutationNotice } from "@/components/feedback/mutation-notice";
 import { useMutation } from "@/lib/api-client/use-mutation";
 import { localDateTime, utcDateTime } from "@/lib/date-time";
@@ -54,6 +54,7 @@ export function RentalActionEditor({
   const validRange = !!startAt && !!endAt && endAt > startAt;
   return (
     <Drawer
+      busy={mutation.busy}
       title={titles[action]}
       onClose={() => {
         if (!mutation.busy) onClose();
@@ -74,7 +75,7 @@ export function RentalActionEditor({
             <div className="form-grid">
               <label className="form-field">
                 Nhận xe lúc
-                <input
+                <Input
                   form="rental-edit-action"
                   name="startAt"
                   type="datetime-local"
@@ -88,7 +89,7 @@ export function RentalActionEditor({
               </label>
               <label className="form-field">
                 Trả xe dự kiến
-                <input
+                <Input
                   form="rental-edit-action"
                   name="endAt"
                   type="datetime-local"
@@ -265,7 +266,7 @@ export function RentalActionEditor({
                 </p>
                 <label className="form-field">
                   Odometer bàn giao (km)
-                  <input
+                  <Input
                     name="odometerStart"
                     type="number"
                     required
@@ -281,7 +282,7 @@ export function RentalActionEditor({
                 <p>Nhận trả sẽ hoàn thành hợp đồng và kết thúc việc giữ xe.</p>
                 <label className="form-field">
                   Odometer nhận trả (km)
-                  <input
+                  <Input
                     name="odometerEnd"
                     type="number"
                     required
@@ -304,7 +305,7 @@ export function RentalActionEditor({
                 </p>
                 <label className="form-field">
                   Ghi chú hủy
-                  <textarea
+                  <Textarea
                     name="notes"
                     maxLength={4000}
                     rows={4}
@@ -318,7 +319,7 @@ export function RentalActionEditor({
                 <p className="quiet">Thời gian theo giờ Việt Nam (UTC+7).</p>
                 <label className="form-field">
                   Trả xe mới
-                  <input
+                  <Input
                     name="endAt"
                     type="datetime-local"
                     required
@@ -331,7 +332,7 @@ export function RentalActionEditor({
             {(action === "edit" || action === "extend") && (
               <label className="form-field">
                 Tiền thuê ({currency})
-                <input
+                <Input
                   name="rentalAmount"
                   type="number"
                   min={0}
@@ -346,7 +347,7 @@ export function RentalActionEditor({
               <>
                 <label className="form-field">
                   Tiền cọc yêu cầu ({currency})
-                  <input
+                  <Input
                     name="depositRequiredAmount"
                     type="number"
                     min={0}
@@ -357,7 +358,7 @@ export function RentalActionEditor({
                   />
                 </label>
                 <label className="rental-checkbox">
-                  <input
+                  <Input
                     name="depositReceived"
                     type="checkbox"
                     defaultChecked={rental.depositReceived}
@@ -366,7 +367,7 @@ export function RentalActionEditor({
                 </label>
                 <label className="form-field">
                   Ghi chú
-                  <textarea
+                  <Textarea
                     name="notes"
                     rows={4}
                     maxLength={4000}
@@ -376,7 +377,7 @@ export function RentalActionEditor({
               </>
             )}
             <div className="rental-form-actions">
-              <Button type="submit">
+              <Button type="submit" loading={mutation.busy}>
                 {mutation.busy ? "Đang xử lý…" : titles[action]}
               </Button>
               <Button type="button" variant="secondary" onClick={onClose}>

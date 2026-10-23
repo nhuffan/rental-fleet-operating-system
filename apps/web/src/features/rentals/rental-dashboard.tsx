@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Button,
+  Tabs,
   EmptyState,
   Panel,
   PanelHeader,
@@ -88,22 +88,23 @@ export function RentalDashboard({
           icon="rental"
         />
         <div className="rental-queue-tabs">
-          <Button
-            variant={overdue ? "secondary" : "primary"}
-            aria-pressed={!overdue}
-            disabled={pending}
-            onClick={() => navigate({ overdue: "", queuePage: 1 })}
-          >
-            Đang thuê
-          </Button>
-          <Button
-            variant={overdue ? "primary" : "secondary"}
-            aria-pressed={overdue}
-            disabled={pending}
-            onClick={() => navigate({ overdue: "true", queuePage: 1 })}
-          >
-            Quá hạn ({overdueTotal})
-          </Button>
+          <Tabs
+            items={[
+              { value: "active", label: "Đang thuê", disabled: pending },
+              {
+                value: "overdue",
+                label: `Quá hạn (${overdueTotal})`,
+                disabled: pending,
+              },
+            ]}
+            value={overdue ? "overdue" : "active"}
+            onChange={(value) =>
+              navigate({
+                overdue: value === "overdue" ? "true" : "",
+                queuePage: 1,
+              })
+            }
+          />
         </div>
         <RentalTable rentals={queue.data} currency={currency} />
         <Pagination

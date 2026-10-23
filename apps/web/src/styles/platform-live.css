@@ -12,3 +12,36 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+.platform-support-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 14px;
+  border-bottom: 1px solid var(--border);
+}
+.platform-support-filters .form-field {
+  margin-bottom: 0;
+  flex: 1 1 175px;
+  min-width: 0;
+}
+.platform-support-filters .notice {
+  flex-basis: 100%;
+}
+.topbar-identity {
+  display: inline-flex;
+  align-items: center;
+}
+
+.topbar > .inline {
+  min-width: 0;
+}
+.topbar > .inline > strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.topbar-identity,
+.topbar-meta {
+  flex-shrink: 0;
+}

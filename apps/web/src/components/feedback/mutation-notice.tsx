@@ -1,3 +1,4 @@
+import { Notice } from "@/components/ui/primitives";
 export function MutationNotice({
   error,
   message,
@@ -7,16 +8,8 @@ export function MutationNotice({
 }) {
   return (
     <div aria-live="polite">
-      {error && (
-        <p role="alert" className="notice notice-danger">
-          {error}
-        </p>
-      )}
-      {message && (
-        <p role="status" className="notice notice-success">
-          {message}
-        </p>
-      )}
+      {error && <Notice tone="danger">{error}</Notice>}
+      {message && <Notice tone="success">{message}</Notice>}
     </div>
   );
 }

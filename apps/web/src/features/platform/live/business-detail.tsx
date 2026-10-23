@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Badge, Panel, PanelHeader } from "@/components/ui/primitives";
 import { formatDate } from "@/lib/query";
 import type { PlatformBusiness } from "./types";
@@ -25,6 +26,20 @@ export function PlatformBusinessDetail({
           <Badge tone="info">Chỉ đọc</Badge>
         </div>
       </Panel>
+      <div className="panel-body inline">
+        <Link
+          className="button button-secondary"
+          href={`/superadmin/users?businessId=${b.id}`}
+        >
+          Người dùng doanh nghiệp
+        </Link>
+        <Link
+          className="button button-secondary"
+          href={`/superadmin/audit?businessId=${b.id}`}
+        >
+          Nhật ký platform liên quan
+        </Link>
+      </div>
       <div className="fleet-profile-grid platform-live-detail">
         <Panel>
           <PanelHeader title="Thông tin doanh nghiệp" icon="business" />

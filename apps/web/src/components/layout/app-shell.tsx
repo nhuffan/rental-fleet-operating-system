@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { BrandLockup } from "@/components/ui/brand-lockup";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { PlatformMe } from "@/features/platform/live/types";
@@ -110,13 +111,20 @@ export function AppShell({
                 ? platformContext?.permissions.includes(
                     "platform.business.read",
                   )
-                : true),
+                : path === "audit"
+                  ? platformContext?.permissions.includes("platform.audit.read")
+                  : path === "users"
+                    ? platformContext?.permissions.includes(
+                        "platform.user.read",
+                      )
+                    : true),
         )
         .map(([path, label, icon]) => ({
           href: prefix + (path ? `/${path}` : ""),
           label,
           icon,
-          unavailable: !preview && !["", "businesses"].includes(path),
+          unavailable:
+            !preview && !["", "businesses", "users", "audit"].includes(path),
         }))
     : [
         { href: prefix, label: "Tổng quan", icon: "grid" },
@@ -215,15 +223,17 @@ export function AppShell({
           : pathname.startsWith("/app/customers/")
             ? "Khách hàng"
             : undefined) ??
-    (pathname.includes("businesses/")
-      ? "Chi tiết doanh nghiệp"
-      : "Không gian làm việc");
+    (pathname.includes("users/")
+      ? "Chi tiết người dùng"
+      : pathname.includes("businesses/")
+        ? "Chi tiết doanh nghiệp"
+        : "Không gian làm việc");
   function nav(items: NavItem[]) {
     return items.map((item) => (
       <Link
         key={item.href}
         href={item.href}
-        className={`nav-link ${pathname === item.href || (["/app/vehicles", "/app/rentals", "/app/customers", "/app/trips", "/superadmin/businesses"].includes(item.href) && pathname.startsWith(`${item.href}/`)) ? "is-active" : ""}`}
+        className={`nav-link ${pathname === item.href || (["/app/vehicles", "/app/rentals", "/app/customers", "/app/trips", "/superadmin/businesses", "/superadmin/users"].includes(item.href) && pathname.startsWith(`${item.href}/`)) ? "is-active" : ""}`}
         aria-current={
           pathname === item.href ||
           ([
@@ -232,6 +242,7 @@ export function AppShell({
             "/app/customers",
             "/app/trips",
             "/superadmin/businesses",
+            "/superadmin/users",
           ].includes(item.href) &&
             pathname.startsWith(`${item.href}/`))
             ? "page"
@@ -273,13 +284,7 @@ export function AppShell({
           <Icon name="close" />
         </Button>
         <Link href={prefix} className="brand">
-          <span className="brand-symbol">
-            <Icon name="car" size={25} />
-          </span>
-          <span>
-            Rental Fleet
-            <small>{platform ? "PLATFORM CONSOLE" : "OPERATING SYSTEM"}</small>
-          </span>
+          <BrandLockup />
         </Link>
         {!preview && context?.permissions.includes("rental.manage") ? (
           <Link
@@ -311,7 +316,7 @@ export function AppShell({
           ) : (
             <div>
               <strong>
-                {platform ? "Rental Fleet Platform" : "Minh An Mobility"}
+                {platform ? "Rental Fleet OS" : "Minh An Mobility"}
               </strong>
               <small>
                 {platformContext
@@ -390,9 +395,8 @@ export function AppShell({
             >
               <Icon name="menu" />
             </Button>
-            <span className="topbar-home">
-              <Icon name={platform ? "globe" : "business"} />
-              {platform ? "Platform" : "Workspace"}
+            <span className="topbar-identity">
+              <BrandLockup compact />
             </span>
             <Icon name="chevron" size={13} />
             <strong>{current}</strong>

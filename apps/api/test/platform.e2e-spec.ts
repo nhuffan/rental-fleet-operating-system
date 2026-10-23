@@ -103,7 +103,12 @@ it('requires real Supabase identity plus dedicated platform grant, independent o
       userId: demo.accounts.platformOperator.id,
       role: 'PLATFORM_OPERATOR',
     },
-    permissions: ['platform.overview.read', 'platform.business.read'],
+    permissions: [
+      'platform.overview.read',
+      'platform.business.read',
+      'platform.audit.read',
+      'platform.user.read',
+    ],
     readOnly: true,
   });
   expect(own.body).not.toHaveProperty('business');
@@ -163,6 +168,8 @@ it('revokes disabled principals and profiles immediately and keeps platform read
   try {
     const disabled = await api().get('/platform/me').expect(403);
     expect(disabled.body.code).toBe('PLATFORM_ACCESS_DENIED');
+    await api().get('/platform/audit').expect(403);
+    await api().get('/platform/users').expect(403);
   } finally {
     await database!.pool.query(
       "update public.platform_memberships set status='ACTIVE' where id=$1 and user_id=$2",
@@ -175,6 +182,10 @@ it('revokes disabled principals and profiles immediately and keeps platform read
   );
   try {
     await api().get('/platform/businesses').expect(403);
+    await api().get('/platform/audit').expect(403);
+    await api()
+      .get('/platform/users/' + demo.accounts.ownerA.id)
+      .expect(403);
   } finally {
     await database!.pool.query(
       "update public.user_profiles set status='ACTIVE' where user_id=$1",
@@ -212,3 +223,78 @@ it('denies direct platform table access to the publishable Data API even for an 
     expect(write.error).not.toBeNull();
   }
 }, 30000);
+
+it('serves new support reads only to the independent operator and validates real query boundaries', async () => {
+  for (const actor of ['ownerA', 'adminA', 'operationsA'])
+    for (const path of [
+      '/platform/audit',
+      '/platform/users',
+      '/platform/users/' + demo.accounts.ownerA.id,
+    ])
+      await api(actor, demo.businessA).get(path).expect(403);
+  for (const path of ['/platform/audit', '/platform/users'])
+    await request(app!.getHttpServer())
+      .get('/api/v1' + path)
+      .expect(401);
+  const users = await api()
+    .get('/platform/users?limit=1&businessId=' + demo.businessA)
+    .expect(200);
+  expect(users.body.data).toHaveLength(1);
+  const unique = await database!.pool.query<{ n: number }>(
+    'select count(distinct user_id)::int n from public.business_memberships where business_id=$1',
+    [demo.businessA],
+  );
+  expect(users.body.total).toBe(unique.rows[0].n);
+  const detail = await api()
+    .get('/platform/users/' + demo.accounts.ownerA.id + '?limit=1')
+    .expect(200);
+  expect(detail.body.profile.id).toBe(demo.accounts.ownerA.id);
+  expect(detail.body.memberships.data.length).toBeLessThanOrEqual(1);
+  const audit = await api()
+    .get('/platform/audit?limit=1&businessId=' + demo.businessA)
+    .expect(200);
+  expect(audit.body.data.length).toBeLessThanOrEqual(1);
+  for (const row of audit.body.data) {
+    expect(Object.keys(row).sort()).toEqual([
+      'action',
+      'actorId',
+      'createdAt',
+      'entityId',
+      'entityType',
+      'id',
+      'requestId',
+    ]);
+    expect(row.entityType).toBe('business');
+    expect(row.entityId).toBe(demo.businessA);
+  }
+  for (const data of [users.body, detail.body, audit.body])
+    for (const key of [
+      'email',
+      'phone',
+      'password',
+      'metadata',
+      'deviceUid',
+      'latitude',
+      'longitude',
+      'service_role',
+    ])
+      expect(JSON.stringify(data)).not.toContain(key);
+  for (const path of [
+    '/platform/users?limit=101',
+    '/platform/users?businessId=x',
+    '/platform/users?roleKey=PLATFORM_OPERATOR',
+    '/platform/audit?limit=101',
+    '/platform/audit?sort=metadata',
+    '/platform/audit?from=2020-01-01',
+    '/platform/audit?from=2020-01-01T00:00:00Z&until=2022-01-01T00:00:00Z',
+  ])
+    await api().get(path).expect(400);
+  await api()
+    .get('/platform/users/' + randomUUID())
+    .expect(404);
+  const after = await database!.pool.query<{ n: number }>(
+    'select count(*)::int n from public.audit_logs where actor_user_id=$1',
+    [demo.accounts.platformOperator.id],
+  );
+  expect(after.rows[0].n).toBe(tenantAuditBefore);
+}, 60000);

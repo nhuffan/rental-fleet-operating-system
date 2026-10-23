@@ -1,7 +1,7 @@
 "use client";
 import type { Branch } from "@rental-fleet/contracts";
 import { Drawer } from "@/components/ui/drawer";
-import { Button } from "@/components/ui/primitives";
+import { Button, Input, Select } from "@/components/ui/primitives";
 import { MutationNotice } from "@/components/feedback/mutation-notice";
 import { useMutation } from "@/lib/api-client/use-mutation";
 import type { Vehicle, VehicleCreate, VehicleUpdate } from "./types";
@@ -21,6 +21,7 @@ export function VehicleEditor({
   const mutation = useMutation(businessId);
   return (
     <Drawer
+      busy={mutation.busy}
       title={vehicle ? "Chỉnh sửa xe" : "Thêm xe"}
       onClose={() => {
         if (!mutation.busy) onClose();
@@ -68,7 +69,7 @@ export function VehicleEditor({
           <fieldset disabled={mutation.busy}>
             <label className="form-field">
               Biển số
-              <input
+              <Input
                 name="licensePlate"
                 defaultValue={vehicle?.licensePlate ?? ""}
                 required
@@ -94,7 +95,7 @@ export function VehicleEditor({
             <div className="form-grid">
               <label className="form-field">
                 Hãng xe
-                <input
+                <Input
                   name="make"
                   defaultValue={vehicle?.make ?? ""}
                   required
@@ -104,7 +105,7 @@ export function VehicleEditor({
               </label>
               <label className="form-field">
                 Mẫu xe
-                <input
+                <Input
                   name="model"
                   defaultValue={vehicle?.model ?? ""}
                   required
@@ -115,7 +116,7 @@ export function VehicleEditor({
             </div>
             <label className="form-field">
               Chi nhánh
-              <select name="branchId" defaultValue={vehicle?.branchId ?? ""}>
+              <Select name="branchId" defaultValue={vehicle?.branchId ?? ""}>
                 <option value="">Chưa phân chi nhánh</option>
                 {branches
                   .filter(
@@ -129,11 +130,11 @@ export function VehicleEditor({
                       {branch.status === "ACTIVE" ? "" : " (đã vô hiệu hóa)"}
                     </option>
                   ))}
-              </select>
+              </Select>
             </label>
             <label className="form-field">
               Trạng thái vòng đời
-              <select name="status" defaultValue={vehicle?.status ?? "ACTIVE"}>
+              <Select name="status" defaultValue={vehicle?.status ?? "ACTIVE"}>
                 <option value="ACTIVE">Hoạt động</option>
                 <option
                   value="INACTIVE"
@@ -141,7 +142,7 @@ export function VehicleEditor({
                 >
                   Ngưng hoạt động
                 </option>
-              </select>
+              </Select>
               {vehicle?.currentAssignment && (
                 <small>
                   Tháo thiết bị đang gắn trước khi ngưng hoạt động xe.
@@ -149,7 +150,7 @@ export function VehicleEditor({
               )}
             </label>
             <div className="inline">
-              <Button type="submit">
+              <Button type="submit" loading={mutation.busy}>
                 {mutation.busy ? "Đang lưu…" : "Lưu xe"}
               </Button>
               <Button variant="secondary" type="button" onClick={onClose}>

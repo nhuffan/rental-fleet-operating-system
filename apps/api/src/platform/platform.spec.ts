@@ -12,7 +12,13 @@ import type { Database } from '../database/database.js';
 import { TenantGuard } from '../auth/guards.js';
 import * as schema from '../database/schema.js';
 import { PlatformGuard, type PlatformContext } from './guards.js';
-import { PlatformBusinessQuery } from './dto.js';
+import { PlatformController } from './platform.controller.js';
+import { PageQuery } from '../core/dto.js';
+import {
+  PlatformAuditQuery,
+  PlatformUserQuery,
+  PlatformBusinessQuery,
+} from './dto.js';
 import { PlatformService } from './platform.service.js';
 import { platformPermissionsFor } from './permissions.js';
 let db: PGlite,
@@ -153,6 +159,8 @@ it('denies tenant OWNER and forged metadata regardless of selected business; nev
   expect(platformPermissionsFor('PLATFORM_OPERATOR')).toEqual([
     'platform.overview.read',
     'platform.business.read',
+    'platform.audit.read',
+    'platform.user.read',
   ]);
 });
 it.each(['membership', 'profile', 'role'])(
@@ -186,6 +194,15 @@ it.each(['membership', 'profile', 'role'])(
       await expect(service.overview(operator, rid())).rejects.toMatchObject({
         response: { code: 'PLATFORM_ACCESS_DENIED' },
       });
+      await expect(
+        service.users(operator, new PlatformUserQuery(), rid()),
+      ).rejects.toMatchObject({ response: { code: 'PLATFORM_ACCESS_DENIED' } });
+      await expect(
+        service.user(operator, owner, new PageQuery(), rid()),
+      ).rejects.toMatchObject({ response: { code: 'PLATFORM_ACCESS_DENIED' } });
+      await expect(
+        service.audit(operator, new PlatformAuditQuery(), rid()),
+      ).rejects.toMatchObject({ response: { code: 'PLATFORM_ACCESS_DENIED' } });
     } finally {
       if (kind === 'role') {
         await db.query(
@@ -366,3 +383,288 @@ it('validates business list bounds and does not accept arbitrary sort fragments'
       (await validate(plainToInstance(PlatformBusinessQuery, value))).length,
     ).toBeGreaterThan(0);
 });
+
+it('uses explicit independent permissions for every new support route and denies an ungranted stale context', async () => {
+  expect(
+    Reflect.getMetadata(
+      'platformPermission',
+      Object.getOwnPropertyDescriptor(PlatformController.prototype, 'audit')!
+        .value,
+    ),
+  ).toBe('platform.audit.read');
+  expect(
+    Reflect.getMetadata(
+      'platformPermission',
+      Object.getOwnPropertyDescriptor(PlatformController.prototype, 'users')!
+        .value,
+    ),
+  ).toBe('platform.user.read');
+  expect(
+    Reflect.getMetadata(
+      'platformPermission',
+      Object.getOwnPropertyDescriptor(PlatformController.prototype, 'user')!
+        .value,
+    ),
+  ).toBe('platform.user.read');
+  const forged = { ...operator, userId: owner };
+  await expect(
+    service.users(forged, new PlatformUserQuery(), rid()),
+  ).rejects.toMatchObject({ response: { code: 'PLATFORM_ACCESS_DENIED' } });
+  await expect(
+    service.audit(forged, new PlatformAuditQuery(), rid()),
+  ).rejects.toMatchObject({ response: { code: 'PLATFORM_ACCESS_DENIED' } });
+});
+it('counts unique profiles and returns bounded safe membership summaries including disabled states', async () => {
+  const q = Object.assign(new PlatformUserQuery(), {
+    businessId: businessA,
+    roleKey: 'OWNER',
+    limit: 1,
+  });
+  const list = await service.users(operator, q, rid());
+  expect(list.total).toBe(1);
+  expect(list.data).toHaveLength(1);
+  expect(list.data[0]).toMatchObject({
+    id: owner,
+    displayName: 'Private Owner',
+    membershipCount: 2,
+    activeMembershipCount: 1,
+    platformStatus: 'NONE',
+    roles: ['OWNER'],
+  });
+  const detail = await service.user(
+    operator,
+    owner,
+    Object.assign(new PageQuery(), { limit: 1 }),
+    rid(),
+  );
+  const next = await service.user(
+    operator,
+    owner,
+    Object.assign(new PageQuery(), { limit: 1, page: 2 }),
+    rid(),
+  );
+  expect(detail.memberships.total).toBe(2);
+  expect(detail.memberships.data).toHaveLength(1);
+  expect(next.memberships.data).toHaveLength(1);
+  expect(detail.memberships.data[0].id).not.toBe(next.memberships.data[0].id);
+  expect(
+    [
+      detail.memberships.data[0].businessStatus,
+      next.memberships.data[0].businessStatus,
+    ].sort(),
+  ).toEqual(['ACTIVE', 'DISABLED']);
+  for (const key of [
+    'email',
+    'phone',
+    'password',
+    'metadata',
+    'deviceUid',
+    'latitude',
+    'longitude',
+    'address',
+  ])
+    expect(JSON.stringify(detail)).not.toContain(key);
+  await db.query(
+    "update business_memberships set status='DISABLED' where user_id=$1 and business_id=$2",
+    [owner, businessA],
+  );
+  const disabled = await service.users(
+    operator,
+    Object.assign(new PlatformUserQuery(), {
+      businessId: businessA,
+      membershipStatus: 'DISABLED',
+    }),
+    rid(),
+  );
+  expect(disabled.total).toBe(1);
+  expect(disabled.data[0].activeMembershipCount).toBe(0);
+  await db.query(
+    "update user_profiles set display_name='Literal_%User' where user_id=$1",
+    [owner],
+  );
+  expect(
+    (
+      await service.users(
+        operator,
+        Object.assign(new PlatformUserQuery(), {
+          search: 'Literal_%User',
+          businessId: businessA,
+        }),
+        rid(),
+      )
+    ).total,
+  ).toBe(1);
+  expect(
+    (
+      await service.users(
+        operator,
+        Object.assign(new PlatformUserQuery(), {
+          businessId: businessA,
+          roleKey: 'ADMIN',
+        }),
+        rid(),
+      )
+    ).total,
+  ).toBe(0);
+  await expect(
+    service.user(operator, rid(), new PageQuery(), rid()),
+  ).rejects.toMatchObject({ response: { code: 'PLATFORM_USER_NOT_FOUND' } });
+  const audits = await db.query<{ entity_type: string; entity_id: string }>(
+    "select entity_type,entity_id from platform_audit_logs where actor_user_id=$1 and action='platform.user.read'",
+    [operator.userId],
+  );
+  expect(
+    audits.rows.every((a) => a.entity_type === 'user' && a.entity_id === owner),
+  ).toBe(true);
+});
+it('projects reviewed audit fields only, filters target/date/action, and never reads tenant audit', async () => {
+  const goodId = rid(),
+    requestId = rid();
+  await db.query(
+    "insert into platform_audit_logs(id,actor_user_id,action,entity_type,entity_id,metadata,created_at) values($1,$2,'platform.business.read','business',$3,$4,'2020-01-02T00:00:00Z')",
+    [
+      goodId,
+      operator.userId,
+      businessA,
+      JSON.stringify({
+        requestId,
+        email: 'private@example.test',
+        token: 'SECRET',
+        latitude: 10,
+        deviceUid: 'PRIVATE-TRACKER',
+        body: { password: 'SECRET' },
+      }),
+    ],
+  );
+  await db.query(
+    "insert into platform_audit_logs(actor_user_id,action,entity_type,entity_id,metadata,created_at) values($1,'unreviewed-private@example.test','PRIVATE-TRACKER',$2,$3,'2020-01-03T00:00:00Z')",
+    [
+      operator.userId,
+      businessA,
+      JSON.stringify({ requestId: 'private@example.test' }),
+    ],
+  );
+  await db.query(
+    "insert into audit_logs(business_id,actor_user_id,action,entity_type,entity_id)values($1,$2,'TENANT-ONLY','business',$1)",
+    [businessA, operator.userId],
+  );
+  const q = Object.assign(new PlatformAuditQuery(), {
+    from: '2020-01-01T00:00:00Z',
+    until: '2020-02-01T00:00:00Z',
+    businessId: businessA,
+    limit: 1,
+  });
+  const audit = await service.audit(operator, q, rid());
+  expect(audit.total).toBe(1);
+  expect(audit.data[0]).toEqual({
+    id: goodId,
+    actorId: operator.userId,
+    action: 'platform.business.read',
+    entityType: 'business',
+    entityId: businessA,
+    requestId,
+    createdAt: expect.any(String),
+  });
+  const second = await service.audit(
+    operator,
+    Object.assign(new PlatformAuditQuery(), {
+      from: q.from,
+      until: q.until,
+      action: 'other',
+      limit: 1,
+    }),
+    rid(),
+  );
+  expect(
+    second.data.some(
+      (a) =>
+        a.entityId === null && a.entityType === 'other' && a.requestId === null,
+    ),
+  ).toBe(true);
+  expect(JSON.stringify(audit)).not.toMatch(
+    /SECRET|email|latitude|deviceUid|metadata|TENANT-ONLY/,
+  );
+  expect(
+    (
+      await service.audit(
+        operator,
+        Object.assign(new PlatformAuditQuery(), q, {
+          action: 'platform.user.read',
+        }),
+        rid(),
+      )
+    ).total,
+  ).toBe(0);
+  expect(
+    (
+      await service.audit(
+        operator,
+        Object.assign(new PlatformAuditQuery(), q, { page: 2 }),
+        rid(),
+      )
+    ).data,
+  ).toHaveLength(0);
+});
+it('rejects invalid support query bounds, arbitrary sorts, UUIDs and audit date ranges', async () => {
+  for (const [klass, values] of [
+    [
+      PlatformUserQuery,
+      [
+        { limit: 101 },
+        { businessId: 'x' },
+        { roleKey: 'PLATFORM_OPERATOR' },
+        { membershipStatus: 'ANY' },
+        { sort: 'display_name desc;select 1' },
+        { search: 'x'.repeat(121) },
+      ],
+    ],
+    [
+      PlatformAuditQuery,
+      [
+        { limit: 101 },
+        { action: 'customer.read' },
+        { businessId: 'x' },
+        { from: '2020-01-01' },
+        { from: 'not-dateZ' },
+        { sort: 'metadata' },
+        { order: 'random' },
+      ],
+    ],
+  ] as const)
+    for (const value of values)
+      expect(
+        (await validate(plainToInstance<object, unknown>(klass, value))).length,
+      ).toBeGreaterThan(0);
+  for (const q of [
+    { from: '2020-01-02T00:00:00Z', until: '2020-01-01T00:00:00Z' },
+    { from: '2020-01-01T00:00:00Z', until: '2022-01-01T00:00:00Z' },
+  ])
+    await expect(
+      service.audit(
+        operator,
+        Object.assign(new PlatformAuditQuery(), q),
+        rid(),
+      ),
+    ).rejects.toMatchObject({ response: { code: 'INVALID_AUDIT_RANGE' } });
+});
+it.each(['platform.audit.read', 'platform.users.read', 'platform.user.read'])(
+  'fails closed when audit persistence fails for %s',
+  async (action) => {
+    await db.exec(
+      `alter table platform_audit_logs add constraint platform_support_test_failure check(action<>'${action}') not valid`,
+    );
+    try {
+      const read =
+        action === 'platform.audit.read'
+          ? service.audit(operator, new PlatformAuditQuery(), rid())
+          : action === 'platform.users.read'
+            ? service.users(operator, new PlatformUserQuery(), rid())
+            : service.user(operator, owner, new PageQuery(), rid());
+      await expect(read).rejects.toBeDefined();
+    } finally {
+      await db.exec(
+        'alter table platform_audit_logs drop constraint platform_support_test_failure',
+      );
+    }
+  },
+);

@@ -15,17 +15,26 @@ import {
 import { PlatformOverviewPanel } from "@/features/platform/live/overview";
 import { BusinessesPanel } from "@/features/platform/live/businesses-panel";
 import { PlatformBusinessDetail } from "@/features/platform/live/business-detail";
-import { businessFilters } from "@/features/platform/live/query";
+import {
+  SupportPanel,
+  UserDetailPanel,
+} from "@/features/platform/live/support-panel";
+import {
+  businessFilters,
+  auditFilters,
+  userFilters,
+} from "@/features/platform/live/query";
 import type {
+  PlatformAuditPage,
+  PlatformUserPage,
+  PlatformUserDetail,
   PlatformBusiness,
   PlatformBusinessPage,
   PlatformOverview,
 } from "@/features/platform/live/types";
 const unavailable: Record<string, string> = {
-  users: "Người dùng nền tảng",
   features: "Quản lý tính năng",
   integrations: "Tích hợp & GPS",
-  audit: "Nhật ký nền tảng",
   settings: "Cài đặt hệ thống",
 };
 export default async function Superadmin({
@@ -49,6 +58,77 @@ export default async function Superadmin({
           action={<Badge tone="info">LIVE · Chỉ đọc</Badge>}
         />
         <PlatformOverviewPanel data={data} />
+      </>
+    );
+  }
+  if (screen[0] === "audit" && screen.length === 1) {
+    await requirePlatformPermission("platform.audit.read");
+    const filters = auditFilters(await searchParams);
+    const data = await platformApi<PlatformAuditPage>(
+      `/platform/audit?${queryString(filters)}`,
+      `/superadmin/audit?${queryString(filters)}`,
+    );
+    const resolved = { ...filters, from: data.from, until: data.until };
+    return (
+      <>
+        <PageHeader
+          eyebrow="PLATFORM CONSOLE"
+          title="Nhật ký nền tảng"
+          description="Theo dõi sự kiện platform với bộ lọc được xử lý ở backend."
+          action={<Badge tone="info">LIVE · Chỉ đọc</Badge>}
+        />
+        <SupportPanel
+          mode="audit"
+          key={queryString(resolved)}
+          data={data}
+          filters={resolved}
+        />
+      </>
+    );
+  }
+  if (screen[0] === "users" && screen.length <= 2) {
+    await requirePlatformPermission("platform.user.read");
+    if (screen.length === 2) {
+      if (!validId(screen[1])) notFound();
+      const q = businessFilters(await searchParams);
+      const path = `/superadmin/users/${screen[1]}`;
+      const data = await platformApi<PlatformUserDetail>(
+        `/platform/users/${screen[1]}?${queryString({ page: q.page, limit: q.limit })}`,
+        path,
+        { notFoundOn404: true },
+      );
+      return (
+        <>
+          <Link className="back-link" href="/superadmin/users">
+            ← Danh sách người dùng
+          </Link>
+          <PageHeader
+            title="Chi tiết người dùng"
+            description="Hồ sơ hỗ trợ tối thiểu và liên kết doanh nghiệp; không có thao tác quản trị tài khoản."
+          />
+          <UserDetailPanel data={data} />
+        </>
+      );
+    }
+    const filters = userFilters(await searchParams);
+    const data = await platformApi<PlatformUserPage>(
+      `/platform/users?${queryString(filters)}`,
+      `/superadmin/users?${queryString(filters)}`,
+    );
+    return (
+      <>
+        <PageHeader
+          eyebrow="PLATFORM CONSOLE"
+          title="Người dùng & hỗ trợ"
+          description="Tra cứu hồ sơ duy nhất trên toàn nền tảng bằng quyền platform độc lập."
+          action={<Badge tone="info">LIVE · Chỉ đọc</Badge>}
+        />
+        <SupportPanel
+          mode="users"
+          key={queryString(filters)}
+          data={data}
+          filters={filters}
+        />
       </>
     );
   }
@@ -108,7 +188,7 @@ export default async function Superadmin({
           <EmptyState
             icon="shield"
             title="Chưa có API được phân quyền cho chức năng này"
-            description="Hiện chỉ Tổng quan, Danh sách và Chi tiết doanh nghiệp dùng dữ liệu thật. Chức năng này sẽ được mở khi có backend và quyền tương ứng."
+            description="Chức năng này sẽ được mở khi có backend và quyền tương ứng. Các thao tác quản trị tại đây chưa khả dụng."
           />
           <div className="panel-body">
             <Link className="button button-secondary" href="/superadmin">
