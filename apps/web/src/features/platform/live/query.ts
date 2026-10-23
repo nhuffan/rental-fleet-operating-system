@@ -51,9 +51,6 @@ export function userFilters(params: SearchParams) {
   return {
     ...businessFilters(params),
     businessId: validId(text(params.businessId)) ? text(params.businessId) : "",
-    roleKey: ["OWNER", "ADMIN", "OPERATIONS"].includes(text(params.roleKey))
-      ? text(params.roleKey)
-      : "",
     membershipStatus: ["ACTIVE", "DISABLED"].includes(
       text(params.membershipStatus),
     )

@@ -2,10 +2,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Me, Membership, Page } from "@rental-fleet/contracts";
-import { useMutation, type MemberCreate } from "@/lib/api-client/use-mutation";
+import { useMutation } from "@/lib/api-client/use-mutation";
 import {
   Button,
-  Badge,
   Panel,
   PanelHeader,
   StatusBadge,
@@ -34,7 +33,7 @@ export function MembersPanel({
   const member = editing && editing !== "new" ? editing : null;
   const rows = initial.data.filter(
     (row) =>
-      `${row.displayName ?? ""} ${row.userId} ${row.roleKey}`
+      `${row.displayName ?? ""} ${row.userId}`
         .toLowerCase()
         .includes(query.toLowerCase()) &&
       (status === "ALL" || row.status === status),
@@ -42,7 +41,7 @@ export function MembersPanel({
   const columns = [
     {
       key: "name",
-      label: "Thành viên",
+      label: "Owner",
       render: (r: Membership) => (
         <div className="inline">
           <span className="avatar">
@@ -58,23 +57,6 @@ export function MembersPanel({
       ),
     },
     {
-      key: "role",
-      label: "Vai trò",
-      render: (r: Membership) => (
-        <Badge
-          tone={
-            r.roleKey === "OWNER"
-              ? "brand"
-              : r.roleKey === "ADMIN"
-                ? "info"
-                : "neutral"
-          }
-        >
-          {r.roleKey}
-        </Badge>
-      ),
-    },
-    {
       key: "status",
       label: "Trạng thái",
       render: (r: Membership) => <StatusBadge status={r.status} />,
@@ -84,20 +66,17 @@ export function MembersPanel({
           {
             key: "action",
             label: "Thao tác",
-            render: (r: Membership) =>
-              context.role === "OWNER" || r.roleKey === "OPERATIONS" ? (
-                <Button
-                  variant="secondary"
-                  onClick={() => {
-                    mutation.clear();
-                    setEditing(r);
-                  }}
-                >
-                  Chỉnh sửa
-                </Button>
-              ) : (
-                <span className="quiet">Chỉ Owner quản lý</span>
-              ),
+            render: (r: Membership) => (
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  mutation.clear();
+                  setEditing(r);
+                }}
+              >
+                Chỉnh sửa
+              </Button>
+            ),
           },
         ]
       : []),
@@ -107,8 +86,8 @@ export function MembersPanel({
       <MutationNotice {...mutation} />
       <Panel>
         <PanelHeader
-          title="Thành viên doanh nghiệp"
-          subtitle={`${initial.total} thành viên · Quyền truy cập theo vai trò`}
+          title="Owner của doanh nghiệp"
+          subtitle={`${initial.total} Owner · Toàn quyền quản lý doanh nghiệp`}
           icon="users"
           action={
             editable && (
@@ -119,7 +98,7 @@ export function MembersPanel({
                 }}
               >
                 <Icon name="plus" size={15} />
-                Thêm thành viên
+                Thêm Owner
               </Button>
             )
           }
@@ -128,7 +107,7 @@ export function MembersPanel({
           <SearchInput value={query} onChange={setQuery} />
           <select
             className="filter-select"
-            aria-label="Lọc trạng thái thành viên"
+            aria-label="Lọc trạng thái Owner"
             value={status}
             onChange={(e) => setStatus(e.target.value)}
           >
@@ -140,7 +119,7 @@ export function MembersPanel({
         <DataTable
           rows={rows}
           columns={columns}
-          caption="Danh sách thành viên của doanh nghiệp hiện tại"
+          caption="Danh sách Owner của doanh nghiệp hiện tại"
         />
         <Pagination
           {...initial}
@@ -148,12 +127,12 @@ export function MembersPanel({
         />
       </Panel>
       <p className="quiet" style={{ marginTop: 14 }}>
-        Tìm kiếm và bộ lọc áp dụng cho trang hiện tại. Chỉ Owner được quản lý
-        vai trò Owner / Admin.
+        Tìm kiếm và bộ lọc áp dụng cho trang hiện tại. Mỗi Owner có toàn quyền
+        quản lý doanh nghiệp. Luôn giữ ít nhất một Owner hoạt động.
       </p>
       {editing && (
         <Drawer
-          title={member ? "Chỉnh sửa thành viên" : "Thêm thành viên"}
+          title={member ? "Cập nhật quyền truy cập Owner" : "Thêm Owner"}
           onClose={() => {
             if (!mutation.busy) setEditing(null);
           }}
@@ -162,26 +141,24 @@ export function MembersPanel({
             <MutationNotice {...mutation} />
             <p className="quiet">
               {member
-                ? "Cập nhật vai trò và trạng thái trong doanh nghiệp này."
-                : "Nhập User ID của tài khoản đã được tạo trong Supabase Auth. Thao tác này không gửi thư mời email."}
+                ? "Bật hoặc tắt quyền truy cập Owner trong doanh nghiệp này."
+                : "Nhập User ID của tài khoản đã được tạo trong Supabase Auth để cấp toàn quyền Owner. Thao tác này không gửi thư mời email."}
             </p>
             <form
               onSubmit={async (e) => {
                 e.preventDefault();
                 const f = new FormData(e.currentTarget);
-                const roleKey = f.get("roleKey") as MemberCreate["roleKey"];
                 const ok = member
                   ? await mutation.mutate({
                       path: `/memberships/${member.id}`,
                       body: {
-                        roleKey,
                         status: f.get("status") as "ACTIVE" | "DISABLED",
                       },
                     })
                   : await mutation.mutate({
                       path: "/memberships",
                       method: "POST",
-                      body: { userId: String(f.get("userId")).trim(), roleKey },
+                      body: { userId: String(f.get("userId")).trim() },
                     });
                 if (ok) setEditing(null);
               }}
@@ -199,20 +176,6 @@ export function MembersPanel({
                     />
                   </label>
                 )}
-                <label className="form-field">
-                  Vai trò
-                  <select
-                    name="roleKey"
-                    defaultValue={member?.roleKey ?? "OPERATIONS"}
-                  >
-                    {(context.role === "OWNER"
-                      ? ["OWNER", "ADMIN", "OPERATIONS"]
-                      : ["OPERATIONS"]
-                    ).map((role) => (
-                      <option key={role}>{role}</option>
-                    ))}
-                  </select>
-                </label>
                 {member && (
                   <label className="form-field">
                     Trạng thái
@@ -224,7 +187,7 @@ export function MembersPanel({
                 )}
                 <div className="inline">
                   <Button type="submit" disabled={mutation.busy}>
-                    {mutation.busy ? "Đang lưu…" : "Lưu thành viên"}
+                    {mutation.busy ? "Đang lưu…" : "Lưu quyền truy cập"}
                   </Button>
                   <Button
                     type="button"

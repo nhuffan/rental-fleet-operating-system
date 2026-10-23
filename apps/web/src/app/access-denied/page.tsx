@@ -14,8 +14,8 @@ export default async function AccessDenied({
       <h1>Bạn chưa có quyền truy cập{platform ? " nền tảng" : ""}.</h1>
       <p>
         {platform
-          ? "Tài khoản cần quyền platform operator đang hoạt động. Vai trò OWNER/ADMIN của doanh nghiệp không cấp quyền này. Hãy liên hệ quản trị nền tảng."
-          : "Doanh nghiệp hoặc membership có thể chưa được kích hoạt. Hãy liên hệ quản trị viên."}
+          ? "Tài khoản cần quyền Superadmin đang hoạt động. Owner chỉ có quyền trong doanh nghiệp. Hãy liên hệ quản trị nền tảng."
+          : "Không gian doanh nghiệp chỉ dành cho Owner đang hoạt động. Tài khoản có thể chưa được cấp quyền hoặc đã bị vô hiệu hóa. Cổng khách thuê xe chưa được triển khai."}
       </p>
       <div className="inline">
         <Link href={platform ? "/superadmin" : "/app"}>Thử lại</Link>

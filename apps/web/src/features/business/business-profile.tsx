@@ -103,8 +103,8 @@ export function BusinessProfile({
           />
           <dl className="detail-list">
             <div>
-              <dt>Vai trò hiện tại</dt>
-              <dd>{context.role}</dd>
+              <dt>Không gian truy cập</dt>
+              <dd>Owner</dd>
             </div>
             <div>
               <dt>Trạng thái</dt>
@@ -123,7 +123,7 @@ export function BusinessProfile({
             <p className="quiet">
               {editable
                 ? "Bạn có quyền cập nhật hồ sơ doanh nghiệp."
-                : "Bạn có quyền xem. Liên hệ Owner hoặc Admin để cập nhật hồ sơ."}
+                : "Bạn có quyền xem. Liên hệ Owner để cập nhật hồ sơ."}
             </p>
           </div>
         </Panel>

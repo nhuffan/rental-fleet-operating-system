@@ -99,6 +99,7 @@ export class TenantGuard implements CanActivate {
         and(
           eq(memberships.userId, req.identity.id),
           eq(memberships.status, 'ACTIVE'),
+          eq(memberships.roleKey, 'OWNER'),
           eq(businesses.status, 'ACTIVE'),
           eq(profiles.status, 'ACTIVE'),
           selected ? eq(businesses.id, selected) : undefined,

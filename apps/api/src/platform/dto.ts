@@ -168,10 +168,6 @@ export class PlatformUserQuery extends PlatformBusinessQuery {
   @ValidateIf((_o, v) => v !== undefined)
   @IsUUID()
   businessId?: string;
-  @ApiPropertyOptional({ enum: ['OWNER', 'ADMIN', 'OPERATIONS'] })
-  @ValidateIf((_o, v) => v !== undefined)
-  @IsIn(['OWNER', 'ADMIN', 'OPERATIONS'])
-  roleKey?: string;
   @ApiPropertyOptional({ enum: ['ACTIVE', 'DISABLED'] })
   @ValidateIf((_o, v) => v !== undefined)
   @IsIn(['ACTIVE', 'DISABLED'])
@@ -204,7 +200,7 @@ export class PlatformUserMembership {
   @ApiProperty({ format: 'uuid' }) businessId!: string;
   @ApiProperty() businessName!: string;
   @ApiProperty({ enum: ['ACTIVE', 'DISABLED'] }) businessStatus!: string;
-  @ApiProperty({ enum: ['OWNER', 'ADMIN', 'OPERATIONS'] }) roleKey!: string;
+  @ApiProperty({ enum: ['OWNER'] }) roleKey!: string;
   @ApiProperty({ enum: ['ACTIVE', 'DISABLED'] }) status!: string;
 }
 export class PlatformUserMembershipPage extends PageMeta {

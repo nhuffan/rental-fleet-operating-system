@@ -16,12 +16,12 @@ export class BusinessResponse {
 export class BusinessChoice {
   @ApiProperty() id!: string;
   @ApiProperty() name!: string;
-  @ApiProperty({ enum: ['OWNER', 'ADMIN', 'OPERATIONS'] }) role!: string;
+  @ApiProperty({ enum: ['OWNER'] }) role!: string;
 }
 export class MeResponse {
   @ApiProperty({ type: UserResponse }) user!: UserResponse;
   @ApiProperty({ type: BusinessResponse }) business!: BusinessResponse;
-  @ApiProperty({ enum: ['OWNER', 'ADMIN', 'OPERATIONS'] }) role!: string;
+  @ApiProperty({ enum: ['OWNER'] }) role!: string;
   @ApiProperty({ type: [String] }) permissions!: string[];
   @ApiProperty({ type: [BusinessChoice] }) businesses!: BusinessChoice[];
 }
@@ -39,7 +39,7 @@ export class MembershipResponse {
   @ApiProperty() businessId!: string;
   @ApiProperty() userId!: string;
   @ApiProperty({ required: false }) displayName?: string;
-  @ApiProperty({ enum: ['OWNER', 'ADMIN', 'OPERATIONS'] }) roleKey!: string;
+  @ApiProperty({ enum: ['OWNER'] }) roleKey!: string;
   @ApiProperty() status!: string;
 }
 export class PageMeta {

@@ -144,11 +144,11 @@ export function useMutation(businessId: string) {
           RESOURCE_HAS_ASSIGNMENT:
             "Hãy tháo thiết bị đang gắn trước khi ngưng hoạt động.",
           ROLE_CHANGE_DENIED:
-            "Chỉ Owner được quản lý vai trò Admin hoặc Owner.",
+            "Chỉ Owner đang hoạt động được quản lý quyền truy cập doanh nghiệp.",
           USER_NOT_FOUND:
             "Không tìm thấy tài khoản Auth. Hãy kiểm tra User ID đã được tạo.",
           MEMBERSHIP_EXISTS:
-            "Thành viên đã tồn tại. Hãy chỉnh sửa thành viên hiện tại.",
+            "Owner đã có quyền truy cập. Hãy cập nhật trạng thái hiện tại.",
         };
         setError(
           messages[payload.code] ??

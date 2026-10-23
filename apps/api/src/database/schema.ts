@@ -37,18 +37,27 @@ export const profiles = pgTable('user_profiles', {
   status: text().notNull().default('ACTIVE'),
   ...times(),
 });
-export const memberships = pgTable('business_memberships', {
-  id: uuid().primaryKey().defaultRandom(),
-  businessId: uuid('business_id')
-    .notNull()
-    .references(() => businesses.id),
-  userId: uuid('user_id')
-    .notNull()
-    .references(() => profiles.userId),
-  roleKey: text('role_key').notNull(),
-  status: text().notNull().default('ACTIVE'),
-  ...times(),
-});
+export const memberships = pgTable(
+  'business_memberships',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    businessId: uuid('business_id')
+      .notNull()
+      .references(() => businesses.id),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => profiles.userId),
+    roleKey: text('role_key').notNull().$type<'OWNER'>(),
+    status: text().notNull().default('ACTIVE'),
+    ...times(),
+  },
+  (table) => [
+    check(
+      'business_memberships_role_key_check',
+      sql`${table.roleKey} = 'OWNER'`,
+    ),
+  ],
+);
 export const branches = pgTable(
   'branches',
   {

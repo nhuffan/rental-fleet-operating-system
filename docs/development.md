@@ -31,17 +31,17 @@ Drizzle is the query layer. SQL migrations in `supabase/migrations` are the sole
 
 `DATABASE_URL` is the PostgreSQL URI from Connect → Session pooler, with a URL-encoded password and no placeholder brackets. The client verifies TLS using `infra/certs/supabase-ca.crt` (public CA downloaded from the Dashboard); override `DATABASE_CA_PATH` if another CA is required. Never disable certificate/hostname verification. Idle pool errors log only a redacted event/type, never the connection/client or error message.
 
-Only development project **eeryymswcufnebibigqf** may be seeded or used for demo/E2E/GPS maintenance. Set `APP_ENV=development`, `ALLOW_DEMO_SEED=true` and a working server key in `SUPABASE_SECRET_KEY`, then run `pnpm db:seed`. Seed creates two disposable demo businesses and role-specific Auth users without email; it is repeatable and does not reset existing users/data. Login details live only in ignored root `.env.demo.json`; `accounts.ownerA.email/password` supplies the owner login. Never print or commit this file, real env files, tokens or server keys.
+Only development project **eeryymswcufnebibigqf** may be used for account setup/E2E/GPS maintenance. The configured named development accounts live only in ignored root `.env.accounts.json` (mode 0600), with the three requested identities: Superadmin, Owner and deferred Customer. Never print or commit this file, passwords, real env values, tokens or server keys. The Owner has access to both retained demo businesses; Superadmin has independent platform access only. Customer has a confirmed Auth identity/profile and no business/platform membership; no customer portal is implemented.
 
-Production users are created in Supabase Auth by an administrator. An OWNER/ADMIN adds the known Auth User ID through membership management; there is no automatic email invite. Only OWNER can assign elevated roles. Do not seed, reset or run development tests against staging/production.
+Persistent example-account seeding is retired. `pnpm db:seed` deliberately refuses without changing data, and `platform:seed` rejects the retired `.env.demo.json` marker. These commands cannot silently recreate the removed example identities. Named accounts are provisioned through a trusted administrator using Supabase Auth Admin API and server-side membership tables, with no email invitations or role claims trusted from metadata.
 
-E2E suites run serially because SaaS Core exercises revocation of shared demo accounts. Suites/QA must record exact disposable IDs and clean only those domain records, in dependency order, while retaining audit events. Never delete by wildcard or remove existing tenant data.
+Real E2E suites use run-scoped disposable fixtures, never `.env.accounts.json` or named personal credentials. They require the exact development project, `APP_ENV=development`, `ALLOW_DEMO_SEED=true` and a local server key. Each suite owns isolated businesses/branches/Auth IDs and cleans exact owned operational records and identities in `afterAll`, retaining audit history; audit-bearing businesses remain disabled tombstones because tenant audit has a business FK. Suites remain serial for predictable fixture load. Never disable/demote/reset named accounts or delete unrelated data. Full historical E2E remains reserved for Final Validation.
 
 ## Architecture and security
 
 - Web uses per-request Supabase SSR clients, cookie refresh in `proxy.ts` and protected server layouts. It forwards bearer tokens to NestJS; browser code receives only the publishable key. A business switch reloads the document so prior tenant form/list/map state cannot survive.
 - NestJS verifies Supabase Auth, then active profile, business and membership. Optional `X-Business-Id` selects a verified active membership; otherwise the oldest active membership is selected. Never authorize with `user_metadata`, a browser-supplied business ID, hidden menu or frontend state.
-- OWNER manages all roles; ADMIN manages operational memberships/business/branches/settings and Fleet/Customer/Rental writes. OPERATIONS reads business/branches/settings, vehicles/devices, customers/rentals/availability and authorized telemetry/trips. The last active owner cannot be demoted or disabled. Backend guards enforce permissions independently of the UI.
+- The application has two active surfaces: Superadmin (internal platform role `PLATFORM_OPERATOR`) and business `OWNER`. Owner receives the existing tenant operational permissions; legacy ADMIN/OPERATIONS and deferred Customer receive none. Member creation accepts only `userId` and always grants OWNER; update accepts only required ACTIVE/DISABLED `status`. Role selection/hierarchy and permission matrices/counts are removed from UI. The last effective active Owner cannot be disabled. Backend permission guards remain independent of UI and metadata.
 - Every tenant resource query includes the verified business ID. Platform read APIs use independent active platform membership/profile/permission checks and return approved global metadata/aggregates; a tenant role or selected-business header never grants global access. Mutations acquire the business row lock, recheck current profile/business/membership/permission and write the resource and audit event in one transaction. Membership revocation and domain writes share that lock. Unique/exclusion constraints provide a second concurrency defense.
 - Audit metadata contains request IDs and changed field names, not bodies, coordinates, tracker identifiers, credentials, contacts, notes or amounts. Wrapped database errors map to stable public conflict codes.
 - Exposed tables enable RLS. Tenant registry/customer/rental Data API reads require active membership/profile/business; direct writes by `anon`/`authenticated` are revoked. `gps_positions` denies all Data API reads and writes, with RLS enabled and no read policy. The API's trusted database connection still must enforce tenant authorization itself. No `SECURITY DEFINER` authorization helper is used.
@@ -49,39 +49,42 @@ E2E suites run serially because SaaS Core exercises revocation of shared demo ac
 
 Domain boundaries are `apps/api/src/fleet/vehicles`, `apps/api/src/rentals`, `apps/api/src/telematics/{gps,trips}` and the independently authorized `apps/api/src/platform`. Web live features follow `features/fleet/vehicles`, `features/rentals` and `features/telematics/{gps,trips}`; synthetic business examples live in `features/previews/business`; platform live components/data access are under `features/platform/live`, alongside the separate development preview. Shared UI/data-display/overlay components contain presentation behavior rather than tenant business rules. Routes and API payloads remain stable during structural moves.
 
+The Owner-only migration refuses while any legacy non-OWNER membership remains, including disabled rows. Resolve those identities explicitly before applying it; the migration never promotes staff into Owner or deletes historical data. It restricts the DB check to OWNER and tenant audit RLS to active Owner/profile/business. Current Auth account-type labels are descriptive only and are not authorization inputs.
+
 ## Platform console
 
 `/superadmin`, `/superadmin/businesses`, `/superadmin/businesses/:id`, `/superadmin/audit`, `/superadmin/users` and `/superadmin/users/:id` are live read-only platform views. Enter through `/superadmin` or `/login?next=/superadmin`. Server layouts/pages verify platform context through NestJS; the proxy refreshes Auth and redirects unauthenticated `/superadmin/*` to platform login. Local return paths allow only `/app` or `/superadmin` descendants, normalize traversal, reject external/control/out-of-scope destinations, and preserve deep links. The ordinary Business Admin login still defaults to `/app`.
 
-Supabase supplies identity only. `AuthGuard` verifies the current user; `PlatformGuard` checks an ACTIVE `user_profiles` row plus an independent ACTIVE `platform_memberships` row with role **PLATFORM_OPERATOR**. Tenant OWNER/ADMIN/OPERATIONS, `user_metadata`, the business cookie and `X-Business-Id` are never platform grants. A platform-only operator receives no tenant operational permission; a user requiring both surfaces needs both independently reviewed memberships. Browser code sees no server key.
+Supabase supplies identity only. `AuthGuard` verifies the current user; `PlatformGuard` checks an ACTIVE `user_profiles` row plus an independent ACTIVE `platform_memberships` row with role **PLATFORM_OPERATOR**. Tenant OWNER, retired roles, `user_metadata`, the business cookie and `X-Business-Id` are never platform grants. A platform-only operator receives no tenant operational permission; a user requiring both surfaces needs both independently reviewed memberships. Browser code sees no server key.
 
-| API (relative to `/api/v1`) | Permission / behavior |
-| --- | --- |
-| `GET /platform/me` | Independent principal, read permissions and `readOnly:true`; no tenant context or email projection |
-| `GET /platform/overview` | `platform.overview.read`; current totals across all businesses, including disabled ones |
-| `GET /platform/businesses` | `platform.business.read`; page/limit ≤100, literal name search ≤120 chars, ACTIVE/DISABLED filter, allowlisted name/createdAt ordering with stable ID ties |
-| `GET /platform/businesses/:id` | `platform.business.read`; approved metadata and aggregates for one business, 404 when absent |
-| `GET /platform/audit` | `platform.audit.read`; page/limit ≤100, reviewed action, target business UUID, from inclusive/until exclusive with UTC offset, createdAt/action sort and stable ID ties; default last 30 days, maximum range 366 days |
-| `GET /platform/users` | `platform.user.read`; unique profiles, literal display-name search ≤120 chars, profile status, business UUID, role and membership status filters; name/createdAt sort, page/limit ≤100 |
-| `GET /platform/users/:id` | `platform.user.read`; minimal profile plus independently paginated memberships (`page`/`limit`), 404 for absent profile |
+| API (relative to `/api/v1`)    | Permission / behavior                                                                                                                                                                                                 |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /platform/me`             | Independent principal, read permissions and `readOnly:true`; no tenant context or email projection                                                                                                                    |
+| `GET /platform/overview`       | `platform.overview.read`; current totals across all businesses, including disabled ones                                                                                                                               |
+| `GET /platform/businesses`     | `platform.business.read`; page/limit ≤100, literal name search ≤120 chars, ACTIVE/DISABLED filter, allowlisted name/createdAt ordering with stable ID ties                                                            |
+| `GET /platform/businesses/:id` | `platform.business.read`; approved metadata and aggregates for one business, 404 when absent                                                                                                                          |
+| `GET /platform/audit`          | `platform.audit.read`; page/limit ≤100, reviewed action, target business UUID, from inclusive/until exclusive with UTC offset, createdAt/action sort and stable ID ties; default last 30 days, maximum range 366 days |
+| `GET /platform/users`          | `platform.user.read`; unique profiles, literal display-name search ≤120 chars, profile status, business UUID, membership status filters; name/createdAt sort, page/limit ≤100                                         |
+| `GET /platform/users/:id`      | `platform.user.read`; minimal profile plus independently paginated memberships (`page`/`limit`), 404 for absent profile                                                                                               |
 
 Business projections contain name/status/timezone/currency/timestamps plus branches, membership rows, vehicles/rentals and current-assignment GPS freshness counts. Active membership requires both membership and profile ACTIVE; totals include disabled businesses, and membership counts are not globally unique people. GPS is always TEST and follows the existing 120/600-second thresholds. The API does not return user contacts, customer records, raw device identities, coordinates, history, notes or settings. Aggregations happen in SQL for the selected page/businesses, without browser tenant loops or per-tenant requests.
 
 Every successful platform read locks and rechecks the operator/profile in the transaction that reads data and inserts `platform_audit_logs`; failed recheck or audit failure prevents delivery. Metadata records only a server request ID; targeted business/user IDs are separate fields with explicit entity types. Platform audit is independent of tenant `audit_logs`. The two platform tables have RLS enabled, no browser policies and all privileges revoked from PUBLIC/anon/authenticated, including for an authenticated platform operator. The API's trusted DB connection must still perform all platform authorization. There are no browser grants or platform administration writes.
 
-After applying migrations on the exact development project and preparing the existing normal demo fixture, run `pnpm --filter api platform:seed` with `ALLOW_DEMO_SEED=true` and local server credentials. This creates a **separate** `accounts.platformOperator` Auth identity/profile/platform membership in ignored root `.env.demo.json`; it refuses tenant-account reuse, uses an exclusive local credential-file lock, keeps credentials mode 0600 and preserves disabled states. It never promotes a demo tenant OWNER. The command refuses staging/production; provision actual operators through an explicit trusted administrator process rather than demo seeding. No self-service platform signup or role-management endpoint exists.
+The previous dedicated demo bootstrap is retired for configured named accounts; `platform:seed` refuses retired fixtures. Provision actual Superadmin access through an explicit trusted administrator process. The internal name `PLATFORM_OPERATOR` is kept for the existing platform DB/API boundary; the UI displays **Superadmin**. No self-service platform signup or platform write-management endpoint exists.
 
 Audit returns only ID, actor UUID reference, allowlisted action/entity type, target UUID, timestamp and UUID-shaped server request ID; raw metadata is never returned. Unreviewed actions/entity types become `other`, unknown targets and malformed request IDs are omitted/null. A business filter matches only direct business-targeted platform events, never tenant audit. Viewing audit itself is audited after the returned snapshot. Filters use a fixed returned time window when paginating.
 
-Users are registered application profiles, not an enumeration of Supabase Auth identities. Each list row counts one person regardless of tenant membership count. Support projection includes ID/display name/profile status, platform grant status, timestamps, fixed role summary and membership counts. Detail memberships expose business ID/name/status and membership role/status only. `activeMembershipCount` requires profile, membership and business ACTIVE; this is deliberately stricter than Overview's active membership count, which includes disabled businesses. Contacts, Auth metadata, credentials, customers and raw telemetry are excluded. No impersonation, password reset, disabling or role-management actions are provided.
+Users are registered application profiles, not an enumeration of Supabase Auth identities. Each list row counts one person regardless of tenant membership count. Support projection includes ID/display name/profile status, platform grant status, timestamps, Owner summary and membership counts. Detail memberships expose business ID/name/status and membership role/status only. `activeMembershipCount` requires profile, membership and business ACTIVE; this is deliberately stricter than Overview's active membership count, which includes disabled businesses. Contacts, Auth metadata, credentials, customers and raw telemetry are excluded. No impersonation, password reset, disabling or role-management actions are provided.
 
 Features, Integrations and System Settings routes remain authorized but explicitly **unavailable**, with no live data contract or fake writes. Tenant suspension, entitlements, billing and account-management/support writes are not implemented. Development design previews remain a separate labelled surface and are excluded from production.
 
-Focused platform verification (requires the development migration and dedicated demo operator):
+Focused authorization/migration verification:
 
 ```sh
-pnpm --filter api exec vitest run src/platform/platform.spec.ts src/database/platform-migrations.spec.ts src/database/platform-seed-policy.spec.ts src/database/migrations.spec.ts
+pnpm --filter api exec vitest run src/platform/platform.spec.ts src/database/platform-migrations.spec.ts src/database/platform-seed-policy.spec.ts src/database/owner-role-migrations.spec.ts src/database/migrations.spec.ts
 pnpm --filter api build
+# Optional explicit real E2E: disposable fixture lifecycle, never personal accounts
 pnpm --filter api exec vitest run --config vitest.config.e2e.ts test/platform.e2e-spec.ts
 pnpm --filter web exec node --test test/auth-navigation.test.mjs
 ```
@@ -96,7 +99,7 @@ Runtime identity uses the approved Canva **Rental Fleet OS** design `DAHY0Bey5gc
 
 `/app/vehicles`, `/app/vehicles/devices` and `/app/vehicles/:id` are live tenant-authorized pages. Vehicle lifecycle is `ACTIVE`/`INACTIVE`; rental availability and GPS freshness are independent derived concepts. A registry entry or assignment does not mean a tracker is online.
 
-OWNER/ADMIN have `vehicle.read/manage` and `gps.read/manage`; OPERATIONS has `vehicle.read` and `gps.read`. Assign/end requires `vehicle.manage`. New branch associations require an active branch belonging to the verified tenant.
+OWNER has `vehicle.read/manage` and `gps.read/manage`. Assign/end requires `vehicle.manage`. New branch associations require an active branch belonging to the verified tenant.
 
 License plates are uppercased with whitespace/dot/hyphen removed, then validated as 4–16 ASCII letters/digits. The canonical plate is unique within the business, including inactive vehicles. GPS `provider` is lowercase and `deviceUid` trimmed but case-sensitive; `(provider, deviceUid)` is globally unique. Provider, UID and business ownership are immutable; PATCH changes only device label/status.
 
@@ -104,21 +107,21 @@ Each vehicle/device has at most one current primary assignment, enforced by part
 
 All endpoints below are relative to `/api/v1` and require Supabase authentication plus verified tenant permission:
 
-| Endpoint | Permission / behavior |
-| --- | --- |
-| `GET /vehicles`, `GET /vehicles/:id` | `vehicle.read`; profiles and current assignment |
-| `POST /vehicles`, `PATCH /vehicles/:id` | `vehicle.manage`; profile/lifecycle |
-| `GET /gps-devices` | `gps.read`; registry with available-device filter |
-| `POST /gps-devices`, `PATCH /gps-devices/:id` | `gps.manage`; register or label/status update |
-| `GET /vehicles/:id/device-assignments` | `vehicle.read`; paginated history |
-| `POST /vehicles/:id/device-assignments` | `vehicle.manage`; active unassigned device/vehicle |
-| `POST /vehicles/:id/device-assignments/:assignmentId/end` | `vehicle.manage`; empty body only |
+| Endpoint                                                  | Permission / behavior                              |
+| --------------------------------------------------------- | -------------------------------------------------- |
+| `GET /vehicles`, `GET /vehicles/:id`                      | `vehicle.read`; profiles and current assignment    |
+| `POST /vehicles`, `PATCH /vehicles/:id`                   | `vehicle.manage`; profile/lifecycle                |
+| `GET /gps-devices`                                        | `gps.read`; registry with available-device filter  |
+| `POST /gps-devices`, `PATCH /gps-devices/:id`             | `gps.manage`; register or label/status update      |
+| `GET /vehicles/:id/device-assignments`                    | `vehicle.read`; paginated history                  |
+| `POST /vehicles/:id/device-assignments`                   | `vehicle.manage`; active unassigned device/vehicle |
+| `POST /vehicles/:id/device-assignments/:assignmentId/end` | `vehicle.manage`; empty body only                  |
 
 Lists use validated pagination, search/status, allowlisted sorting and stable ID ties; vehicles also filter branch, devices provider and `available=true`. UI device/customer/vehicle selection must paginate rather than silently cap choices at the first page. Fleet audit actions are `vehicle.create/update`, `gps_device.create/update` and `device_assignment.assign/end`.
 
 ## Customer and Rental Core
 
-Live routes: `/app/customers`, `/app/customers/:id`, `/app/rentals`, `/app/rentals/new` and `/app/rentals/:id`. Dashboard schedule/active queue and Vehicle Detail current/next rental use real Rental API data. OWNER/ADMIN have `customer.read/manage` and `rental.read/manage`; OPERATIONS has the two read permissions.
+Live routes: `/app/customers`, `/app/customers/:id`, `/app/rentals`, `/app/rentals/new` and `/app/rentals/:id`. Dashboard schedule/active queue and Vehicle Detail current/next rental use real Rental API data. OWNER has `customer.read/manage` and `rental.read/manage`.
 
 Customer names are trimmed, 1–120 characters; phone or email is required. Phone accepts 5–32 characters (digits, spaces/hyphens, optional leading `+`); email is trimmed/lowercase, maximum 254 characters. Contacts may be shared and are nonunique. Notes are at most 2,000 characters. Disable rather than hard-delete; a customer with RESERVED/ACTIVE rentals cannot be disabled. Historical rentals retain customer references.
 
@@ -126,17 +129,17 @@ Lifecycle: `DRAFT → RESERVED → ACTIVE → COMPLETED`; DRAFT/RESERVED may bec
 
 Drafts do not hold vehicles. Reserve requires an active vehicle/customer, unexpired interval and availability; handover is allowed only during the planned interval and while no other rental holds the vehicle. RESERVED/ACTIVE rentals block half-open UTC intervals `[startAt,endAt)`; adjacent reservations may share an endpoint. PostgreSQL GiST exclusion uses `btree_gist` in `extensions` to prevent overlap, plus a partial unique index permits only one ACTIVE rental per vehicle. An overdue unreturned vehicle remains unavailable after its old planned end. Existing future reservations stay visible but cannot hand over until the actual rental returns. Reserve/Extend recheck conflicts under the business lock.
 
-| Endpoint | Behavior |
-| --- | --- |
-| `GET/POST /customers`, `GET/PATCH /customers/:id` | `customer.read/manage`; customer registry |
-| `GET/POST /rentals`, `GET/PATCH /rentals/:id` | `rental.read/manage`; list/read/create draft/patch permitted fields |
-| `POST /rentals/:id/reserve` | `rental.manage`; empty body or `{}` |
-| `POST /rentals/:id/handover` | `rental.manage`; `{ odometerStart }` |
-| `POST /rentals/:id/extend` | `rental.manage`; `{ endAt, rentalAmount? }`, strictly later end |
-| `POST /rentals/:id/return` | `rental.manage`; `{ odometerEnd }` |
-| `POST /rentals/:id/cancel` | `rental.manage`; `{ notes? }` optionally replaces notes |
-| `GET /vehicles/availability` | Required `startAt/endAt`; pagination/search/branch/available-only and reasons |
-| `GET /vehicles/:id/rental-state` | Current/next rental and derived vehicle display state |
+| Endpoint                                          | Behavior                                                                      |
+| ------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `GET/POST /customers`, `GET/PATCH /customers/:id` | `customer.read/manage`; customer registry                                     |
+| `GET/POST /rentals`, `GET/PATCH /rentals/:id`     | `rental.read/manage`; list/read/create draft/patch permitted fields           |
+| `POST /rentals/:id/reserve`                       | `rental.manage`; empty body or `{}`                                           |
+| `POST /rentals/:id/handover`                      | `rental.manage`; `{ odometerStart }`                                          |
+| `POST /rentals/:id/extend`                        | `rental.manage`; `{ endAt, rentalAmount? }`, strictly later end               |
+| `POST /rentals/:id/return`                        | `rental.manage`; `{ odometerEnd }`                                            |
+| `POST /rentals/:id/cancel`                        | `rental.manage`; `{ notes? }` optionally replaces notes                       |
+| `GET /vehicles/availability`                      | Required `startAt/endAt`; pagination/search/branch/available-only and reasons |
+| `GET /vehicles/:id/rental-state`                  | Current/next rental and derived vehicle display state                         |
 
 Draft PATCH may change customer/vehicle/interval/amounts/deposit/notes. RESERVED/ACTIVE PATCH changes amounts/deposit/notes only; interval extension uses the action endpoint. Terminal rentals are read-only. Amounts are JSON numbers 0–999,999,999.99 with at most two decimal places, stored as exact `numeric(14,2)`. Currency follows Business settings. `depositRequiredAmount` and `depositReceived` are simple fields, not payment/refund/reconciliation ledgers. Rental lists filter status/customer/vehicle/overdue and paginate on the server. Forms use generated contracts; a vehicle choice is advisory until reserve rechecks it.
 
@@ -152,15 +155,15 @@ A `gps_ingress_window` structured event reports only fixed aggregate outcome cou
 
 The adapter maps only canonical fields, not raw provider packets:
 
-| Field | Validation/source |
-| --- | --- |
-| `provider`, `deviceUid` | Fixed `traccar`; case-sensitive `device.uniqueId` |
-| `recordedAt`, `receivedAt` | Strict timezone-qualified `position.fixTime`; database clock on first receipt |
-| `latitude`, `longitude` | Finite numeric degrees in −90…90 and −180…180 |
-| `speedKph`, `heading` | Knots ×1.852, finite 0…600 km/h; course finite 0 ≤ degrees <360 |
-| `ignition` | Boolean `position.attributes.ignition`, null when absent |
+| Field                       | Validation/source                                                                                           |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `provider`, `deviceUid`     | Fixed `traccar`; case-sensitive `device.uniqueId`                                                           |
+| `recordedAt`, `receivedAt`  | Strict timezone-qualified `position.fixTime`; database clock on first receipt                               |
+| `latitude`, `longitude`     | Finite numeric degrees in −90…90 and −180…180                                                               |
+| `speedKph`, `heading`       | Knots ×1.852, finite 0…600 km/h; course finite 0 ≤ degrees <360                                             |
+| `ignition`                  | Boolean `position.attributes.ignition`, null when absent                                                    |
 | `sourceEventId`, `eventKey` | Optional positive safe-integer provider ID; SHA-256 of UID/fix/coordinates/normalized speed/course/ignition |
-| `sourceMode` | Server-fixed/database-constrained `TEST` |
+| `sourceMode`                | Server-fixed/database-constrained `TEST`                                                                    |
 
 Only `position.valid === true` is accepted. Invalid values return `INVALID_TELEMETRY`; fixes more than five minutes ahead of database time or more than 30 days old return `GPS_TIME_OUTSIDE_WINDOW`. Global immutable registry identity resolves the business; incoming business/vehicle IDs are ignored. Under the business lock, ingestion checks active business/device and exactly one historical assignment containing `recordedAt` in `[assignedAt,unassignedAt)`. This includes ended assignments for delayed events; unresolved/ambiguous assignments are rejected. Composite `(businessId,assignmentId,deviceId,vehicleId)` ownership is enforced by a foreign key.
 
@@ -168,13 +171,13 @@ Unique `(deviceId,eventKey)` makes semantic retransmissions idempotent. Traccar 
 
 `GET /vehicles/:id/location` returns a scoped current projection or 404; `GET /fleet/locations` returns scoped paginated projections, optional `search/state`, tenant statistics, `asOf` and `pollAfterSeconds:20`. Both require `gps.read`. An active rental ID is exposed only with `rental.read`. Registry permissions and assignment do not establish a GPS signal:
 
-| State | Recorded fix age against server time |
-| --- | --- |
-| `UNASSIGNED` | No current assignment |
-| `NO_DATA` | Current assignment has no accepted fix |
-| `FRESH` | ≤120 seconds |
-| `STALE` | >120 and ≤600 seconds |
-| `OFFLINE` | >600 seconds; last-known coordinates may remain visible |
+| State        | Recorded fix age against server time                    |
+| ------------ | ------------------------------------------------------- |
+| `UNASSIGNED` | No current assignment                                   |
+| `NO_DATA`    | Current assignment has no accepted fix                  |
+| `FRESH`      | ≤120 seconds                                            |
+| `STALE`      | >120 and ≤600 seconds                                   |
+| `OFFLINE`    | >600 seconds; last-known coordinates may remain visible |
 
 `GET /fleet/telemetry/diagnostics` requires `gps.read` and returns only the selected tenant's freshness counts and unique stored fixes/devices received in the last 15 minutes, last received/recorded times, `sourceMode:TEST`, ingestion-enabled state and fixed process limits. Duplicate requests do not increase stored-fix counts or change first receipt time. The response exposes no device/vehicle IDs, coordinates, credentials or cross-tenant failure counters; failure categories remain in aggregate internal logs.
 
@@ -203,13 +206,13 @@ History expires **30 days after receivedAt**, except the latest point of each ac
 
 ## Derived Trip history and route replay
 
-Trips are calculated on demand from existing `gps_positions`; there is no duplicate history table, persisted summary or new migration. OWNER/ADMIN/OPERATIONS receive `trip.read`; the same active-profile/business/membership guards and tenant predicates protect every Trip/filter/detail/route query. An opaque Trip ID is not an authorization credential. GPS ingestion and current-location selection remain separate and unchanged.
+Trips are calculated on demand from existing `gps_positions`; there is no duplicate history table, persisted summary or new migration. OWNER receives `trip.read`; the same active-profile/business/membership guards and tenant predicates protect every Trip/filter/detail/route query. An opaque Trip ID is not an authorization credential. GPS ingestion and current-location selection remain separate and unchanged.
 
-| Endpoint | Query / response boundary |
-| --- | --- |
-| `GET /trips` | Optional `vehicleId`, `rentalId`, `from`, `to`, `sort=asc/desc` (default desc), standard page/limit; default last 24 hours |
-| `GET /trips/:id` | One rederived summary in its original exact query window |
-| `GET /trips/:id/route` | Recorded points with page/limit; default and maximum 500 points per page, `total` and `hasMore` |
+| Endpoint               | Query / response boundary                                                                                                  |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `GET /trips`           | Optional `vehicleId`, `rentalId`, `from`, `to`, `sort=asc/desc` (default desc), standard page/limit; default last 24 hours |
+| `GET /trips/:id`       | One rederived summary in its original exact query window                                                                   |
+| `GET /trips/:id/route` | Recorded points with page/limit; default and maximum 500 points per page, `total` and `hasMore`                            |
 
 Ranges use `[from,to)`, require timezone-qualified timestamps, increase strictly and span at most **7 days**, with end no later than five minutes ahead. At most **10,000 candidate fixes** may be considered before trip-list pagination; denser ranges fail with 422 `TRIP_POINT_LIMIT` and must be narrowed. Invalid ranges/IDs return 400 `INVALID_TRIP_RANGE` / `INVALID_TRIP_ID`; unavailable or cross-tenant filter/detail resources return 404 `TRIP_NOT_FOUND`. Empty data is a valid empty list. Route paging bounds transfers rather than silently truncating server derivation.
 

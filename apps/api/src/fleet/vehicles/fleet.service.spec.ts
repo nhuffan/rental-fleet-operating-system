@@ -17,7 +17,7 @@ let db: ReturnType<typeof drizzle<typeof schema>>;
 let service: FleetService;
 let a: TenantContext;
 let b: TenantContext;
-let ops: TenantContext;
+let revoked: TenantContext;
 const vehicleBody = (licensePlate = '51A12345') => ({
   licensePlate,
   make: 'Toyota',
@@ -27,7 +27,8 @@ const deviceBody = (deviceUid = randomUUID()) => ({
   provider: 'manual',
   deviceUid,
 });
-async function actor(businessId: string, role = 'OWNER') {
+async function actor(businessId: string) {
+  const role = 'OWNER' as const;
   const userId = randomUUID();
   const membershipId = randomUUID();
   await client.query('insert into auth.users(id) values($1)', [userId]);
@@ -65,7 +66,11 @@ beforeEach(async () => {
     .returning();
   a = await actor(businessA.id);
   b = await actor(businessB.id);
-  ops = await actor(businessA.id, 'OPERATIONS');
+  revoked = await actor(businessA.id);
+  await db
+    .update(schema.memberships)
+    .set({ status: 'DISABLED' })
+    .where(eq(schema.memberships.id, revoked.membershipId));
 });
 afterAll(async () => {
   await client?.close();
@@ -269,14 +274,9 @@ it('applies literal search, deterministic sorting, filtering and pagination', as
     ).total,
   ).toBe(1);
 });
-it.each(['role', 'membership', 'profile', 'business'])(
+it.each(['membership', 'profile', 'business'])(
   'rechecks %s after acquiring the tenant lock rather than trusting the guard context',
   async (scenario) => {
-    if (scenario === 'role')
-      await db
-        .update(schema.memberships)
-        .set({ roleKey: 'OPERATIONS' })
-        .where(eq(schema.memberships.id, a.membershipId));
     if (scenario === 'membership')
       await db
         .update(schema.memberships)
@@ -296,8 +296,7 @@ it.each(['role', 'membership', 'profile', 'business'])(
       service.createVehicle(a, vehicleBody(), 'stale-context'),
     ).rejects.toMatchObject({
       response: {
-        code:
-          scenario === 'role' ? 'PERMISSION_DENIED' : 'TENANT_ACCESS_DENIED',
+        code: 'TENANT_ACCESS_DENIED',
       },
     });
     expect(
@@ -310,15 +309,13 @@ it.each(['role', 'membership', 'profile', 'business'])(
     ).toBe(0);
   },
 );
-it('allows operations fleet reads and rejects service writes even if a controller check were bypassed', async () => {
-  await service.createVehicle(a, vehicleBody(), 'owner');
-  expect((await service.listVehicles(ops, new VehicleQuery())).total).toBe(1);
+it('rejects revoked Owner writes even if a controller check were bypassed', async () => {
   await expect(
-    service.createVehicle(ops, vehicleBody('51C12345'), 'ops'),
-  ).rejects.toMatchObject({ response: { code: 'PERMISSION_DENIED' } });
+    service.createVehicle(revoked, vehicleBody('51C12345'), 'revoked'),
+  ).rejects.toMatchObject({ response: { code: 'TENANT_ACCESS_DENIED' } });
   await expect(
-    service.createDevice(ops, deviceBody(), 'ops'),
-  ).rejects.toMatchObject({ response: { code: 'PERMISSION_DENIED' } });
+    service.createDevice(revoked, deviceBody(), 'revoked'),
+  ).rejects.toMatchObject({ response: { code: 'TENANT_ACCESS_DENIED' } });
 });
 it('rolls back the resource if its audit insert fails', async () => {
   await client.exec(

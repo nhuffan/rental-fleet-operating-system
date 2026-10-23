@@ -1,4 +1,4 @@
-export const ROLES = ['OWNER', 'ADMIN', 'OPERATIONS'] as const;
+export const ROLES = ['OWNER'] as const;
 export type Role = (typeof ROLES)[number];
 export const PERMISSIONS = [
   'business.read',
@@ -21,32 +21,8 @@ export const PERMISSIONS = [
   'trip.read',
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
-const map: Record<Role, readonly Permission[]> = {
-  OWNER: PERMISSIONS,
-  ADMIN: PERMISSIONS,
-  OPERATIONS: [
-    'business.read',
-    'branch.read',
-    'settings.read',
-    'vehicle.read',
-    'gps.read',
-    'customer.read',
-    'rental.read',
-    'trip.read',
-  ],
-};
+// Supabase supplies identity only. Customer access is deferred and legacy tenant
+// roles never receive a fallback grant, including when a stale session survives.
 export function permissionsFor(role: string): readonly Permission[] {
-  return map[role as Role] ?? [];
-}
-export function canManageRole(
-  actor: string,
-  before: string | undefined,
-  after: string,
-) {
-  return (
-    actor === 'OWNER' ||
-    (actor === 'ADMIN' &&
-      (!before || before === 'OPERATIONS') &&
-      after === 'OPERATIONS')
-  );
+  return role === 'OWNER' ? PERMISSIONS : [];
 }

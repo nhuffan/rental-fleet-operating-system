@@ -144,7 +144,7 @@ export function BusinessesPanel({
               },
               {
                 key: "members",
-                label: "Memberships",
+                label: "Owner",
                 render: (b) => (
                   <>
                     {b.counts.activeMemberships} / {b.counts.memberships}
@@ -199,9 +199,9 @@ export function BusinessesPanel({
         />
       </div>
       <p className="panel-body quiet">
-        Memberships là số liên kết người dùng với doanh nghiệp, không phải số
-        tài khoản duy nhất trên toàn nền tảng. GPS luôn là TEST feed; trạng thái
-        đăng ký thiết bị không đồng nghĩa có tín hiệu.
+        Owner được đếm theo liên kết với doanh nghiệp, không phải số tài khoản
+        duy nhất trên toàn nền tảng. GPS luôn là TEST feed; trạng thái đăng ký
+        thiết bị không đồng nghĩa có tín hiệu.
       </p>
     </Panel>
   );

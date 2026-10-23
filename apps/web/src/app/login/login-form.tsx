@@ -61,7 +61,7 @@ export function LoginForm({ destination }: { destination: string }) {
             </span>
             <span>
               <Icon name="users" />
-              Phân quyền theo doanh nghiệp
+              Quản lý doanh nghiệp
             </span>
           </div>
         </div>
@@ -73,7 +73,7 @@ export function LoginForm({ destination }: { destination: string }) {
           <h2 id="login-title">Đăng nhập</h2>
           <p className="muted">
             {platform
-              ? "Đăng nhập bằng tài khoản được cấp quyền quản trị nền tảng riêng."
+              ? "Đăng nhập bằng tài khoản Superadmin được cấp quyền quản trị nền tảng."
               : "Tiếp tục công việc trong doanh nghiệp của bạn."}
           </p>
           <form method="post" onSubmit={submit} aria-busy={pending}>

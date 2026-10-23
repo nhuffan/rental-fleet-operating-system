@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { randomUUID } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { disposableFixture } from './disposable-fixture.js';
 import type { INestApplication } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { createClient } from '@supabase/supabase-js';
@@ -10,18 +10,9 @@ import { configureApp } from '../dist/http.js';
 import { Database } from '../dist/database/database.js';
 import { loadConfig } from '../dist/config.js';
 
-type Demo = {
-  projectRef: string;
-  businessA: string;
-  businessB: string;
-  branchA: string;
-  branchB: string;
-  accounts: Record<string, { id: string; email: string; password: string }>;
-};
-const demo = JSON.parse(readFileSync('../../.env.demo.json', 'utf8')) as Demo;
-const tokens: Record<string, string> = {};
-const vehicleIds: string[] = [];
-const deviceIds: string[] = [];
+const fixture = disposableFixture();
+const demo = fixture.data;
+const tokens = fixture.tokens;
 let app: INestApplication | undefined;
 let database: Database | undefined;
 const unique = () => randomUUID().replaceAll('-', '');
@@ -62,7 +53,7 @@ async function vehicle(
       ...extra,
     })
     .expect(201);
-  vehicleIds.push(r.body.id as string);
+
   return r.body as {
     id: string;
     businessId: string;
@@ -85,7 +76,7 @@ async function device(
       ...extra,
     })
     .expect(201);
-  deviceIds.push(r.body.id as string);
+
   return r.body as {
     id: string;
     businessId: string;
@@ -96,59 +87,20 @@ async function device(
 }
 beforeAll(async () => {
   process.env.LOG_REQUESTS = 'false';
-  const c = loadConfig();
-  process.env.GPS_TRACCAR_TOKEN = 'stage5-e2e-' + randomUUID() + randomUUID();
-  const expected = 'eeryymswcufnebibigqf';
-  if (
-    c.environment !== 'development' ||
-    new URL(c.supabaseUrl).hostname !== expected + '.supabase.co' ||
-    demo.projectRef !== expected
-  )
-    throw new Error(
-      'Fleet E2E is restricted to the seeded development project',
-    );
-  for (const actor of ['ownerA', 'ownerB', 'adminA', 'operationsA']) {
-    const client = createClient(c.supabaseUrl, c.publishableKey, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
-    const { data, error } = await client.auth.signInWithPassword({
-      email: demo.accounts[actor].email,
-      password: demo.accounts[actor].password,
-    });
-    if (error || !data.session)
-      throw new Error('Development fixture login failed: ' + actor);
-    tokens[actor] = data.session.access_token;
-  }
+  process.env.GPS_TRACCAR_TOKEN = 'e2e-' + randomUUID() + randomUUID();
+  await fixture.start();
   app = await NestFactory.create(AppModule, { logger: false });
   configureApp(app);
   await app.init();
   database = app.get(Database);
-}, 60000);
+}, 120000);
 afterAll(async () => {
   try {
-    if (database) {
-      await database.pool.query(
-        'delete from public.gps_positions where business_id=any($1::uuid[]) and vehicle_id=any($2::uuid[])',
-        [[demo.businessA, demo.businessB], vehicleIds],
-      );
-      // Only records created by this suite are removed; audit evidence is retained.
-      await database.pool.query(
-        'delete from public.device_assignments where business_id=any($1::uuid[]) and (vehicle_id=any($2::uuid[]) or device_id=any($3::uuid[]))',
-        [[demo.businessA, demo.businessB], vehicleIds, deviceIds],
-      );
-      await database.pool.query(
-        'delete from public.vehicles where business_id=any($1::uuid[]) and id=any($2::uuid[])',
-        [[demo.businessA, demo.businessB], vehicleIds],
-      );
-      await database.pool.query(
-        'delete from public.gps_devices where business_id=any($1::uuid[]) and id=any($2::uuid[])',
-        [[demo.businessA, demo.businessB], deviceIds],
-      );
-    }
+    await fixture.cleanup();
   } finally {
     await app?.close();
   }
-}, 30000);
+}, 60000);
 
 function packet(
   uid: string,
@@ -248,7 +200,7 @@ it('stores canonical telemetry, deduplicates, keeps current monotonic, scopes re
   expect(
     other.body.data.some((x: { vehicleId: string }) => x.vehicleId === v.id),
   ).toBe(false);
-  const page = await api('operationsA')
+  const page = await api('ownerA')
     .get('/fleet/locations?limit=1&state=FRESH&search=' + v.licensePlate)
     .expect(200);
   expect(page.body.total).toBe(1);
@@ -363,7 +315,9 @@ it('hardens ingress media/body/auth errors and exposes only authorized tenant ag
     .expect(401);
   const { v, d } = await assigned();
   await ingest(packet(d.deviceUid)).expect(201);
-  for (const actor of ['ownerA', 'adminA', 'operationsA']) {
+  for (const actor of ['noMembership', 'platformOperator'])
+    await api(actor).get('/fleet/telemetry/diagnostics').expect(403);
+  for (const actor of ['ownerA']) {
     const diagnostic = await api(actor)
       .get('/fleet/telemetry/diagnostics')
       .expect(200);

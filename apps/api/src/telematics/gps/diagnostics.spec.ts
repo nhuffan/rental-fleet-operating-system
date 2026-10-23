@@ -8,7 +8,7 @@ let db: PGlite, service: GpsService;
 const businessA = randomUUID(),
   businessB = randomUUID();
 const context = (businessId: string) =>
-  ({ businessId, role: 'OPERATIONS' }) as TenantContext;
+  ({ businessId, role: 'OWNER' }) as TenantContext;
 beforeAll(async () => {
   db = new PGlite();
   await db.exec(`create table vehicles(id uuid,business_id uuid,license_plate text,make text,model text);

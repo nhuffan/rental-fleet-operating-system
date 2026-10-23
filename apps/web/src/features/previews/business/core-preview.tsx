@@ -21,9 +21,9 @@ const context: Me = {
     email: "preview@example.invalid",
   },
   business,
-  role: "OPERATIONS",
+  role: "OWNER",
   permissions: [],
-  businesses: [{ id: business.id, name: business.name, role: "OPERATIONS" }],
+  businesses: [{ id: business.id, name: business.name, role: "OWNER" }],
 };
 const branches: Page<Branch> = {
   page: 1,
@@ -42,12 +42,12 @@ const branches: Page<Branch> = {
 const members: Page<Membership> = {
   page: 1,
   limit: 20,
-  total: 3,
-  data: (["OWNER", "ADMIN", "OPERATIONS"] as const).map((roleKey, i) => ({
+  total: 2,
+  data: (["OWNER", "OWNER"] as const).map((roleKey, i) => ({
     id: `member-${i}`,
     businessId: business.id,
     userId: `00000000-0000-4000-8000-00000000000${i + 2}`,
-    displayName: `Thành viên minh họa ${i + 1}`,
+    displayName: `Owner minh họa ${i + 1}`,
     roleKey,
     status: "ACTIVE",
   })),
@@ -59,7 +59,7 @@ export function CorePreview({ screen }: { screen: string }) {
         title={
           {
             business: "Doanh nghiệp",
-            users: "Thành viên & quyền",
+            users: "Quyền truy cập Owner",
             branches: "Chi nhánh",
             settings: "Cài đặt",
             audit: "Nhật ký hoạt động",

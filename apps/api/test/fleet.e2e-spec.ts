@@ -1,27 +1,17 @@
 import 'reflect-metadata';
 import { randomUUID } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { disposableFixture } from './disposable-fixture.js';
 import type { INestApplication } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { createClient } from '@supabase/supabase-js';
 import request from 'supertest';
 import { AppModule } from '../dist/app.module.js';
 import { configureApp } from '../dist/http.js';
 import { Database } from '../dist/database/database.js';
 import { loadConfig } from '../dist/config.js';
 
-type Demo = {
-  projectRef: string;
-  businessA: string;
-  businessB: string;
-  branchA: string;
-  branchB: string;
-  accounts: Record<string, { id: string; email: string; password: string }>;
-};
-const demo = JSON.parse(readFileSync('../../.env.demo.json', 'utf8')) as Demo;
-const tokens: Record<string, string> = {};
-const vehicleIds: string[] = [];
-const deviceIds: string[] = [];
+const fixture = disposableFixture();
+const demo = fixture.data;
+const tokens = fixture.tokens;
 let app: INestApplication | undefined;
 let database: Database | undefined;
 const unique = () => randomUUID().replaceAll('-', '');
@@ -62,7 +52,7 @@ async function vehicle(
       ...extra,
     })
     .expect(201);
-  vehicleIds.push(r.body.id as string);
+
   return r.body as {
     id: string;
     businessId: string;
@@ -85,7 +75,7 @@ async function device(
       ...extra,
     })
     .expect(201);
-  deviceIds.push(r.body.id as string);
+
   return r.body as {
     id: string;
     businessId: string;
@@ -96,87 +86,59 @@ async function device(
 }
 beforeAll(async () => {
   process.env.LOG_REQUESTS = 'false';
-  const c = loadConfig();
-  const expected = 'eeryymswcufnebibigqf';
-  if (
-    c.environment !== 'development' ||
-    new URL(c.supabaseUrl).hostname !== expected + '.supabase.co' ||
-    demo.projectRef !== expected
-  )
-    throw new Error(
-      'Fleet E2E is restricted to the seeded development project',
-    );
-  for (const actor of ['ownerA', 'ownerB', 'adminA', 'operationsA']) {
-    const client = createClient(c.supabaseUrl, c.publishableKey, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
-    const { data, error } = await client.auth.signInWithPassword({
-      email: demo.accounts[actor].email,
-      password: demo.accounts[actor].password,
-    });
-    if (error || !data.session)
-      throw new Error('Development fixture login failed: ' + actor);
-    tokens[actor] = data.session.access_token;
-  }
+  await fixture.start();
   app = await NestFactory.create(AppModule, { logger: false });
   configureApp(app);
   await app.init();
   database = app.get(Database);
-}, 60000);
+}, 120000);
 afterAll(async () => {
   try {
-    if (database) {
-      // Only records created by this suite are removed; audit evidence is retained.
-      await database.pool.query(
-        'delete from public.device_assignments where business_id=any($1::uuid[]) and (vehicle_id=any($2::uuid[]) or device_id=any($3::uuid[]))',
-        [[demo.businessA, demo.businessB], vehicleIds, deviceIds],
-      );
-      await database.pool.query(
-        'delete from public.vehicles where business_id=any($1::uuid[]) and id=any($2::uuid[])',
-        [[demo.businessA, demo.businessB], vehicleIds],
-      );
-      await database.pool.query(
-        'delete from public.gps_devices where business_id=any($1::uuid[]) and id=any($2::uuid[])',
-        [[demo.businessA, demo.businessB], deviceIds],
-      );
-    }
+    await fixture.cleanup();
   } finally {
     await app?.close();
   }
-}, 30000);
+}, 60000);
 
-it('requires authentication and grants operations fleet reads but no writes', async () => {
+it('grants Owner fleet management while denying ungranted identities', async () => {
   await request(app!.getHttpServer()).get('/api/v1/vehicles').expect(401);
-  const context = await api('operationsA').get('/me').expect(200);
+  const context = await api('ownerA').get('/me').expect(200);
   expect(context.body.permissions).toEqual(
-    expect.arrayContaining(['vehicle.read', 'gps.read']),
+    expect.arrayContaining([
+      'vehicle.read',
+      'vehicle.manage',
+      'gps.read',
+      'gps.manage',
+    ]),
   );
-  expect(context.body.permissions).not.toContain('vehicle.manage');
-  await api('operationsA').get('/vehicles').expect(200);
-  await api('operationsA').get('/gps-devices').expect(200);
-  await api('operationsA')
+  await api('noMembership').get('/me').expect(403);
+  for (const path of ['/vehicles', '/gps-devices']) {
+    await api('ownerA').get(path).expect(200);
+    await api('noMembership').get(path).expect(403);
+  }
+  await api('noMembership')
     .post('/vehicles')
     .send({ licensePlate: plate(), make: 'Test', model: 'Denied' })
     .expect(403);
-  await api('operationsA')
+  await api('noMembership')
     .post('/gps-devices')
     .send({ provider: 'manual', deviceUid: unique() })
     .expect(403);
-  const v = await vehicle('adminA');
-  const d = await device('adminA');
-  await api('operationsA')
+  const v = await vehicle('ownerA');
+  const d = await device('ownerA');
+  await api('noMembership')
     .patch('/vehicles/' + v.id)
     .send({ status: 'INACTIVE' })
     .expect(403);
-  await api('operationsA')
+  await api('noMembership')
     .patch('/gps-devices/' + d.id)
     .send({ label: 'Denied' })
     .expect(403);
-  await api('operationsA')
+  await api('noMembership')
     .post(`/vehicles/${v.id}/device-assignments`)
     .send({ deviceId: d.id })
     .expect(403);
-  await api('operationsA')
+  await api('noMembership')
     .post(`/vehicles/${v.id}/device-assignments/${randomUUID()}/end`)
     .expect(403);
 });
@@ -338,10 +300,10 @@ it('isolates known vehicle, device and assignment IDs across businesses', async 
 });
 
 it('supports create -> assign -> end -> reassign while preserving history and audit', async () => {
-  const v = await vehicle('adminA', demo.businessA, { branchId: demo.branchA });
-  const first = await device('adminA');
-  const second = await device('adminA');
-  const assigned = await api('adminA')
+  const v = await vehicle('ownerA', demo.businessA, { branchId: demo.branchA });
+  const first = await device('ownerA');
+  const second = await device('ownerA');
+  const assigned = await api('ownerA')
     .post(`/vehicles/${v.id}/device-assignments`)
     .send({ deviceId: first.id })
     .expect(201);
@@ -358,7 +320,7 @@ it('supports create -> assign -> end -> reassign while preserving history and au
       .expect(409);
     expect(disabled.body.code).toBe('RESOURCE_HAS_ASSIGNMENT');
   }
-  const ended = await api('adminA')
+  const ended = await api('ownerA')
     .post(`/vehicles/${v.id}/device-assignments/${assigned.body.id}/end`)
     .expect(201);
   expect(ended.body.unassignedAt).toBeTruthy();
@@ -392,7 +354,7 @@ it('supports create -> assign -> end -> reassign while preserving history and au
     .patch('/gps-devices/' + second.id)
     .send({ status: 'ACTIVE' })
     .expect(200);
-  const reassigned = await api('adminA')
+  const reassigned = await api('ownerA')
     .post(`/vehicles/${v.id}/device-assignments`)
     .send({ deviceId: second.id })
     .expect(201);

@@ -48,7 +48,7 @@ const aggregates = `
 const joins = `left join branches_agg br on br.business_id=b.id left join memberships_agg m on m.business_id=b.id left join vehicles_agg v on v.business_id=b.id left join rentals_agg r on r.business_id=b.id left join gps_agg g on g.business_id=b.id`;
 const projection = `b.id,b.name,b.status,b.timezone,b.currency,b.created_at as "createdAt",b.updated_at as "updatedAt",${counts('counts')},${gps}`;
 const userProjection = `p.user_id as id,p.display_name as "displayName",p.status,p.created_at as "createdAt",p.updated_at as "updatedAt",coalesce(pm.status,'NONE') as "platformStatus",coalesce(m.n,0)::int as "membershipCount",coalesce(m.active,0)::int as "activeMembershipCount",coalesce(m.roles,'[]'::jsonb) roles`;
-const userJoins = `left join public.platform_memberships pm on pm.user_id=p.user_id left join lateral(select count(*)::int n,count(*) filter(where bm.status='ACTIVE' and b.status='ACTIVE' and p.status='ACTIVE')::int active,jsonb_agg(distinct bm.role_key order by bm.role_key) roles from public.business_memberships bm join public.businesses b on b.id=bm.business_id where bm.user_id=p.user_id)m on true`;
+const userJoins = `left join public.platform_memberships pm on pm.user_id=p.user_id left join lateral(select count(*)::int n,count(*) filter(where bm.status='ACTIVE' and b.status='ACTIVE' and p.status='ACTIVE')::int active,jsonb_agg(distinct bm.role_key order by bm.role_key) roles from public.business_memberships bm join public.businesses b on b.id=bm.business_id where bm.user_id=p.user_id and bm.role_key='OWNER')m on true`;
 @Injectable()
 export class PlatformService {
   constructor(@Inject(Database) private readonly database: Database) {}
@@ -245,15 +245,14 @@ export class PlatformService {
         const result = await tx.query<{ data: PlatformUser[]; total: number }>(
           `
         with filtered as(select p.* from public.user_profiles p where ($1::text is null or p.status=$1) and p.display_name ilike $2
-          and (($3::uuid is null and $4::text is null and $5::text is null) or exists(select 1 from public.business_memberships bm where bm.user_id=p.user_id and ($3::uuid is null or bm.business_id=$3) and ($4::text is null or bm.role_key=$4) and ($5::text is null or bm.status=$5)))),
-        selected as(select * from filtered order by ${column} ${direction},user_id ${direction} limit $6 offset $7),
+          and (($3::uuid is null and $4::text is null) or exists(select 1 from public.business_memberships bm where bm.user_id=p.user_id and bm.role_key='OWNER' and ($3::uuid is null or bm.business_id=$3) and ($4::text is null or bm.status=$4)))),
+        selected as(select * from filtered order by ${column} ${direction},user_id ${direction} limit $5 offset $6),
         result as(select ${userProjection} from selected p ${userJoins})
         select coalesce((select jsonb_agg(result order by ${outputColumn} ${direction},id ${direction}) from result),'[]'::jsonb) data,(select count(*)::int from filtered) total`,
           [
             q.status ?? null,
             pattern,
             q.businessId ?? null,
-            q.roleKey ?? null,
             q.membershipStatus ?? null,
             q.limit,
             (q.page - 1) * q.limit,
@@ -288,7 +287,7 @@ export class PlatformService {
             message: 'User profile not found',
           });
         const rows = await tx.query<PlatformUserMembership>(
-          `select m.id,m.business_id as "businessId",b.name as "businessName",b.status as "businessStatus",m.role_key as "roleKey",m.status from public.business_memberships m join public.businesses b on b.id=m.business_id where m.user_id=$1 order by b.name,m.id limit $2 offset $3`,
+          `select m.id,m.business_id as "businessId",b.name as "businessName",b.status as "businessStatus",m.role_key as "roleKey",m.status from public.business_memberships m join public.businesses b on b.id=m.business_id where m.user_id=$1 and m.role_key='OWNER' order by b.name,m.id limit $2 offset $3`,
           [id, q.limit, (q.page - 1) * q.limit],
         );
         return {

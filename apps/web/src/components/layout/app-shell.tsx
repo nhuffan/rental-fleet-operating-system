@@ -190,7 +190,7 @@ export function AppShell({
           ? [
               {
                 href: `${prefix}/users`,
-                label: "Thành viên & quyền",
+                label: "Quyền truy cập Owner",
                 icon: "users" as const,
               },
             ]
@@ -356,7 +356,7 @@ export function AppShell({
                 platform ? "/dev-preview/business" : "/dev-preview/platform"
               }
             >
-              {platform ? "Business Admin preview" : "Platform preview"}
+              {platform ? "Owner preview" : "Platform preview"}
               <Icon name="arrow" size={14} />
             </Link>
           )}
@@ -373,9 +373,11 @@ export function AppShell({
             <div>
               <strong>{displayName}</strong>
               <small>
-                {platformContext?.principal.role ||
-                  context?.role ||
-                  "Dữ liệu minh họa"}
+                {platformContext
+                  ? "Superadmin"
+                  : context
+                    ? "Owner"
+                    : "Dữ liệu minh họa"}
               </small>
             </div>
           </div>
@@ -406,7 +408,7 @@ export function AppShell({
               <Badge tone="warning">Design preview</Badge>
             ) : (
               <Badge tone="success">
-                {platformContext ? "Platform operator" : context?.role}
+                {platformContext ? "Superadmin" : "Owner"}
               </Badge>
             )}
             <span className="topbar-email">

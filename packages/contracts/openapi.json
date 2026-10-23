@@ -1320,19 +1320,6 @@
             }
           },
           {
-            "name": "roleKey",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "OWNER",
-                "ADMIN",
-                "OPERATIONS"
-              ]
-            }
-          },
-          {
             "name": "membershipStatus",
             "required": false,
             "in": "query",
@@ -13722,9 +13709,7 @@
           "roleKey": {
             "type": "string",
             "enum": [
-              "OWNER",
-              "ADMIN",
-              "OPERATIONS"
+              "OWNER"
             ]
           },
           "status": {
@@ -13854,9 +13839,7 @@
           "role": {
             "type": "string",
             "enum": [
-              "OWNER",
-              "ADMIN",
-              "OPERATIONS"
+              "OWNER"
             ]
           }
         },
@@ -13878,9 +13861,7 @@
           "role": {
             "type": "string",
             "enum": [
-              "OWNER",
-              "ADMIN",
-              "OPERATIONS"
+              "OWNER"
             ]
           },
           "permissions": {
@@ -14033,9 +14014,7 @@
           "roleKey": {
             "type": "string",
             "enum": [
-              "OWNER",
-              "ADMIN",
-              "OPERATIONS"
+              "OWNER"
             ]
           },
           "status": {
@@ -14082,32 +14061,15 @@
           "userId": {
             "type": "string",
             "format": "uuid"
-          },
-          "roleKey": {
-            "type": "string",
-            "enum": [
-              "OWNER",
-              "ADMIN",
-              "OPERATIONS"
-            ]
           }
         },
         "required": [
-          "userId",
-          "roleKey"
+          "userId"
         ]
       },
       "MemberUpdate": {
         "type": "object",
         "properties": {
-          "roleKey": {
-            "type": "string",
-            "enum": [
-              "OWNER",
-              "ADMIN",
-              "OPERATIONS"
-            ]
-          },
           "status": {
             "type": "string",
             "enum": [
@@ -14115,7 +14077,10 @@
               "DISABLED"
             ]
           }
-        }
+        },
+        "required": [
+          "status"
+        ]
       },
       "SettingsResponse": {
         "type": "object",

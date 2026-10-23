@@ -1,7 +1,7 @@
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
-  // Suites share disposable Auth fixtures; avoid racing profile/membership revocation checks.
+  // Run real Auth/database suites serially to bound load; each owns isolated disposable fixtures.
   test: {
     globals: true,
     // Real Supabase Auth verification is performed on every HTTP request.

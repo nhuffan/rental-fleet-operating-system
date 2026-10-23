@@ -21,8 +21,8 @@ export default async function ResourcePage({
   return (
     <>
       <PageHeader
-        title="Thành viên & quyền"
-        description="Quản lý đội ngũ và quyền truy cập doanh nghiệp."
+        title="Quyền truy cập Owner"
+        description="Quản lý các Owner được toàn quyền truy cập doanh nghiệp."
       />
       <MembersPanel
         key={context.business.id}

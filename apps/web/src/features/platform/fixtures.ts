@@ -56,9 +56,9 @@ export const platformEvents = [
   {
     id: "ev1",
     time: "09:50",
-    title: "Thêm thành viên vận hành",
+    title: "Thêm Owner doanh nghiệp",
     business: "Minh An Mobility",
-    description: "Một tài khoản OPERATIONS được thêm vào doanh nghiệp.",
+    description: "Một Owner được cấp quyền truy cập doanh nghiệp.",
     icon: "users" as const,
   },
   {

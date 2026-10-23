@@ -70,16 +70,16 @@ export default async function Dashboard({
         {members && (
           <Panel className="core-stat">
             <span>
-              <Icon name="users" /> Thành viên
+              <Icon name="users" /> Owner
             </span>
             <strong>{members.total}</strong>
           </Panel>
         )}
         <Panel className="core-stat">
           <span>
-            <Icon name="shield" /> Vai trò của bạn
+            <Icon name="shield" /> Không gian của bạn
           </span>
-          <strong style={{ fontSize: 20 }}>{c.role}</strong>
+          <strong style={{ fontSize: 20 }}>Owner</strong>
         </Panel>
       </div>
       {locations && (
@@ -108,7 +108,7 @@ export default async function Dashboard({
             </span>
             <div>
               <h2>{c.business.name}</h2>
-              <p>Quản lý doanh nghiệp & đội ngũ vận hành</p>
+              <p>Quản lý doanh nghiệp & hoạt động cho thuê xe</p>
             </div>
           </div>
           <dl className="detail-list">
@@ -119,10 +119,6 @@ export default async function Dashboard({
             <div>
               <dt>Tiền tệ</dt>
               <dd>{c.business.currency}</dd>
-            </div>
-            <div>
-              <dt>Quyền truy cập</dt>
-              <dd>{c.permissions.length} quyền được cấp</dd>
             </div>
           </dl>
         </Panel>
@@ -150,8 +146,8 @@ export default async function Dashboard({
                   [
                     "users",
                     "users",
-                    "Thành viên & quyền",
-                    "Vai trò và quyền truy cập đội ngũ",
+                    "Quyền truy cập Owner",
+                    "Quản lý Owner của doanh nghiệp",
                   ],
                 ]
               : []),

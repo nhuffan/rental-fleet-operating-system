@@ -77,3 +77,9 @@ it('supports only a dedicated identity and preserves explicitly disabled fixture
     }),
   ).toBeUndefined();
 });
+
+it('refuses retired fixtures so removing demo accounts cannot recreate them', () => {
+  expect(() => platformDemo({ ...fixture(), retired: true })).toThrow(
+    PlatformSeedRefused,
+  );
+});

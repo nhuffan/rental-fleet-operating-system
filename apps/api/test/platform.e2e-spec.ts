@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { randomUUID } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { disposableFixture } from './disposable-fixture.js';
 import type { INestApplication } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { createClient } from '@supabase/supabase-js';
@@ -9,14 +9,9 @@ import { AppModule } from '../dist/app.module.js';
 import { configureApp } from '../dist/http.js';
 import { Database } from '../dist/database/database.js';
 import { loadConfig } from '../dist/config.js';
-type Demo = {
-  projectRef: string;
-  businessA: string;
-  businessB: string;
-  accounts: Record<string, { id: string; email: string; password: string }>;
-};
-const demo = JSON.parse(readFileSync('../../.env.demo.json', 'utf8')) as Demo;
-const tokens: Record<string, string> = {};
+const fixture = disposableFixture();
+const demo = fixture.data;
+const tokens = fixture.tokens;
 let app: INestApplication | undefined, database: Database | undefined;
 let opMembershipId: string;
 let tenantAuditBefore = 0;
@@ -33,32 +28,7 @@ function api(actor = 'platformOperator', business?: string) {
 }
 beforeAll(async () => {
   process.env.LOG_REQUESTS = 'false';
-  const c = loadConfig(),
-    expected = 'eeryymswcufnebibigqf';
-  if (
-    c.environment !== 'development' ||
-    new URL(c.supabaseUrl).hostname !== expected + '.supabase.co' ||
-    demo.projectRef !== expected
-  )
-    throw new Error(
-      'Platform E2E is restricted to the seeded development project',
-    );
-  if (!demo.accounts.platformOperator)
-    throw new Error(
-      'Run the dedicated development platform bootstrap before Platform E2E',
-    );
-  for (const actor of ['platformOperator', 'ownerA', 'adminA', 'operationsA']) {
-    const client = createClient(c.supabaseUrl, c.publishableKey, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
-    const { data, error } = await client.auth.signInWithPassword({
-      email: demo.accounts[actor].email,
-      password: demo.accounts[actor].password,
-    });
-    if (error || !data.session)
-      throw new Error('Platform development fixture login failed: ' + actor);
-    tokens[actor] = data.session.access_token;
-  }
+  await fixture.start();
   app = await NestFactory.create(AppModule, { logger: false });
   configureApp(app);
   await app.init();
@@ -75,15 +45,19 @@ beforeAll(async () => {
     [demo.accounts.platformOperator.id],
   );
   tenantAuditBefore = existing.rows[0].n;
-}, 60000);
+}, 120000);
 afterAll(async () => {
-  await app?.close();
-});
+  try {
+    await fixture.cleanup();
+  } finally {
+    await app?.close();
+  }
+}, 60000);
 it('requires real Supabase identity plus dedicated platform grant, independent of tenant headers', async () => {
   await request(app!.getHttpServer())
     .get('/api/v1/platform/overview')
     .expect(401);
-  for (const actor of ['ownerA', 'adminA', 'operationsA'])
+  for (const actor of ['ownerA', 'disabledA', 'noMembership'])
     for (const business of [
       undefined,
       demo.businessA,
@@ -117,7 +91,7 @@ it('requires real Supabase identity plus dedicated platform grant, independent o
   await api('platformOperator', demo.businessA).get('/vehicles').expect(403);
   await api('platformOperator').get('/me').expect(403);
 }, 60000);
-it('returns real bounded platform metadata and aggregates while preserving Business Admin tenant isolation', async () => {
+it('returns real bounded platform metadata and aggregates while preserving Owner tenant isolation', async () => {
   const overview = await api().get('/platform/overview').expect(200);
   expect(overview.body.businesses.total).toBeGreaterThanOrEqual(2);
   expect(overview.body.gps.sourceMode).toBe('TEST');
@@ -225,7 +199,7 @@ it('denies direct platform table access to the publishable Data API even for an 
 }, 30000);
 
 it('serves new support reads only to the independent operator and validates real query boundaries', async () => {
-  for (const actor of ['ownerA', 'adminA', 'operationsA'])
+  for (const actor of ['ownerA', 'disabledA', 'noMembership'])
     for (const path of [
       '/platform/audit',
       '/platform/users',

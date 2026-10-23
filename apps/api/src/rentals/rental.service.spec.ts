@@ -17,10 +17,11 @@ let service: RentalService;
 let fleet: FleetService;
 let a: TenantContext;
 let b: TenantContext;
-let ops: TenantContext;
+let revoked: TenantContext;
 const time = (delta: number) => new Date(Date.now() + delta).toISOString();
 const minute = 60_000;
-async function actor(businessId: string, role = 'OWNER') {
+async function actor(businessId: string) {
+  const role = 'OWNER' as const;
   const userId = randomUUID();
   const membershipId = randomUUID();
   await client.query('insert into auth.users(id) values($1)', [userId]);
@@ -88,7 +89,11 @@ beforeEach(async () => {
     .returning();
   a = await actor(businessA.id);
   b = await actor(businessB.id);
-  ops = await actor(businessA.id, 'OPERATIONS');
+  revoked = await actor(businessA.id);
+  await db
+    .update(schema.memberships)
+    .set({ status: 'DISABLED' })
+    .where(eq(schema.memberships.id, revoked.membershipId));
 });
 afterAll(async () => {
   await client?.close();
@@ -478,15 +483,10 @@ it('validates merged customer contacts without globally deduplicating households
     ).data.map((row) => row.id),
   ).toEqual([first.id]);
 });
-it.each(['role', 'membership', 'profile', 'business'])(
+it.each(['membership', 'profile', 'business'])(
   'rechecks %s under the tenant lock for customer and rental writes',
   async (scenario) => {
     const { body } = await fixtures();
-    if (scenario === 'role')
-      await db
-        .update(schema.memberships)
-        .set({ roleKey: 'OPERATIONS' })
-        .where(eq(schema.memberships.id, a.membershipId));
     if (scenario === 'membership')
       await db
         .update(schema.memberships)
@@ -502,8 +502,7 @@ it.each(['role', 'membership', 'profile', 'business'])(
         .update(schema.businesses)
         .set({ status: 'DISABLED' })
         .where(eq(schema.businesses.id, a.businessId));
-    const code =
-      scenario === 'role' ? 'PERMISSION_DENIED' : 'TENANT_ACCESS_DENIED';
+    const code = 'TENANT_ACCESS_DENIED';
     await expect(service.createRental(a, body, 'stale')).rejects.toMatchObject({
       response: { code },
     });
@@ -520,19 +519,29 @@ it.each(['role', 'membership', 'profile', 'business'])(
     ).toBe(0);
   },
 );
-it('allows OPERATIONS reads while rejecting service writes and accepts ADMIN manage', async () => {
+it('allows a second Owner to operate rentals but rejects revoked Owner writes', async () => {
   const { body } = await fixtures();
   const rental = await service.createRental(a, body, 'draft');
-  expect((await service.listRentals(ops, new RentalQuery())).total).toBe(1);
-  expect((await service.listCustomers(ops, new CustomerQuery())).total).toBe(1);
-  await expect(service.reserve(ops, rental.id, 'ops')).rejects.toMatchObject({
-    response: { code: 'PERMISSION_DENIED' },
+  await expect(
+    service.reserve(revoked, rental.id, 'revoked'),
+  ).rejects.toMatchObject({
+    response: { code: 'TENANT_ACCESS_DENIED' },
   });
   await expect(
-    service.createCustomer(ops, { name: 'Ops', phone: '12345' }, 'ops'),
-  ).rejects.toMatchObject({ response: { code: 'PERMISSION_DENIED' } });
-  const admin = await actor(a.businessId, 'ADMIN');
-  expect((await service.reserve(admin, rental.id, 'admin')).status).toBe(
+    service.createCustomer(
+      revoked,
+      { name: 'Revoked', phone: '12345' },
+      'revoked',
+    ),
+  ).rejects.toMatchObject({ response: { code: 'TENANT_ACCESS_DENIED' } });
+  const secondOwner = await actor(a.businessId);
+  expect(
+    (await service.listRentals(secondOwner, new RentalQuery())).total,
+  ).toBe(1);
+  expect(
+    (await service.listCustomers(secondOwner, new CustomerQuery())).total,
+  ).toBe(1);
+  expect((await service.reserve(secondOwner, rental.id, 'owner')).status).toBe(
     'RESERVED',
   );
 });

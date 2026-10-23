@@ -417,7 +417,6 @@ it('uses explicit independent permissions for every new support route and denies
 it('counts unique profiles and returns bounded safe membership summaries including disabled states', async () => {
   const q = Object.assign(new PlatformUserQuery(), {
     businessId: businessA,
-    roleKey: 'OWNER',
     limit: 1,
   });
   const list = await service.users(operator, q, rid());
@@ -500,7 +499,7 @@ it('counts unique profiles and returns bounded safe membership summaries includi
         operator,
         Object.assign(new PlatformUserQuery(), {
           businessId: businessA,
-          roleKey: 'ADMIN',
+          membershipStatus: 'ACTIVE',
         }),
         rid(),
       )
@@ -633,7 +632,12 @@ it('rejects invalid support query bounds, arbitrary sorts, UUIDs and audit date 
   ] as const)
     for (const value of values)
       expect(
-        (await validate(plainToInstance<object, unknown>(klass, value))).length,
+        (
+          await validate(plainToInstance<object, unknown>(klass, value), {
+            whitelist: true,
+            forbidNonWhitelisted: true,
+          })
+        ).length,
       ).toBeGreaterThan(0);
   for (const q of [
     { from: '2020-01-02T00:00:00Z', until: '2020-01-01T00:00:00Z' },

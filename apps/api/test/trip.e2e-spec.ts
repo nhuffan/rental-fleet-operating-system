@@ -1,26 +1,16 @@
 import 'reflect-metadata';
 import { randomUUID } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { disposableFixture } from './disposable-fixture.js';
 import type { INestApplication } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { createClient } from '@supabase/supabase-js';
 import request from 'supertest';
 import { AppModule } from '../dist/app.module.js';
 import { configureApp } from '../dist/http.js';
 import { Database } from '../dist/database/database.js';
-import { loadConfig } from '../dist/config.js';
-type Demo = {
-  projectRef: string;
-  businessA: string;
-  businessB: string;
-  accounts: Record<string, { id: string; email: string; password: string }>;
-};
-const demo = JSON.parse(readFileSync('../../.env.demo.json', 'utf8')) as Demo;
-const tokens: Record<string, string> = {};
-const vehicleIds: string[] = [],
-  deviceIds: string[] = [],
-  customerIds: string[] = [],
-  rentalIds: string[] = [];
+const fixture = disposableFixture();
+const demo = fixture.data;
+const tokens = fixture.tokens;
+const rentalIds: string[] = [];
 let app: INestApplication | undefined, database: Database | undefined;
 const unique = () => randomUUID().replaceAll('-', '');
 function api(actor = 'ownerA', business = demo.businessA) {
@@ -42,65 +32,20 @@ function api(actor = 'ownerA', business = demo.businessA) {
 }
 beforeAll(async () => {
   process.env.LOG_REQUESTS = 'false';
-  const c = loadConfig(),
-    expected = 'eeryymswcufnebibigqf';
-  if (
-    c.environment !== 'development' ||
-    new URL(c.supabaseUrl).hostname !== expected + '.supabase.co' ||
-    demo.projectRef !== expected
-  )
-    throw new Error('Trip E2E is restricted to the seeded development project');
-  process.env.GPS_TRACCAR_TOKEN = 'stage6-e2e-' + randomUUID() + randomUUID();
-  for (const actor of ['ownerA', 'ownerB', 'adminA', 'operationsA']) {
-    const client = createClient(c.supabaseUrl, c.publishableKey, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
-    const { data, error } = await client.auth.signInWithPassword({
-      email: demo.accounts[actor].email,
-      password: demo.accounts[actor].password,
-    });
-    if (error || !data.session)
-      throw new Error('Development fixture login failed: ' + actor);
-    tokens[actor] = data.session.access_token;
-  }
+  process.env.GPS_TRACCAR_TOKEN = 'e2e-' + randomUUID() + randomUUID();
+  await fixture.start();
   app = await NestFactory.create(AppModule, { logger: false });
   configureApp(app);
   await app.init();
   database = app.get(Database);
-}, 60000);
+}, 120000);
 afterAll(async () => {
   try {
-    if (database) {
-      const scope = [[demo.businessA, demo.businessB], vehicleIds];
-      await database.pool.query(
-        'delete from public.gps_positions where business_id=any($1::uuid[]) and vehicle_id=any($2::uuid[])',
-        scope,
-      );
-      await database.pool.query(
-        'delete from public.rentals where business_id=any($1::uuid[]) and id=any($2::uuid[])',
-        [[demo.businessA, demo.businessB], rentalIds],
-      );
-      await database.pool.query(
-        'delete from public.device_assignments where business_id=any($1::uuid[]) and vehicle_id=any($2::uuid[])',
-        scope,
-      );
-      await database.pool.query(
-        'delete from public.vehicles where business_id=any($1::uuid[]) and id=any($2::uuid[])',
-        scope,
-      );
-      await database.pool.query(
-        'delete from public.gps_devices where business_id=any($1::uuid[]) and id=any($2::uuid[])',
-        [[demo.businessA, demo.businessB], deviceIds],
-      );
-      await database.pool.query(
-        'delete from public.customers where business_id=any($1::uuid[]) and id=any($2::uuid[])',
-        [[demo.businessA, demo.businessB], customerIds],
-      );
-    }
+    await fixture.cleanup();
   } finally {
     await app?.close();
   }
-}, 30000);
+}, 60000);
 async function assigned() {
   const v = await api()
     .post('/vehicles')
@@ -110,7 +55,7 @@ async function assigned() {
       model: 'Trip E2E',
     })
     .expect(201);
-  vehicleIds.push(v.body.id as string);
+
   const d = await api()
     .post('/gps-devices')
     .send({
@@ -119,7 +64,7 @@ async function assigned() {
       label: 'Disposable Stage 6 Trip E2E',
     })
     .expect(201);
-  deviceIds.push(d.body.id as string);
+
   const a = await api()
     .post('/vehicles/' + String(v.body.id) + '/device-assignments')
     .send({ deviceId: d.body.id })
@@ -160,7 +105,7 @@ const qs = (from: Date, to: Date) =>
   encodeURIComponent(from.toISOString()) +
   '&to=' +
   encodeURIComponent(to.toISOString());
-it('reads canonical TEST feed as live derived trips with bounded route replay, rental overlap and all read roles', async () => {
+it('reads canonical TEST feed as live derived trips with bounded route replay, rental overlap and Owner authorization', async () => {
   const fixture = await assigned();
   const start = new Date(Date.now() - 5 * 60000),
     end = new Date();
@@ -183,7 +128,7 @@ it('reads canonical TEST feed as live derived trips with bounded route replay, r
     .post('/customers')
     .send({ name: 'Disposable Stage 6 customer', email: 'trip@example.test' })
     .expect(201);
-  customerIds.push(c.body.id as string);
+
   const r = await api()
     .post('/rentals')
     .send({
@@ -222,13 +167,17 @@ it('reads canonical TEST feed as live derived trips with bounded route replay, r
     routeAvailable: true,
   });
   expect(trip.distanceMeters).toBeGreaterThan(100);
-  for (const actor of ['ownerA', 'adminA', 'operationsA']) {
+  for (const actor of ['ownerA']) {
     const me = await api(actor).get('/me').expect(200);
     expect(me.body.permissions).toContain('trip.read');
     await api(actor)
       .get('/trips/' + trip.id)
       .expect(200);
   }
+  for (const actor of ['noMembership', 'platformOperator'])
+    await api(actor)
+      .get('/trips/' + trip.id)
+      .expect(403);
   const route = await api()
     .get('/trips/' + trip.id + '/route?limit=2')
     .expect(200);

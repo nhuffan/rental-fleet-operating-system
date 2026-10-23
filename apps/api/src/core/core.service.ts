@@ -17,11 +17,7 @@ import {
   settings,
 } from '../database/schema.js';
 import { denied, type TenantContext } from '../auth/guards.js';
-import {
-  canManageRole,
-  permissionsFor,
-  type Permission,
-} from '../auth/permissions.js';
+import { permissionsFor, type Permission } from '../auth/permissions.js';
 import {
   BranchCreate,
   BranchUpdate,
@@ -52,6 +48,7 @@ export class CoreService {
         and(
           eq(memberships.userId, c.userId),
           eq(memberships.status, 'ACTIVE'),
+          eq(memberships.roleKey, 'OWNER'),
           eq(businesses.status, 'ACTIVE'),
         ),
       )
@@ -82,10 +79,7 @@ export class CoreService {
     requestId: string,
     action: string,
     type: string,
-    operation: (
-      tx: Tx,
-      role: string,
-    ) => Promise<{ value: T; id: string; fields?: string[] }>,
+    operation: (tx: Tx) => Promise<{ value: T; id: string; fields?: string[] }>,
   ) {
     return this.database.db.transaction(async (tx) => {
       // Serialize tenant admin writes, then recheck membership/permission so concurrent revocation cannot be bypassed.
@@ -113,7 +107,7 @@ export class CoreService {
           code: 'PERMISSION_DENIED',
           message: 'Permission denied',
         });
-      const result = await operation(tx, member.role);
+      const result = await operation(tx);
       await tx.insert(auditLogs).values({
         businessId: c.businessId,
         actorUserId: c.userId,
@@ -239,7 +233,10 @@ export class CoreService {
     );
   }
   async listMembers(c: TenantContext, q: PageQuery) {
-    const where = eq(memberships.businessId, c.businessId);
+    const where = and(
+      eq(memberships.businessId, c.businessId),
+      eq(memberships.roleKey, 'OWNER'),
+    );
     const [data, totals] = await Promise.all([
       this.database.db
         .select({
@@ -270,12 +267,7 @@ export class CoreService {
       requestId,
       'membership.add',
       'membership',
-      async (tx, role) => {
-        if (!canManageRole(role, undefined, body.roleKey))
-          throw new ForbiddenException({
-            code: 'ROLE_CHANGE_DENIED',
-            message: 'Only owners can manage elevated roles',
-          });
+      async (tx) => {
         const identity = await tx.execute(
           sql`select id from auth.users where id = ${body.userId}::uuid`,
         );
@@ -306,7 +298,7 @@ export class CoreService {
           .insert(memberships)
           .values({
             userId: body.userId,
-            roleKey: body.roleKey,
+            roleKey: 'OWNER',
             businessId: c.businessId,
           })
           .returning();
@@ -324,13 +316,9 @@ export class CoreService {
       c,
       'user.manage',
       requestId,
-      body.status === 'DISABLED'
-        ? 'membership.disable'
-        : body.roleKey
-          ? 'membership.role_change'
-          : 'membership.update',
+      body.status === 'DISABLED' ? 'membership.disable' : 'membership.update',
       'membership',
-      async (tx, role) => {
+      async (tx) => {
         const [before] = await tx
           .select()
           .from(memberships)
@@ -346,17 +334,9 @@ export class CoreService {
             message: 'Membership not found',
           });
         if (
-          !canManageRole(role, before.roleKey, body.roleKey ?? before.roleKey)
-        )
-          throw new ForbiddenException({
-            code: 'ROLE_CHANGE_DENIED',
-            message: 'Only owners can manage elevated roles',
-          });
-        if (
           before.roleKey === 'OWNER' &&
           before.status === 'ACTIVE' &&
-          ((body.roleKey && body.roleKey !== 'OWNER') ||
-            body.status === 'DISABLED')
+          body.status === 'DISABLED'
         ) {
           const [owners] = await tx
             .select({ total: count() })
@@ -379,7 +359,6 @@ export class CoreService {
         const [value] = await tx
           .update(memberships)
           .set({
-            roleKey: body.roleKey,
             status: body.status,
             updatedAt: new Date(),
           })

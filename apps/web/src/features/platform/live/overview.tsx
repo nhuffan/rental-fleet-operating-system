@@ -6,7 +6,7 @@ import type { PlatformOverview } from "./types";
 export function PlatformOverviewPanel({ data }: { data: PlatformOverview }) {
   const stats = [
     ["Doanh nghiệp hoạt động", data.businesses.ACTIVE, "business"],
-    ["Memberships hoạt động", data.totals.activeMemberships, "users"],
+    ["Liên kết Owner hoạt động", data.totals.activeMemberships, "users"],
     ["Xe trong hệ thống", data.totals.vehicles, "car"],
     ["Hợp đồng đang thuê", data.totals.activeRentals, "rental"],
   ] as const;
@@ -50,7 +50,7 @@ export function PlatformOverviewPanel({ data }: { data: PlatformOverview }) {
               </dd>
             </div>
             <div>
-              <dt>Liên kết thành viên</dt>
+              <dt>Liên kết Owner</dt>
               <dd>
                 {data.totals.activeMemberships} hoạt động /{" "}
                 {data.totals.memberships} tổng
@@ -112,9 +112,9 @@ export function PlatformOverviewPanel({ data }: { data: PlatformOverview }) {
       </div>
       <p className="notice notice-info">
         Số liệu tổng hợp bao gồm tất cả doanh nghiệp theo trạng thái hiện có; số
-        doanh nghiệp hoạt động được tách riêng. Memberships có thể đếm cùng một
-        người ở nhiều doanh nghiệp. Console chỉ đọc metadata và tổng hợp, không
-        hiển thị tọa độ, UID thiết bị hoặc thông tin liên hệ khách hàng.
+        doanh nghiệp hoạt động được tách riêng. Liên kết Owner có thể đếm cùng
+        một người ở nhiều doanh nghiệp. Console chỉ đọc metadata và tổng hợp,
+        không hiển thị tọa độ, UID thiết bị hoặc thông tin liên hệ khách hàng.
       </p>
     </>
   );

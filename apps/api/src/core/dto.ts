@@ -71,19 +71,11 @@ export class BranchUpdate {
 }
 export class MemberCreate {
   @ApiProperty({ format: 'uuid' }) @IsUUID() userId!: string;
-  @ApiProperty({ enum: ['OWNER', 'ADMIN', 'OPERATIONS'] })
-  @IsIn(['OWNER', 'ADMIN', 'OPERATIONS'])
-  roleKey!: string;
 }
 export class MemberUpdate {
-  @ApiPropertyOptional({ enum: ['OWNER', 'ADMIN', 'OPERATIONS'] })
-  @ValidateIf((_o, value) => value !== undefined)
-  @IsIn(['OWNER', 'ADMIN', 'OPERATIONS'])
-  roleKey?: string;
-  @ApiPropertyOptional({ enum: ['ACTIVE', 'DISABLED'] })
-  @ValidateIf((_o, value) => value !== undefined)
+  @ApiProperty({ enum: ['ACTIVE', 'DISABLED'] })
   @IsIn(['ACTIVE', 'DISABLED'])
-  status?: string;
+  status!: string;
 }
 export class SettingsConfig {
   @ApiPropertyOptional({ enum: ['vi', 'en'] })

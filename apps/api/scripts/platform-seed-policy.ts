@@ -11,6 +11,7 @@ export type DemoAccount = {
 export type PlatformDemo = {
   projectRef: string;
   accounts: Record<string, DemoAccount>;
+  retired?: boolean;
   [key: string]: unknown;
 };
 export function assertPlatformSeedEnvironment(
@@ -38,6 +39,10 @@ export function platformDemo(value: unknown): PlatformDemo {
       'An existing development demo fixture is required',
     );
   const data = value as Partial<PlatformDemo>;
+  if (data.retired === true)
+    throw new PlatformSeedRefused(
+      'Persistent demo seeding is retired; use disposable E2E fixtures instead.',
+    );
   if (
     data.projectRef !== DEVELOPMENT_PLATFORM_PROJECT ||
     typeof data.accounts !== 'object' ||

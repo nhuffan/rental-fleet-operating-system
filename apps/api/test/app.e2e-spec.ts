@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { readFileSync } from 'node:fs';
+import { disposableFixture } from './disposable-fixture.js';
 import { NestFactory } from '@nestjs/core';
 import type { INestApplication } from '@nestjs/common';
 import { createClient } from '@supabase/supabase-js';
@@ -8,22 +8,9 @@ import { AppModule } from '../dist/app.module.js';
 import { configureApp } from '../dist/http.js';
 import { Database } from '../dist/database/database.js';
 import { loadConfig } from '../dist/config.js';
-type Account = {
-  id: string;
-  email: string;
-  password: string;
-  role: string;
-  business: string;
-};
-const demo = JSON.parse(readFileSync('../../.env.demo.json', 'utf8')) as {
-  projectRef: string;
-  businessA: string;
-  businessB: string;
-  branchA: string;
-  branchB: string;
-  accounts: Record<string, Account>;
-};
-const tokens: Record<string, string> = {};
+const fixture = disposableFixture();
+const demo = fixture.data;
+const tokens = fixture.tokens;
 let app: INestApplication;
 let database: Database;
 let createdBranch: string;
@@ -49,43 +36,19 @@ function api(actor = 'ownerA', business = demo.businessA) {
 }
 beforeAll(async () => {
   process.env.LOG_REQUESTS = 'false';
-  const c = loadConfig();
-  if (
-    c.environment !== 'development' ||
-    !c.supabaseUrl.includes(demo.projectRef)
-  )
-    throw Error('Integration tests require the seeded development project');
-  for (const [name, a] of Object.entries(demo.accounts)) {
-    const client = createClient(c.supabaseUrl, c.publishableKey, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
-    const { data, error } = await client.auth.signInWithPassword({
-      email: a.email,
-      password: a.password,
-    });
-    if (error || !data.session) throw Error('Demo login failed: ' + name);
-    tokens[name] = data.session.access_token;
-  }
+  await fixture.start();
   app = await NestFactory.create(AppModule, { logger: false });
   configureApp(app);
   await app.init();
   database = app.get(Database);
-}, 60000);
+}, 120000);
 afterAll(async () => {
-  if (database) {
-    if (createdBranch)
-      await database.pool.query(
-        'delete from public.branches where id=$1 and business_id=$2',
-        [createdBranch, demo.businessA],
-      );
-    if (addedMember)
-      await database.pool.query(
-        'delete from public.business_memberships where id=$1 and business_id=$2',
-        [addedMember, demo.businessA],
-      );
+  try {
+    await fixture.cleanup();
+  } finally {
+    await app?.close();
   }
-  await app?.close();
-});
+}, 60000);
 it('health is public and request IDs/errors are standardized', async () => {
   const r = await request(app.getHttpServer())
     .get('/api/v1/health')
@@ -160,23 +123,23 @@ it('validates DTOs, rejects tenant injection, malformed pagination and null fiel
     .send({ timezone: 'Invalid/Timezone' })
     .expect(400);
 });
-it('enforces RBAC and audits admin branch/settings changes', async () => {
-  await api('operationsA')
+it('limits writes to Owner and audits branch/settings changes', async () => {
+  await api('noMembership')
     .post('/branches')
     .send({ name: 'denied' })
     .expect(403);
-  await api('operationsA').get('/memberships').expect(403);
-  const r = await api('adminA')
+  await api('noMembership').get('/memberships').expect(403);
+  const r = await api('ownerA')
     .post('/branches')
     .send({ name: 'Integration branch' })
     .expect(201);
   createdBranch = r.body.id;
-  await api('adminA')
+  await api('ownerA')
     .patch('/branches/' + createdBranch)
     .send({ status: 'DISABLED' })
     .expect(200);
   const before = await api().get('/settings').expect(200);
-  await api('adminA')
+  await api('ownerA')
     .patch('/settings')
     .send({ config: { locale: 'vi', dateFormat: 'ISO' } })
     .expect(200);
@@ -193,15 +156,15 @@ it('enforces RBAC and audits admin branch/settings changes', async () => {
   );
   expect(logs.rows.every((r) => r.metadata.requestId)).toBe(true);
 });
-it('prevents owner escalation, last-owner removal and tenant membership IDOR', async () => {
+it('rejects role selection, last-owner removal and tenant membership IDOR', async () => {
   const members = await api().get('/memberships').expect(200);
   const owner = members.body.data.find(
     (m: { userId: string }) => m.userId === demo.accounts.ownerA.id,
   );
-  await api('adminA')
+  await api('ownerA')
     .patch('/memberships/' + owner.id)
-    .send({ roleKey: 'OPERATIONS' })
-    .expect(403);
+    .send({ roleKey: 'OWNER' })
+    .expect(400);
   await api()
     .patch('/memberships/' + owner.id)
     .send({ status: 'DISABLED' })
@@ -217,13 +180,19 @@ it('prevents owner escalation, last-owner removal and tenant membership IDOR', a
 it('adds, changes and disables membership with audit; revoked membership takes effect immediately', async () => {
   const r = await api()
     .post('/memberships')
-    .send({ userId: demo.accounts.noMembership.id, roleKey: 'OPERATIONS' })
+    .send({ userId: demo.accounts.noMembership.id })
     .expect(201);
   addedMember = r.body.id;
+  expect(r.body.roleKey).toBe('OWNER');
   await api('noMembership').get('/me').expect(200);
   await api()
     .patch('/memberships/' + addedMember)
-    .send({ roleKey: 'ADMIN' })
+    .send({ status: 'DISABLED' })
+    .expect(200);
+  await api('noMembership').get('/me').expect(403);
+  await api()
+    .patch('/memberships/' + addedMember)
+    .send({ status: 'ACTIVE' })
     .expect(200);
   await api('noMembership').get('/memberships').expect(200);
   await api()
@@ -235,7 +204,7 @@ it('adds, changes and disables membership with audit; revoked membership takes e
     'select action from public.audit_logs where business_id=$1 and entity_id=$2',
     [demo.businessA, addedMember],
   );
-  expect(logs.rows).toHaveLength(3);
+  expect(logs.rows).toHaveLength(4);
 });
 it('enforces tenant RLS and denies direct writes through real Supabase Data API', async () => {
   const c = loadConfig();
@@ -285,7 +254,7 @@ it('keeps an active owner during concurrent self-disable requests', async () => 
   );
   await api()
     .patch('/memberships/' + addedMember)
-    .send({ roleKey: 'OWNER', status: 'ACTIVE' })
+    .send({ status: 'ACTIVE' })
     .expect(200);
   try {
     const results = await Promise.all([
@@ -310,7 +279,7 @@ it('keeps an active owner during concurrent self-disable requests', async () => 
       [owner.id, demo.businessA],
     );
     await database.pool.query(
-      "update public.business_memberships set status='DISABLED',role_key='OPERATIONS' where id=$1 and business_id=$2",
+      "update public.business_memberships set status='DISABLED' where id=$1 and business_id=$2",
       [addedMember, demo.businessA],
     );
   }
@@ -320,7 +289,7 @@ it('does not trust user metadata and blocks disabled profiles in API and RLS', a
   const client = createClient(c.supabaseUrl, c.publishableKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
-  const account = demo.accounts.operationsA;
+  const account = demo.accounts.noMembership;
   const { error: loginError } = await client.auth.signInWithPassword({
     email: account.email,
     password: account.password,
@@ -331,26 +300,26 @@ it('does not trust user metadata and blocks disabled profiles in API and RLS', a
   });
   expect(error).toBeNull();
   try {
-    await api('operationsA')
+    await api('noMembership')
       .post('/branches')
       .send({ name: 'metadata must not authorize' })
       .expect(403);
     await database.pool.query(
       "update public.user_profiles set status='DISABLED' where user_id=$1",
-      [account.id],
+      [demo.accounts.ownerA.id],
     );
-    await api('operationsA').get('/me').expect(403);
+    await api('ownerA').get('/me').expect(403);
     const r = await fetch(c.supabaseUrl + '/rest/v1/branches?select=id', {
       headers: {
         apikey: c.publishableKey,
-        Authorization: 'Bearer ' + tokens.operationsA,
+        Authorization: 'Bearer ' + tokens.ownerA,
       },
     });
     expect(await r.json()).toEqual([]);
   } finally {
     await database.pool.query(
       "update public.user_profiles set status='ACTIVE' where user_id=$1",
-      [account.id],
+      [demo.accounts.ownerA.id],
     );
     await client.auth.updateUser({ data: { role: null, business_id: null } });
     await client.auth.signOut();

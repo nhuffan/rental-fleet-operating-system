@@ -387,7 +387,7 @@ export function PlatformPreview({
           <SearchInput
             value={query}
             onChange={setQuery}
-            placeholder="Tìm doanh nghiệp hoặc vai trò…"
+            placeholder="Tìm doanh nghiệp hoặc Owner…"
           />
           <Badge tone="warning">Preview</Badge>
         </div>
@@ -395,7 +395,7 @@ export function PlatformPreview({
           caption="Người dùng nền tảng minh họa"
           rows={businesses
             .flatMap((b) =>
-              ["OWNER", "OPERATIONS"].map((role, i) => ({
+              ["Owner"].map((role, i) => ({
                 id: `${b.id}-${role}`,
                 name: `Tài khoản mẫu ${i + 1}`,
                 business: b.name,
@@ -420,7 +420,7 @@ export function PlatformPreview({
             },
             {
               key: "role",
-              label: "Vai trò tenant",
+              label: "Quyền truy cập",
               render: (r) => <Badge tone="info">{r.role}</Badge>,
             },
             {

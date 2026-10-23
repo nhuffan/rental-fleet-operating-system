@@ -98,19 +98,10 @@ export function SupportPanel({
                 {statuses}
               </Select>
             </FormField>
-            <FormField id="support-role" label="Vai trò doanh nghiệp">
-              <Select
-                id="support-role"
-                name="roleKey"
-                defaultValue={filters.roleKey}
-              >
-                <option value="">Mọi vai trò</option>
-                {["OWNER", "ADMIN", "OPERATIONS"].map((role) => (
-                  <option key={role}>{role}</option>
-                ))}
-              </Select>
-            </FormField>
-            <FormField id="support-membership" label="Trạng thái membership">
+            <FormField
+              id="support-membership"
+              label="Trạng thái truy cập doanh nghiệp"
+            >
               <Select
                 id="support-membership"
                 name="membershipStatus"
@@ -289,17 +280,27 @@ export function SupportPanel({
               },
               {
                 key: "platform",
-                label: "Quyền platform",
+                label: "Quyền Superadmin",
                 render: (u) =>
                   u.platformStatus === "NONE" ? (
                     <Badge>Chưa cấp</Badge>
                   ) : (
-                    <StatusBadge status={u.platformStatus} />
+                    <Badge
+                      tone={
+                        u.platformStatus === "ACTIVE" && u.status === "ACTIVE"
+                          ? "brand"
+                          : "neutral"
+                      }
+                    >
+                      {u.platformStatus === "ACTIVE" && u.status === "ACTIVE"
+                        ? "Superadmin"
+                        : "Superadmin · Đã vô hiệu hóa"}
+                    </Badge>
                   ),
               },
               {
                 key: "memberships",
-                label: "Memberships",
+                label: "Doanh nghiệp",
                 render: (u) => (
                   <>
                     {u.activeMembershipCount} / {u.membershipCount}
@@ -309,8 +310,13 @@ export function SupportPanel({
               },
               {
                 key: "roles",
-                label: "Vai trò doanh nghiệp",
-                render: (u) => u.roles.join(", ") || "Không có membership",
+                label: "Quyền doanh nghiệp",
+                render: (u) =>
+                  u.roles.includes("OWNER")
+                    ? u.activeMembershipCount > 0
+                      ? "Owner"
+                      : "Owner · Không hiệu lực"
+                    : "Chưa cấp",
               },
               {
                 key: "created",
@@ -330,7 +336,7 @@ export function SupportPanel({
         <Notice>
           {mode === "audit"
             ? "Chỉ nhật ký platform; bộ lọc doanh nghiệp chỉ áp dụng cho sự kiện nhắm trực tiếp đến doanh nghiệp đó. Các trường ngoài danh sách cho phép được lược bỏ."
-            : "Tổng là số hồ sơ duy nhất, không phải số membership. Membership hiệu lực cần hồ sơ, membership và doanh nghiệp cùng hoạt động. Không cung cấp email hoặc thông tin liên hệ."}
+            : "Tổng là số hồ sơ duy nhất. Quyền doanh nghiệp hiệu lực cần hồ sơ, Owner và doanh nghiệp cùng hoạt động. Hồ sơ chưa được cấp quyền không có quyền Owner hoặc Superadmin; cổng khách thuê xe chưa được triển khai. Không cung cấp email hoặc thông tin liên hệ."}
         </Notice>
       </div>
     </Panel>
@@ -356,13 +362,17 @@ export function UserDetailPanel({ data }: { data: PlatformUserDetail }) {
             </dd>
           </div>
           <div>
-            <dt>Quyền platform</dt>
+            <dt>Quyền Superadmin</dt>
             <dd>
-              {u.platformStatus === "NONE" ? "Chưa cấp" : u.platformStatus}
+              {u.platformStatus === "NONE"
+                ? "Chưa cấp"
+                : u.platformStatus === "ACTIVE" && u.status === "ACTIVE"
+                  ? "Superadmin"
+                  : "Superadmin · Đã vô hiệu hóa"}
             </dd>
           </div>
           <div>
-            <dt>Memberships hiệu lực / tổng</dt>
+            <dt>Doanh nghiệp hiệu lực / tổng</dt>
             <dd>
               {u.activeMembershipCount} / {u.membershipCount}
             </dd>
@@ -387,11 +397,11 @@ export function UserDetailPanel({ data }: { data: PlatformUserDetail }) {
         <PanelHeader
           title="Liên kết doanh nghiệp"
           icon="business"
-          subtitle="Trạng thái membership và doanh nghiệp được hiển thị riêng."
+          subtitle="Trạng thái truy cập Owner và doanh nghiệp được hiển thị riêng."
         />
         <div aria-busy={pending}>
           <DataTable
-            caption="Memberships của hồ sơ, có phân trang từ API"
+            caption="Quyền Owner của hồ sơ, có phân trang từ API"
             rows={data.memberships.data}
             columns={[
               {
@@ -409,10 +419,9 @@ export function UserDetailPanel({ data }: { data: PlatformUserDetail }) {
                   </Link>
                 ),
               },
-              { key: "role", label: "Vai trò", render: (m) => m.roleKey },
               {
                 key: "status",
-                label: "Membership",
+                label: "Quyền Owner",
                 render: (m) => <StatusBadge status={m.status} />,
               },
               {

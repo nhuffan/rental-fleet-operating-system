@@ -80,7 +80,7 @@ export function PlatformBusinessDetail({
               </dd>
             </div>
             <div>
-              <dt>Memberships</dt>
+              <dt>Owner</dt>
               <dd>
                 {b.counts.activeMemberships} hoạt động / {b.counts.memberships}{" "}
                 tổng
@@ -104,8 +104,8 @@ export function PlatformBusinessDetail({
             </div>
           </dl>
           <p className="panel-body quiet">
-            Liên kết thành viên không phải tài khoản duy nhất. Membership hoạt
-            động cần liên kết và hồ sơ người dùng cùng hoạt động.
+            Mỗi liên kết cấp quyền Owner cho một doanh nghiệp. Quyền hiệu lực
+            cần liên kết và hồ sơ người dùng cùng hoạt động.
           </p>
         </Panel>
         <Panel>

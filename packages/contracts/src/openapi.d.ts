@@ -788,7 +788,7 @@ export interface components {
             /** @enum {string} */
             businessStatus: "ACTIVE" | "DISABLED";
             /** @enum {string} */
-            roleKey: "OWNER" | "ADMIN" | "OPERATIONS";
+            roleKey: "OWNER";
             /** @enum {string} */
             status: "ACTIVE" | "DISABLED";
         };
@@ -823,13 +823,13 @@ export interface components {
             id: string;
             name: string;
             /** @enum {string} */
-            role: "OWNER" | "ADMIN" | "OPERATIONS";
+            role: "OWNER";
         };
         MeResponse: {
             user: components["schemas"]["UserResponse"];
             business: components["schemas"]["BusinessResponse"];
             /** @enum {string} */
-            role: "OWNER" | "ADMIN" | "OPERATIONS";
+            role: "OWNER";
             permissions: string[];
             businesses: components["schemas"]["BusinessChoice"][];
         };
@@ -873,7 +873,7 @@ export interface components {
             userId: string;
             displayName?: string;
             /** @enum {string} */
-            roleKey: "OWNER" | "ADMIN" | "OPERATIONS";
+            roleKey: "OWNER";
             status: string;
         };
         MembershipPage: {
@@ -885,14 +885,10 @@ export interface components {
         MemberCreate: {
             /** Format: uuid */
             userId: string;
-            /** @enum {string} */
-            roleKey: "OWNER" | "ADMIN" | "OPERATIONS";
         };
         MemberUpdate: {
             /** @enum {string} */
-            roleKey?: "OWNER" | "ADMIN" | "OPERATIONS";
-            /** @enum {string} */
-            status?: "ACTIVE" | "DISABLED";
+            status: "ACTIVE" | "DISABLED";
         };
         SettingsResponse: {
             businessId: string;
@@ -2005,7 +2001,6 @@ export interface operations {
                 sort?: "name" | "createdAt";
                 order?: "asc" | "desc";
                 businessId?: string;
-                roleKey?: "OWNER" | "ADMIN" | "OPERATIONS";
                 membershipStatus?: "ACTIVE" | "DISABLED";
             };
             header?: never;

@@ -1,26 +1,17 @@
 import 'reflect-metadata';
 import { randomUUID } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { disposableFixture } from './disposable-fixture.js';
 import type { INestApplication } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { createClient } from '@supabase/supabase-js';
 import request from 'supertest';
 import { AppModule } from '../dist/app.module.js';
 import { configureApp } from '../dist/http.js';
 import { Database } from '../dist/database/database.js';
 import { loadConfig } from '../dist/config.js';
 
-type Demo = {
-  projectRef: string;
-  businessA: string;
-  businessB: string;
-  accounts: Record<string, { id: string; email: string; password: string }>;
-};
-const demo = JSON.parse(readFileSync('../../.env.demo.json', 'utf8')) as Demo;
-const tokens: Record<string, string> = {};
-const vehicleIds: string[] = [];
-const customerIds: string[] = [];
-const rentalIds: string[] = [];
+const fixture = disposableFixture();
+const demo = fixture.data;
+const tokens = fixture.tokens;
 let app: INestApplication | undefined;
 let database: Database | undefined;
 const stamp = () => randomUUID().replaceAll('-', '');
@@ -57,7 +48,7 @@ async function vehicle(actor = 'ownerA', business = demo.businessA) {
       model: 'Disposable Stage 4 E2E',
     })
     .expect(201);
-  vehicleIds.push(r.body.id as string);
+
   return r.body as { id: string; status: string };
 }
 async function customer(
@@ -75,7 +66,7 @@ async function customer(
       ...extra,
     })
     .expect(201);
-  customerIds.push(r.body.id as string);
+
   return r.body as {
     id: string;
     name: string;
@@ -105,7 +96,7 @@ async function rental(
       ...extra,
     })
     .expect(201);
-  rentalIds.push(r.body.id as string);
+
   return r.body as {
     id: string;
     status: string;
@@ -119,65 +110,36 @@ const availability = (start: string, end: string) =>
   new URLSearchParams({ startAt: start, endAt: end, limit: '100' }).toString();
 beforeAll(async () => {
   process.env.LOG_REQUESTS = 'false';
-  const config = loadConfig();
-  if (
-    config.environment !== 'development' ||
-    new URL(config.supabaseUrl).hostname !==
-      'eeryymswcufnebibigqf.supabase.co' ||
-    demo.projectRef !== 'eeryymswcufnebibigqf'
-  )
-    throw new Error('Rental E2E restricted to seeded development project');
-  for (const actor of ['ownerA', 'ownerB', 'adminA', 'operationsA']) {
-    const client = createClient(config.supabaseUrl, config.publishableKey, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
-    const { data, error } = await client.auth.signInWithPassword({
-      email: demo.accounts[actor].email,
-      password: demo.accounts[actor].password,
-    });
-    if (error || !data.session)
-      throw new Error('Development fixture login failed: ' + actor);
-    tokens[actor] = data.session.access_token;
-  }
+  await fixture.start();
   app = await NestFactory.create(AppModule, { logger: false });
   configureApp(app);
   await app.init();
   database = app.get(Database);
-}, 60000);
+}, 120000);
 afterAll(async () => {
   try {
-    if (database) {
-      // Exact recorded IDs only; never reset the schema/seed, never remove audit evidence.
-      await database.pool.query(
-        'delete from public.rentals where business_id=any($1::uuid[]) and id=any($2::uuid[])',
-        [[demo.businessA, demo.businessB], rentalIds],
-      );
-      await database.pool.query(
-        'delete from public.customers where business_id=any($1::uuid[]) and id=any($2::uuid[])',
-        [[demo.businessA, demo.businessB], customerIds],
-      );
-      await database.pool.query(
-        'delete from public.vehicles where business_id=any($1::uuid[]) and id=any($2::uuid[])',
-        [[demo.businessA, demo.businessB], vehicleIds],
-      );
-    }
+    await fixture.cleanup();
   } finally {
     await app?.close();
   }
-}, 30000);
+}, 60000);
 
-it('authorizes Customer/Rental reads and denies every Operations write action', async () => {
+it('authorizes Owner Customer/Rental management and denies ungranted access', async () => {
   await request(app!.getHttpServer()).get('/api/v1/customers').expect(401);
   await request(app!.getHttpServer()).get('/api/v1/rentals').expect(401);
-  const me = await api('operationsA').get('/me').expect(200);
+  const me = await api('ownerA').get('/me').expect(200);
   expect(me.body.permissions).toEqual(
-    expect.arrayContaining(['customer.read', 'rental.read']),
+    expect.arrayContaining([
+      'customer.read',
+      'customer.manage',
+      'rental.read',
+      'rental.manage',
+    ]),
   );
-  expect(me.body.permissions).not.toContain('customer.manage');
-  expect(me.body.permissions).not.toContain('rental.manage');
-  const c = await customer('adminA');
-  const v = await vehicle('adminA');
-  const r = await rental(v.id, c.id, {}, 'adminA');
+  await api('noMembership').get('/me').expect(403);
+  const c = await customer('ownerA');
+  const v = await vehicle('ownerA');
+  const r = await rental(v.id, c.id, {}, 'ownerA');
   for (const path of [
     '/customers',
     '/customers/' + c.id,
@@ -185,17 +147,19 @@ it('authorizes Customer/Rental reads and denies every Operations write action', 
     '/rentals/' + r.id,
     availability(iso(1), iso(60)),
     `/vehicles/${v.id}/rental-state`,
-  ])
-    await api('operationsA').get(path).expect(200);
-  await api('operationsA')
+  ]) {
+    await api('ownerA').get(path).expect(200);
+    await api('noMembership').get(path).expect(403);
+  }
+  await api('noMembership')
     .post('/customers')
     .send({ name: 'Forbidden', phone: '0900123456' })
     .expect(403);
-  await api('operationsA')
+  await api('noMembership')
     .patch('/customers/' + c.id)
     .send({ name: 'Forbidden' })
     .expect(403);
-  await api('operationsA')
+  await api('noMembership')
     .post('/rentals')
     .send({
       vehicleId: v.id,
@@ -204,7 +168,7 @@ it('authorizes Customer/Rental reads and denies every Operations write action', 
       endAt: iso(60),
     })
     .expect(403);
-  await api('operationsA')
+  await api('noMembership')
     .patch('/rentals/' + r.id)
     .send({ notes: 'Forbidden' })
     .expect(403);
@@ -215,7 +179,7 @@ it('authorizes Customer/Rental reads and denies every Operations write action', 
     ['return', { odometerEnd: 20 }],
     ['cancel', {}],
   ] as const)
-    await api('operationsA').post(action(r.id, name)).send(body).expect(403);
+    await api('noMembership').post(action(r.id, name)).send(body).expect(403);
 });
 
 it('validates contacts, money, dates and immutable lifecycle inputs', async () => {
@@ -269,18 +233,18 @@ it('validates contacts, money, dates and immutable lifecycle inputs', async () =
 });
 
 it('runs Customer → Draft → Reserve → Handover → Extend → Return with atomic redacted audit', async () => {
-  const c = await customer('adminA');
-  const v = await vehicle('adminA');
-  const r = await rental(v.id, c.id, {}, 'adminA');
+  const c = await customer('ownerA');
+  const v = await vehicle('ownerA');
+  const r = await rental(v.id, c.id, {}, 'ownerA');
   expect(r.status).toBe('DRAFT');
-  await api('adminA')
+  await api('ownerA')
     .patch('/rentals/' + r.id)
     .send({
       notes: 'Private synthetic note not for audit',
       depositReceived: true,
     })
     .expect(200);
-  const reserved = await api('adminA')
+  const reserved = await api('ownerA')
     .post(action(r.id, 'reserve'))
     .expect(201);
   expect(reserved.body.status).toBe('RESERVED');
@@ -288,7 +252,7 @@ it('runs Customer → Draft → Reserve → Handover → Extend → Return with 
   await api().post(action(r.id, 'reserve')).expect(409);
   for (const path of ['/vehicles/' + v.id, '/customers/' + c.id])
     await api().patch(path).send({ status: 'INACTIVE' }).expect(409);
-  const handover = await api('adminA')
+  const handover = await api('ownerA')
     .post(action(r.id, 'handover'))
     .send({ odometerStart: 12000 })
     .expect(201);
@@ -304,7 +268,7 @@ it('runs Customer → Draft → Reserve → Handover → Extend → Return with 
     .send({ vehicleId: (await vehicle()).id })
     .expect(409);
   const nextEnd = iso(180);
-  const extended = await api('adminA')
+  const extended = await api('ownerA')
     .post(action(r.id, 'extend'))
     .send({ endAt: nextEnd, rentalAmount: 1500000 })
     .expect(201);
@@ -318,7 +282,7 @@ it('runs Customer → Draft → Reserve → Handover → Extend → Return with 
   const current = await api().get(`/vehicles/${v.id}/rental-state`).expect(200);
   expect(current.body.state).toBe('RENTED');
   expect(current.body.currentRental.id).toBe(r.id);
-  const returned = await api('adminA')
+  const returned = await api('ownerA')
     .post(action(r.id, 'return'))
     .send({ odometerEnd: 12240 })
     .expect(201);
@@ -469,7 +433,6 @@ it('rejects extension overlap, inactive resources, premature handover and invali
         endAt: iso(660),
       });
     if (draft.status === 201) {
-      rentalIds.push(draft.body.id as string);
       await api().post(action(draft.body.id, 'reserve')).expect(409);
     } else expect(draft.status).toBe(409);
   }
