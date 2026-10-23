@@ -1,3 +1,6 @@
+import { PlatformController } from './platform/platform.controller.js';
+import { PlatformService } from './platform/platform.service.js';
+import { PlatformGuard } from './platform/guards.js';
 import { GpsIngress } from './telematics/gps/ingress.js';
 import { TripController } from './telematics/trips/trip.controller.js';
 import { TripService } from './telematics/trips/trip.service.js';
@@ -19,6 +22,7 @@ import { AuthGuard, TenantGuard, PermissionGuard } from './auth/guards.js';
 @Module({
   controllers: [
     AppController,
+    PlatformController,
     CoreController,
     RentalController,
     FleetController,
@@ -28,6 +32,8 @@ import { AuthGuard, TenantGuard, PermissionGuard } from './auth/guards.js';
   ],
   providers: [
     Database,
+    PlatformService,
+    PlatformGuard,
     CoreService,
     FleetService,
     GpsService,

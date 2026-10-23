@@ -2,6 +2,8 @@
 
 ## Run and verify
 
+Implementation stages run focused changed-path/security tests, build/typecheck and lint for touched workspaces. Full historical E2E, broad browser/viewport matrices and load benchmarks belong to Final Validation unless a concrete regression requires them. Critical authorization failures must be fixed before delivery.
+
 Use pnpm 11.19.0; project scripts select Node 24.21.0. Copy `apps/web/.env.example` to `apps/web/.env.local` and `apps/api/.env.example` to `apps/api/.env` on a new checkout. Supply real values locally only.
 
 ```sh
@@ -13,7 +15,7 @@ pnpm build
 pnpm lint
 pnpm typecheck
 pnpm test                # domain/security tests and clean-database migration replay
-pnpm test:e2e            # real dev Auth/API/RLS tests; requires demo seed
+pnpm test:e2e            # full real dev suite; reserved for Final Validation or a concrete regression
 pnpm openapi             # after API build; exports spec and generated types
 ```
 
@@ -40,12 +42,42 @@ E2E suites run serially because SaaS Core exercises revocation of shared demo ac
 - Web uses per-request Supabase SSR clients, cookie refresh in `proxy.ts` and protected server layouts. It forwards bearer tokens to NestJS; browser code receives only the publishable key. A business switch reloads the document so prior tenant form/list/map state cannot survive.
 - NestJS verifies Supabase Auth, then active profile, business and membership. Optional `X-Business-Id` selects a verified active membership; otherwise the oldest active membership is selected. Never authorize with `user_metadata`, a browser-supplied business ID, hidden menu or frontend state.
 - OWNER manages all roles; ADMIN manages operational memberships/business/branches/settings and Fleet/Customer/Rental writes. OPERATIONS reads business/branches/settings, vehicles/devices, customers/rentals/availability and authorized telemetry/trips. The last active owner cannot be demoted or disabled. Backend guards enforce permissions independently of the UI.
-- Every resource query includes the verified business ID. Mutations acquire the business row lock, recheck current profile/business/membership/permission and write the resource and audit event in one transaction. Membership revocation and domain writes share that lock. Unique/exclusion constraints provide a second concurrency defense.
+- Every tenant resource query includes the verified business ID. Platform read APIs use independent active platform membership/profile/permission checks and return approved global metadata/aggregates; a tenant role or selected-business header never grants global access. Mutations acquire the business row lock, recheck current profile/business/membership/permission and write the resource and audit event in one transaction. Membership revocation and domain writes share that lock. Unique/exclusion constraints provide a second concurrency defense.
 - Audit metadata contains request IDs and changed field names, not bodies, coordinates, tracker identifiers, credentials, contacts, notes or amounts. Wrapped database errors map to stable public conflict codes.
 - Exposed tables enable RLS. Tenant registry/customer/rental Data API reads require active membership/profile/business; direct writes by `anon`/`authenticated` are revoked. `gps_positions` denies all Data API reads and writes, with RLS enabled and no read policy. The API's trusted database connection still must enforce tenant authorization itself. No `SECURITY DEFINER` authorization helper is used.
 - Generated OpenAPI and TypeScript contracts live in `packages/contracts`; regenerate after API changes. Database schema, credentials and provider secrets remain server-only.
 
-Domain boundaries are `apps/api/src/fleet/vehicles`, `apps/api/src/rentals` and `apps/api/src/telematics/{gps,trips}`. Web live features follow `features/fleet/vehicles`, `features/rentals` and `features/telematics/{gps,trips}`; synthetic business examples live in `features/previews/business`, and platform preview code stays under `features/platform`. Shared UI/data-display/overlay components contain presentation behavior rather than tenant business rules. Routes and API payloads remain stable during structural moves.
+Domain boundaries are `apps/api/src/fleet/vehicles`, `apps/api/src/rentals`, `apps/api/src/telematics/{gps,trips}` and the independently authorized `apps/api/src/platform`. Web live features follow `features/fleet/vehicles`, `features/rentals` and `features/telematics/{gps,trips}`; synthetic business examples live in `features/previews/business`; platform live components/data access are under `features/platform/live`, alongside the separate development preview. Shared UI/data-display/overlay components contain presentation behavior rather than tenant business rules. Routes and API payloads remain stable during structural moves.
+
+## Platform console
+
+`/superadmin`, `/superadmin/businesses` and `/superadmin/businesses/:id` are live read-only Overview/Businesses views. Enter through `/superadmin` or `/login?next=/superadmin`. Server layouts/pages verify platform context through NestJS; the proxy refreshes Auth and redirects unauthenticated `/superadmin/*` to platform login. Local return paths allow only `/app` or `/superadmin` descendants, normalize traversal, reject external/control/out-of-scope destinations, and preserve deep links. The ordinary Business Admin login still defaults to `/app`.
+
+Supabase supplies identity only. `AuthGuard` verifies the current user; `PlatformGuard` checks an ACTIVE `user_profiles` row plus an independent ACTIVE `platform_memberships` row with role **PLATFORM_OPERATOR**. Tenant OWNER/ADMIN/OPERATIONS, `user_metadata`, the business cookie and `X-Business-Id` are never platform grants. A platform-only operator receives no tenant operational permission; a user requiring both surfaces needs both independently reviewed memberships. Browser code sees no server key.
+
+| API (relative to `/api/v1`) | Permission / behavior |
+| --- | --- |
+| `GET /platform/me` | Independent principal, read permissions and `readOnly:true`; no tenant context or email projection |
+| `GET /platform/overview` | `platform.overview.read`; current totals across all businesses, including disabled ones |
+| `GET /platform/businesses` | `platform.business.read`; page/limit ≤100, literal name search ≤120 chars, ACTIVE/DISABLED filter, allowlisted name/createdAt ordering with stable ID ties |
+| `GET /platform/businesses/:id` | `platform.business.read`; approved metadata and aggregates for one business, 404 when absent |
+
+Business projections contain name/status/timezone/currency/timestamps plus branches, membership rows, vehicles/rentals and current-assignment GPS freshness counts. Active membership requires both membership and profile ACTIVE; totals include disabled businesses, and membership counts are not globally unique people. GPS is always TEST and follows the existing 120/600-second thresholds. The API does not return user contacts, customer records, raw device identities, coordinates, history, notes or settings. Aggregations happen in SQL for the selected page/businesses, without browser tenant loops or per-tenant requests.
+
+Every successful platform read locks and rechecks the operator/profile in the transaction that reads data and inserts `platform_audit_logs`; failed recheck or audit failure prevents delivery. Metadata records only a server request ID; targeted business IDs are separate fields. Platform audit is independent of tenant `audit_logs`. The two platform tables have RLS enabled, no browser policies and all privileges revoked from PUBLIC/anon/authenticated, including for an authenticated platform operator. The API's trusted DB connection must still perform all platform authorization. There are no browser grants or platform administration writes.
+
+After applying migrations on the exact development project and preparing the existing normal demo fixture, run `pnpm --filter api platform:seed` with `ALLOW_DEMO_SEED=true` and local server credentials. This creates a **separate** `accounts.platformOperator` Auth identity/profile/platform membership in ignored root `.env.demo.json`; it refuses tenant-account reuse, uses an exclusive local credential-file lock, keeps credentials mode 0600 and preserves disabled states. It never promotes a demo tenant OWNER. The command refuses staging/production; provision actual operators through an explicit trusted administrator process rather than demo seeding. No self-service platform signup or role-management endpoint exists.
+
+Features, Integrations, global Users/Audit and System Settings routes remain authorized but explicitly **unavailable**, with no live data contract or fake writes. Platform read audit is stored for future reviewed audit UI/API; it is not exposed by this stage. Tenant suspension, entitlements, billing and global membership/support tooling are not implemented. Development design previews remain a separate labelled surface and are excluded from production.
+
+Focused platform verification (requires the development migration and dedicated demo operator):
+
+```sh
+pnpm --filter api exec vitest run src/platform/platform.spec.ts src/database/platform-migrations.spec.ts src/database/platform-seed-policy.spec.ts src/database/migrations.spec.ts
+pnpm --filter api build
+pnpm --filter api exec vitest run --config vitest.config.e2e.ts test/platform.e2e-spec.ts
+pnpm --filter web exec node --test test/auth-navigation.test.mjs
+```
 
 ## Fleet registry and assignment
 
@@ -180,13 +212,13 @@ IDs encode the vehicle, start-fix ID and exact normalized query window, then det
 
 ## Web UI and preview boundaries
 
-Live `/app` features use generated API contracts, verified tenant context and shared semantic tokens/components. `apps/web/src/styles/tokens.css` defines the orange/gray/white system: body 15px/1.55, navigation 14px, forms/tables 14px, sections 17px, page titles 28px, helpers/badges 12px. Use semantic/component styles rather than global zoom/transforms. Native dialogs provide labelled titles, Escape/focus containment and restored trigger focus; notices use alert/status regions. Status includes text, not color alone. Tables scroll within panels; navigation collapses and map/list adapts on smaller screens. Verify relevant pages at 1440/768/390px with DOM/browser interaction; no screenshots by default.
+Live `/app` features use generated API contracts, verified tenant context and shared semantic tokens/components. `apps/web/src/styles/tokens.css` defines the orange/gray/white system: body 15px/1.55, navigation 14px, forms/tables 14px, sections 17px, page titles 28px, helpers/badges 12px. Use semantic/component styles rather than global zoom/transforms. Native dialogs provide labelled titles, Escape/focus containment and restored trigger focus; notices use alert/status regions. Status includes text, not color alone. Tables scroll within panels; navigation collapses and map/list adapts on smaller screens. For an implementation stage, verify changed UI paths only as needed; defer exhaustive viewport/visual matrices and comprehensive accessibility checks to Final Validation. No screenshots by default.
 
-Login retains Supabase `signInWithPassword`, pending/error feedback, SSR cookies and business-cookie reset, then `router.replace('/app')`; a competing refresh can race navigation. Preserve the same shared design tokens and components.
+Login retains Supabase `signInWithPassword`, pending/error feedback, SSR cookies and business-cookie reset, then navigates to an allowlisted local destination (default `/app`, or platform/deep link through `next`); a competing refresh can race navigation. Preserve the same shared design tokens and components.
 
-Only `next dev` exposes `/dev-preview/business` and `/dev-preview/platform`, with clearly labelled historical synthetic fixtures. Unimplemented Commercial and platform administration remain previews. `/superadmin/*` redirects to platform preview only in development; all preview/platform routes return 404 under production `next start`. Server checks must happen before importing fixture modules; tenant OWNER is never a platform principal. There is no production flag to enable these synthetic screens. Existing operational preview wrappers still pass the tenant layout/proxy.
+Only `next dev` exposes `/dev-preview/business` and `/dev-preview/platform`, with clearly labelled historical synthetic fixtures; those preview routes return 404 in production. Commercial remains a tenant development preview. Live `/superadmin/*` uses its independent protected platform layout/API and never imports fixture modules. Unimplemented live platform sections display unavailable states. Server checks must happen before importing any development fixtures; a tenant OWNER is never implicitly a platform principal. There is no production flag to enable synthetic screens. Existing tenant operational preview wrappers still pass the tenant layout/proxy.
 
-Future live platform work needs an independent platform principal/permissions, backend/server guards, scoped global list/write APIs and redacted global audit. Never iterate tenant IDs from the browser, expose server keys or grant global access through `user_metadata`. Commercial/payment/accounting, geofences/alerts and physical GPS production onboarding remain outside current scope. Production GPS also needs durable deployment, credential rotation/rate limiting, monitoring, scheduled retention and map capacity planning.
+Future platform management/support features must extend the independent principal/permissions, server/API guards and separate redacted audit rather than bypassing them. Never iterate tenant IDs from the browser, expose server keys or grant global access through `user_metadata`. Commercial/payment/accounting, geofences/alerts and physical GPS production onboarding remain outside current scope. Production GPS also needs durable deployment, credential rotation/rate limiting, monitoring, scheduled retention and map capacity planning.
 
 Production release-boundary regression uses unauthenticated localhost requests against a temporary production server:
 
@@ -212,7 +244,7 @@ Docker has separate api/web targets: Web 4000, API 9000. `NEXT_PUBLIC_*` are pub
 
 ## Stage output and historical records
 
-Root [STAGE_OUTPUT.md](../STAGE_OUTPUT.md) is the sole permanent accumulated implementation log for every stage. Never delete it. Append chronological `## Stage N output` sections containing actual Delivered work, Verification, Boundaries & Remaining, and Next-stage Handoff. Include meaningful API/UI/data behavior, LIVE/TEST/PREVIEW distinctions, exact checks/results, limitations and commit references in the same implementation commit; record the actual SHA in a follow-up touching only this output file when needed. Historical results are recorded facts, not claims that old checks were rerun now; mark missing evidence as not verified.
+Root [STAGE_OUTPUT.md](../STAGE_OUTPUT.md) is the sole permanent accumulated implementation log for every stage. Never delete it. Append chronological `## Stage N output` sections containing actual Delivered work, Minimal Verification, Boundaries & Remaining, and Next-stage Handoff. Include meaningful API/UI/data behavior, LIVE/TEST/PREVIEW distinctions, exact checks/results, limitations and commit references in the same implementation commit; describe it as "this stage's implementation commit" or use the stage identifier and baseline SHA. The Git log is authoritative for its resulting SHA: exactly one implementation commit must include source, migrations/contracts/tests, rule changes and completed output. Never add another commit or amend solely to record the final SHA. Historical results are recorded facts, not claims that old checks were rerun now; mark missing evidence as not verified.
 
 Input stage plans remain task inputs and must not become permanent individual stage reports or copied repository Markdown. Do not create substitute per-stage logs, validation/architecture/recap Markdown, QA JSON manifests or screenshots by default. Visual evidence requires an explicit user request or plan requirement; keep temporary test output outside tracked source. Necessary runtime source, tests, migrations and generated contracts remain allowed.
 

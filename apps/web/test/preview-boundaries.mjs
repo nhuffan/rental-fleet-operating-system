@@ -14,8 +14,6 @@ for (const path of [
   "/dev-preview/business/trips",
   "/dev-preview/platform",
   "/dev-preview/platform/businesses/minh-an",
-  "/superadmin",
-  "/superadmin/businesses",
 ]) {
   test(`production excludes design preview: ${path}`, async () => {
     const response = await fetch(new URL(path, base), { redirect: "manual" });
@@ -52,5 +50,26 @@ for (const path of [
       "/login",
     );
     assert.match(response.headers.get("cache-control") || "", /private/);
+  });
+}
+
+for (const path of [
+  "/superadmin",
+  "/superadmin/businesses",
+  "/superadmin/businesses/00000000-0000-4000-8000-000000000001",
+  "/superadmin/users",
+]) {
+  test(`unauthenticated superadmin route redirects to platform login: ${path}`, async () => {
+    const response = await fetch(new URL(path, base), { redirect: "manual" });
+    assert.ok([302, 303, 307, 308].includes(response.status));
+    const target = new URL(response.headers.get("location"), base);
+    assert.equal(target.pathname, "/login");
+    assert.equal(target.searchParams.get("next"), path);
+    assert.match(response.headers.get("cache-control") || "", /private/);
+    const body = await response.text();
+    assert.ok(
+      !body.includes("Minh An Mobility"),
+      "platform fixtures must never be used by the private live console",
+    );
   });
 }

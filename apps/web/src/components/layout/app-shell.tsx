@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import type { PlatformMe } from "@/features/platform/live/types";
 import type { Me } from "@rental-fleet/contracts";
 import { BusinessPicker, Logout } from "@/app/app/shell-controls";
 import { Icon, type IconName } from "@/components/ui/icon";
@@ -11,6 +12,7 @@ type NavItem = {
   label: string;
   icon: IconName;
   preview?: boolean;
+  unavailable?: boolean;
 };
 const fleetItems: [string, string, IconName][] = [
   ["vehicles", "Đội xe", "car"],
@@ -33,10 +35,12 @@ export function AppShell({
   children,
   context,
   previewDomain,
+  platformContext,
   showPreviews = false,
 }: {
   children: ReactNode;
   context?: Me;
+  platformContext?: PlatformMe;
   previewDomain?: "business" | "platform";
   showPreviews?: boolean;
 }) {
@@ -84,15 +88,36 @@ export function AppShell({
       trigger?.focus();
     };
   }, [open]);
-  const platform = previewDomain === "platform";
+  const platform = previewDomain === "platform" || !!platformContext;
   const preview = !!previewDomain;
-  const prefix = preview ? `/dev-preview/${previewDomain}` : "/app";
+  const prefix = preview
+    ? `/dev-preview/${previewDomain}`
+    : platform
+      ? "/superadmin"
+      : "/app";
+  const displayName =
+    platformContext?.principal.displayName ||
+    context?.user.displayName ||
+    "Design workspace";
   const core: NavItem[] = platform
-    ? platformItems.map(([path, label, icon]) => ({
-        href: prefix + (path ? `/${path}` : ""),
-        label,
-        icon,
-      }))
+    ? platformItems
+        .filter(
+          ([path]) =>
+            preview ||
+            (path === ""
+              ? platformContext?.permissions.includes("platform.overview.read")
+              : path === "businesses"
+                ? platformContext?.permissions.includes(
+                    "platform.business.read",
+                  )
+                : true),
+        )
+        .map(([path, label, icon]) => ({
+          href: prefix + (path ? `/${path}` : ""),
+          label,
+          icon,
+          unavailable: !preview && !["", "businesses"].includes(path),
+        }))
     : [
         { href: prefix, label: "Tổng quan", icon: "grid" },
         ...(!preview && context?.permissions.includes("vehicle.read")
@@ -198,7 +223,7 @@ export function AppShell({
       <Link
         key={item.href}
         href={item.href}
-        className={`nav-link ${pathname === item.href || (["/app/vehicles", "/app/rentals", "/app/customers", "/app/trips"].includes(item.href) && pathname.startsWith(`${item.href}/`)) ? "is-active" : ""}`}
+        className={`nav-link ${pathname === item.href || (["/app/vehicles", "/app/rentals", "/app/customers", "/app/trips", "/superadmin/businesses"].includes(item.href) && pathname.startsWith(`${item.href}/`)) ? "is-active" : ""}`}
         aria-current={
           pathname === item.href ||
           ([
@@ -206,6 +231,7 @@ export function AppShell({
             "/app/rentals",
             "/app/customers",
             "/app/trips",
+            "/superadmin/businesses",
           ].includes(item.href) &&
             pathname.startsWith(`${item.href}/`))
             ? "page"
@@ -216,6 +242,7 @@ export function AppShell({
         <Icon name={item.icon} />
         <span>{item.label}</span>
         {item.preview && <small>Preview</small>}
+        {item.unavailable && <small>Chưa có</small>}
       </Link>
     ));
   }
@@ -287,7 +314,11 @@ export function AppShell({
                 {platform ? "Rental Fleet Platform" : "Minh An Mobility"}
               </strong>
               <small>
-                {platform ? "Môi trường thiết kế" : "Doanh nghiệp minh họa"}
+                {platformContext
+                  ? "Quyền platform độc lập · Chỉ đọc"
+                  : platform
+                    ? "Môi trường thiết kế"
+                    : "Doanh nghiệp minh họa"}
               </small>
             </div>
           )}
@@ -326,14 +357,24 @@ export function AppShell({
           )}
           <div className="user-block">
             <span className="avatar">
-              {(context?.user.displayName || "UI").slice(0, 2).toUpperCase()}
+              {(
+                platformContext?.principal.displayName ||
+                context?.user.displayName ||
+                "UI"
+              )
+                .slice(0, 2)
+                .toUpperCase()}
             </span>
             <div>
-              <strong>{context?.user.displayName || "Design workspace"}</strong>
-              <small>{context?.role || "Dữ liệu minh họa"}</small>
+              <strong>{displayName}</strong>
+              <small>
+                {platformContext?.principal.role ||
+                  context?.role ||
+                  "Dữ liệu minh họa"}
+              </small>
             </div>
           </div>
-          {context && <Logout />}
+          {(context || platformContext) && <Logout />}
         </div>
       </aside>
       <div className="workspace-main" inert={open}>
@@ -360,13 +401,23 @@ export function AppShell({
             {preview ? (
               <Badge tone="warning">Design preview</Badge>
             ) : (
-              <Badge tone="success">{context?.role}</Badge>
+              <Badge tone="success">
+                {platformContext ? "Platform operator" : context?.role}
+              </Badge>
             )}
             <span className="topbar-email">
-              {context?.user.email || "Development only"}
+              {platformContext
+                ? "Chỉ đọc"
+                : context?.user.email || "Development only"}
             </span>
             <span className="avatar avatar-small">
-              {(context?.user.displayName || "UI").slice(0, 2).toUpperCase()}
+              {(
+                platformContext?.principal.displayName ||
+                context?.user.displayName ||
+                "UI"
+              )
+                .slice(0, 2)
+                .toUpperCase()}
             </span>
           </div>
         </header>
@@ -383,7 +434,12 @@ export function AppShell({
             {platform
               ? "Quản trị nền tảng"
               : "Không gian vận hành doanh nghiệp"}{" "}
-            · {preview ? "Design preview" : "SaaS Core"}
+            ·{" "}
+            {preview
+              ? "Design preview"
+              : platform
+                ? "Dữ liệu trực tiếp · Chỉ đọc"
+                : "SaaS Core"}
           </span>
         </footer>
       </div>

@@ -1,0 +1,14 @@
+.platform-live-stats {
+  margin-bottom: 24px;
+}
+.platform-live-detail {
+  margin-top: 24px;
+}
+.platform-live-detail .rental-id {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 767px) {
+  .platform-live-stats {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

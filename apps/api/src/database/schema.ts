@@ -417,3 +417,63 @@ export const gpsPositions = pgTable('gps_positions', {
   ignition: boolean(),
   sourceMode: text('source_mode').notNull().default('TEST'),
 });
+
+// Trusted platform authorization is separate from tenant roles. SQL denies all Data API access.
+export const platformMemberships = pgTable(
+  'platform_memberships',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => profiles.userId, { onDelete: 'cascade' }),
+    roleKey: text('role_key').notNull().default('PLATFORM_OPERATOR'),
+    status: text().notNull().default('ACTIVE'),
+    ...times(),
+  },
+  (table) => [
+    unique('platform_memberships_user_unique').on(table.userId),
+    check(
+      'platform_memberships_role_check',
+      sql`${table.roleKey} = 'PLATFORM_OPERATOR'`,
+    ),
+    check(
+      'platform_memberships_status_check',
+      sql`${table.status} in ('ACTIVE', 'DISABLED')`,
+    ),
+  ],
+);
+
+export const platformAuditLogs = pgTable(
+  'platform_audit_logs',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    actorUserId: uuid('actor_user_id').notNull(),
+    action: text().notNull(),
+    entityType: text('entity_type').notNull(),
+    entityId: uuid('entity_id'),
+    metadata: jsonb().notNull().$type<Record<string, unknown>>().default({}),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    check(
+      'platform_audit_action_check',
+      sql`length(trim(${table.action})) between 1 and 80`,
+    ),
+    check(
+      'platform_audit_entity_type_check',
+      sql`length(trim(${table.entityType})) between 1 and 80`,
+    ),
+    check(
+      'platform_audit_metadata_check',
+      sql`jsonb_typeof(${table.metadata}) = 'object' and octet_length(${table.metadata}::text) <= 4096`,
+    ),
+    index('platform_audit_created').on(table.createdAt.desc(), table.id),
+    index('platform_audit_actor_created').on(
+      table.actorUserId,
+      table.createdAt.desc(),
+      table.id,
+    ),
+  ],
+);

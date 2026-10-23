@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { safeReturnPath } from "./lib/auth-navigation";
 import { publicEnv } from "./lib/env";
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -25,8 +26,22 @@ export async function proxy(request: NextRequest) {
     data: { user },
     error,
   } = await supabase.auth.getUser();
-  if ((!user || error) && request.nextUrl.pathname.startsWith("/app")) {
+  const platform =
+    request.nextUrl.pathname === "/superadmin" ||
+    request.nextUrl.pathname.startsWith("/superadmin/");
+  const tenant =
+    request.nextUrl.pathname === "/app" ||
+    request.nextUrl.pathname.startsWith("/app/");
+  if ((!user || error) && (tenant || platform)) {
     const target = new URL("/login", request.url);
+    if (platform)
+      target.searchParams.set(
+        "next",
+        safeReturnPath(
+          request.nextUrl.pathname + request.nextUrl.search,
+          "/superadmin",
+        ),
+      );
     const redirect = NextResponse.redirect(target);
     response.cookies.getAll().forEach((cookie) => redirect.cookies.set(cookie));
     redirect.headers.set("Cache-Control", "private, no-store");
@@ -35,4 +50,6 @@ export async function proxy(request: NextRequest) {
   response.headers.set("Cache-Control", "private, no-store");
   return response;
 }
-export const config = { matcher: ["/app/:path*", "/login", "/access-denied"] };
+export const config = {
+  matcher: ["/app/:path*", "/superadmin/:path*", "/login", "/access-denied"],
+};

@@ -27,7 +27,8 @@
     "gps:retention": "tsx scripts/telematics/gps-retention.ts",
     "gps:poc": "tsx scripts/telematics/traccar-poc.ts",
     "gps:plans": "tsx scripts/telematics/query-plans.ts",
-    "gps:retention:verify": "tsx scripts/telematics/retention-verify.ts"
+    "gps:retention:verify": "tsx scripts/telematics/retention-verify.ts",
+    "platform:seed": "tsx scripts/platform-seed.ts"
   },
   "dependencies": {
     "@nestjs/common": "^12.0.1",
