@@ -7,8 +7,8 @@ services:
     environment:
       APP_ENV: staging
       HOST: 0.0.0.0
-      PORT: 3001
-    ports: ['127.0.0.1:3001:3001']
+      PORT: 9000
+    ports: ['127.0.0.1:9000:9000']
     restart: unless-stopped
   web:
     build:
@@ -20,7 +20,7 @@ services:
         NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:?required}
     env_file: .env.staging.web
     environment:
-      API_INTERNAL_URL: http://api:3001
+      API_INTERNAL_URL: http://api:9000
     ports: ['127.0.0.1:4000:4000']
     depends_on: [api]
     restart: unless-stopped

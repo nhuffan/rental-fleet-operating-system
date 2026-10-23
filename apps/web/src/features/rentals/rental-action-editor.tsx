@@ -4,9 +4,9 @@ import { Drawer } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/primitives";
 import { MutationNotice } from "@/components/feedback/mutation-notice";
 import { useMutation } from "@/lib/api-client/use-mutation";
-import { localDateTime, utcDateTime } from "./query";
-import { RecordPicker } from "./record-picker";
-import { queryString } from "@/features/vehicles/query";
+import { localDateTime, utcDateTime } from "@/lib/date-time";
+import { RecordPicker } from "@/components/data-display/record-picker";
+import { queryString } from "@/lib/query";
 import type {
   Customer,
   VehicleAvailability,

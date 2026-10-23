@@ -9,7 +9,7 @@ import {
   PanelHeader,
 } from "@/components/ui/primitives";
 import { Pagination } from "@/components/data-display/table";
-import { formatDate, queryString } from "@/features/vehicles/query";
+import { formatDate, queryString } from "@/lib/query";
 import { RentalTable } from "./rental-table";
 import type { RentalPage } from "./types";
 export function RentalDashboard({

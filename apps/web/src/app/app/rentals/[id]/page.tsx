@@ -1,10 +1,11 @@
+import { rentalTripRange } from "@/features/telematics/trips/query";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { api } from "@/lib/api";
 import { PageHeader } from "@/components/ui/primitives";
 import { RentalDetail } from "@/features/rentals/rental-detail";
 import { rentalContext } from "@/features/rentals/server";
-import { validId, type SearchParams } from "@/features/vehicles/query";
+import { validId, type SearchParams } from "@/lib/query";
 import type { Rental } from "@/features/rentals/types";
 export default async function RentalPage({
   params,
@@ -17,6 +18,7 @@ export default async function RentalPage({
   const { id } = await params;
   if (!validId(id)) notFound();
   const rental = await api<Rental>(`/rentals/${id}`, { notFoundOn404: true });
+  const tripRange = rentalTripRange(rental.startAt, rental.endAt);
   const saved = (await searchParams).saved;
   const message =
     saved === "reserved"
@@ -36,6 +38,7 @@ export default async function RentalPage({
       <RentalDetail
         key={`${context.business.id}:${id}`}
         rental={rental}
+        tripRange={tripRange}
         context={context}
         initialMessage={message}
       />

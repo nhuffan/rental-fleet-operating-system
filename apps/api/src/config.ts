@@ -28,7 +28,7 @@ export function loadConfig() {
         'DATABASE_URL and SUPABASE_URL must refer to the same project',
       );
   }
-  const port = Number(process.env.PORT ?? 3001);
+  const port = Number(process.env.PORT ?? 9000);
   if (!Number.isInteger(port) || port < 1 || port > 65535)
     throw new Error('Invalid PORT');
   const environment = required('APP_ENV');

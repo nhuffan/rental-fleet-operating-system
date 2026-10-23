@@ -11,6 +11,7 @@ if (!["localhost", "127.0.0.1", "[::1]"].includes(parsed.hostname)) {
 for (const path of [
   "/dev-preview/business",
   "/dev-preview/business/vehicles",
+  "/dev-preview/business/trips",
   "/dev-preview/platform",
   "/dev-preview/platform/businesses/minh-an",
   "/superadmin",
@@ -32,6 +33,8 @@ for (const path of [
   "/app/users",
   "/app/audit",
   "/app/fleet-map",
+  "/app/trips",
+  "/app/trips/invalid-trip-id",
   "/app/vehicles",
   "/app/vehicles/devices",
   "/app/customers",

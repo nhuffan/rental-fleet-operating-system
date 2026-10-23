@@ -1,7 +1,7 @@
 import { api, currentContext } from "@/lib/api";
 import { PageHeader, EmptyState } from "@/components/ui/primitives";
-import { LiveFleetMap } from "@/features/gps/live-fleet-map";
-import type { LocationPage } from "@/features/gps/types";
+import { LiveFleetMap } from "@/features/telematics/gps/live-fleet-map";
+import type { LocationPage } from "@/features/telematics/gps/types";
 export default async function FleetMapPage() {
   const c = await currentContext();
   if (!c.permissions.includes("gps.read"))

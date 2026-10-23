@@ -1,18 +1,18 @@
-import { VehicleLocationPanel } from "@/features/gps/vehicle-location-panel";
-import type { VehicleLocation } from "@/features/gps/types";
+import { VehicleLocationPanel } from "@/features/telematics/gps/vehicle-location-panel";
+import type { VehicleLocation } from "@/features/telematics/gps/types";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { api } from "@/lib/api";
 import { PageHeader } from "@/components/ui/primitives";
-import { VehicleDetail } from "@/features/vehicles/vehicle-detail";
-import { fleetContext, tenantBranches } from "@/features/vehicles/server";
+import { VehicleDetail } from "@/features/fleet/vehicles/vehicle-detail";
+import { fleetContext, tenantBranches } from "@/features/fleet/vehicles/server";
 import {
   pageNumber,
   validId,
   type SearchParams,
-} from "@/features/vehicles/query";
+} from "@/lib/query";
 import type { VehicleRentalState } from "@/features/rentals/types";
-import type { DeviceAssignmentPage, Vehicle } from "@/features/vehicles/types";
+import type { DeviceAssignmentPage, Vehicle } from "@/features/fleet/vehicles/types";
 export default async function VehiclePage({
   params,
   searchParams,

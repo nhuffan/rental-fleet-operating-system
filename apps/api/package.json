@@ -24,8 +24,8 @@
     "db:migrate": "tsx scripts/migrate.ts",
     "db:seed": "tsx scripts/seed.ts",
     "openapi": "node scripts/openapi.mjs && pnpm --filter @rental-fleet/contracts generate",
-    "gps:retention": "tsx scripts/gps-retention.ts",
-    "gps:poc": "tsx scripts/traccar-poc.ts"
+    "gps:retention": "tsx scripts/telematics/gps-retention.ts",
+    "gps:poc": "tsx scripts/telematics/traccar-poc.ts"
   },
   "dependencies": {
     "@nestjs/common": "^12.0.1",

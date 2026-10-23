@@ -125,14 +125,21 @@ export function AppShell({
               },
             ]
           : []),
+        ...(!preview && context?.permissions.includes("trip.read")
+          ? [{ href: "/app/trips", label: "Hành trình", icon: "trip" as const }]
+          : []),
         ...(preview || showPreviews
           ? fleetItems
               .filter(
                 ([path]) =>
                   preview ||
-                  !["vehicles", "rentals", "customers", "fleet-map"].includes(
-                    path,
-                  ),
+                  ![
+                    "vehicles",
+                    "rentals",
+                    "customers",
+                    "fleet-map",
+                    "trips",
+                  ].includes(path),
               )
               .map(([path, label, icon]) => ({
                 href: `${preview ? prefix : "/app"}/${path}`,
@@ -178,9 +185,11 @@ export function AppShell({
       ? "Đội xe"
       : pathname.startsWith("/app/rentals/")
         ? "Hợp đồng thuê"
-        : pathname.startsWith("/app/customers/")
-          ? "Khách hàng"
-          : undefined) ??
+        : pathname.startsWith("/app/trips/")
+          ? "Hành trình"
+          : pathname.startsWith("/app/customers/")
+            ? "Khách hàng"
+            : undefined) ??
     (pathname.includes("businesses/")
       ? "Chi tiết doanh nghiệp"
       : "Không gian làm việc");
@@ -189,12 +198,15 @@ export function AppShell({
       <Link
         key={item.href}
         href={item.href}
-        className={`nav-link ${pathname === item.href || (["/app/vehicles", "/app/rentals", "/app/customers"].includes(item.href) && pathname.startsWith(`${item.href}/`)) ? "is-active" : ""}`}
+        className={`nav-link ${pathname === item.href || (["/app/vehicles", "/app/rentals", "/app/customers", "/app/trips"].includes(item.href) && pathname.startsWith(`${item.href}/`)) ? "is-active" : ""}`}
         aria-current={
           pathname === item.href ||
-          (["/app/vehicles", "/app/rentals", "/app/customers"].includes(
-            item.href,
-          ) &&
+          ([
+            "/app/vehicles",
+            "/app/rentals",
+            "/app/customers",
+            "/app/trips",
+          ].includes(item.href) &&
             pathname.startsWith(`${item.href}/`))
             ? "page"
             : undefined

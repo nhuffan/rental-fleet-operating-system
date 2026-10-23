@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/primitives";
 import { Pagination } from "@/components/data-display/table";
 import { MutationNotice } from "@/components/feedback/mutation-notice";
-import { formatDate } from "@/features/vehicles/query";
+import { formatDate } from "@/lib/query";
 import { CustomerEditor } from "./customer-editor";
 import { RentalTable } from "./rental-table";
 import type { Customer, RentalPage } from "./types";

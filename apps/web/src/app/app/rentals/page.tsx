@@ -3,7 +3,7 @@ import { PageHeader } from "@/components/ui/primitives";
 import { RentalsPanel } from "@/features/rentals/rentals-panel";
 import { rentalContext } from "@/features/rentals/server";
 import { rentalFilters } from "@/features/rentals/query";
-import { queryString, type SearchParams } from "@/features/vehicles/query";
+import { queryString, type SearchParams } from "@/lib/query";
 import type { RentalPage } from "@/features/rentals/types";
 export default async function RentalsPage({
   searchParams,

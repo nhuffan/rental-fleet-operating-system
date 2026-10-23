@@ -3,7 +3,7 @@ import { currentContext } from "@/lib/api";
 export default async function PreviewPage() {
   if (process.env.NODE_ENV !== "development") notFound();
   await currentContext();
-  const { FleetPreview } = await import("@/features/fleet/fleet-preview");
+  const { FleetPreview } = await import("@/features/previews/business/fleet-preview");
   return (
     <>
       <div className="preview-banner">

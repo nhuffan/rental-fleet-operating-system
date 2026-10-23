@@ -66,10 +66,10 @@ export default async function DesignPreview({
   } else if (
     ["business", "users", "branches", "settings", "audit"].includes(section)
   ) {
-    const { CorePreview } = await import("@/features/business/core-preview");
+    const { CorePreview } = await import("@/features/previews/business/core-preview");
     content = <CorePreview key={section} screen={section} />;
   } else {
-    const { FleetPreview } = await import("@/features/fleet/fleet-preview");
+    const { FleetPreview } = await import("@/features/previews/business/fleet-preview");
     content = <FleetPreview key={section} screen={section} />;
   }
   return (

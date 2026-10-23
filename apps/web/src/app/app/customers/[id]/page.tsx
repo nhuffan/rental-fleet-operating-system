@@ -8,7 +8,7 @@ import {
   pageNumber,
   validId,
   type SearchParams,
-} from "@/features/vehicles/query";
+} from "@/lib/query";
 import type { Customer, RentalPage } from "@/features/rentals/types";
 export default async function CustomerPage({
   params,

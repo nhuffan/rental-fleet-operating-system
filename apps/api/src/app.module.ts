@@ -1,14 +1,19 @@
-import { GpsController, TraccarController } from './gps/gps.controller.js';
-import { GpsService } from './gps/gps.service.js';
+import { TripController } from './telematics/trips/trip.controller.js';
+import { TripService } from './telematics/trips/trip.service.js';
+import {
+  GpsController,
+  TraccarController,
+} from './telematics/gps/gps.controller.js';
+import { GpsService } from './telematics/gps/gps.service.js';
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller.js';
 import { Database } from './database/database.js';
 import { CoreController } from './core/core.controller.js';
 import { CoreService } from './core/core.service.js';
-import { FleetController } from './fleet/fleet.controller.js';
-import { FleetService } from './fleet/fleet.service.js';
-import { RentalController } from './rental/rental.controller.js';
-import { RentalService } from './rental/rental.service.js';
+import { FleetController } from './fleet/vehicles/fleet.controller.js';
+import { FleetService } from './fleet/vehicles/fleet.service.js';
+import { RentalController } from './rentals/rental.controller.js';
+import { RentalService } from './rentals/rental.service.js';
 import { AuthGuard, TenantGuard, PermissionGuard } from './auth/guards.js';
 @Module({
   controllers: [
@@ -17,6 +22,7 @@ import { AuthGuard, TenantGuard, PermissionGuard } from './auth/guards.js';
     RentalController,
     FleetController,
     GpsController,
+    TripController,
     TraccarController,
   ],
   providers: [
@@ -24,6 +30,7 @@ import { AuthGuard, TenantGuard, PermissionGuard } from './auth/guards.js';
     CoreService,
     FleetService,
     GpsService,
+    TripService,
     RentalService,
     AuthGuard,
     TenantGuard,

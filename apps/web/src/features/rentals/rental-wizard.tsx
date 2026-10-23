@@ -6,9 +6,10 @@ import { Drawer } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/primitives";
 import { MutationNotice } from "@/components/feedback/mutation-notice";
 import { useMutation } from "@/lib/api-client/use-mutation";
-import { queryString, formatDate } from "@/features/vehicles/query";
-import { RecordPicker } from "./record-picker";
-import { formatMoney, localDateTime, utcDateTime } from "./query";
+import { queryString, formatDate } from "@/lib/query";
+import { RecordPicker } from "@/components/data-display/record-picker";
+import { formatMoney } from "./query";
+import { localDateTime, utcDateTime } from "@/lib/date-time";
 import type {
   Customer,
   Rental,

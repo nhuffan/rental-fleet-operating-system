@@ -8,7 +8,7 @@ FROM base AS api
 RUN pnpm --filter api build
 ENV NODE_ENV=production HOST=0.0.0.0
 USER node
-EXPOSE 3001
+EXPOSE 9000
 CMD ["pnpm", "--filter", "api", "start:prod"]
 
 FROM base AS web-build

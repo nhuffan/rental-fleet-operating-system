@@ -584,6 +584,11 @@ fieldset {
   color: var(--success);
   border-color: #cce5d7;
 }
+.notice-warning {
+  background: var(--warning-muted);
+  color: var(--warning);
+  border-color: #e7d5ae;
+}
 .notice-info {
   background: var(--info-muted);
   color: var(--info);

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Panel, PanelHeader } from "@/components/ui/primitives";
-import { formatDate } from "@/features/vehicles/query";
+import { formatDate } from "@/lib/query";
 import { RentalStatus } from "./rental-status";
 import type { VehicleRentalState } from "./types";
 export function VehicleRentalPanel({

@@ -460,6 +460,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/trips": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["TripController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/trips/{id}/route": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["TripController_route"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/trips/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["TripController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/integrations/traccar/positions": {
         parameters: {
             query?: never;
@@ -956,6 +1004,107 @@ export interface components {
             /** Format: date-time */
             asOf: string;
             pollAfterSeconds: number;
+        };
+        TripRentalAssociation: {
+            /** Format: uuid */
+            rentalId: string;
+            /** @enum {string} */
+            relation: "CONTAINED" | "OVERLAP";
+            /**
+             * @description Temporal overlap with a scheduled rental; does not prove actual customer use.
+             * @enum {string}
+             */
+            basis: "SCHEDULED_WINDOW";
+        };
+        TripRange: {
+            /** Format: date-time */
+            from: string;
+            /** Format: date-time */
+            to: string;
+        };
+        TripSummary: {
+            /** @description Opaque query-scoped derived identifier, not an authorization credential. Late packets or retention may change segmentation. */
+            id: string;
+            /** Format: uuid */
+            vehicleId: string;
+            licensePlate: string;
+            /** Format: uuid */
+            assignmentId: string;
+            /** Format: uuid */
+            deviceId: string;
+            /**
+             * Format: uuid
+             * @description Set only for exactly one containing scheduled rental; association remains inferred.
+             */
+            rentalId: string | null;
+            rentalAssociations: components["schemas"]["TripRentalAssociation"][];
+            /** Format: date-time */
+            startedAt: string;
+            /** Format: date-time */
+            endedAt: string;
+            durationSeconds: number;
+            /** @description Haversine estimate over usable consecutive fixes; never an odometer measurement. */
+            distanceMeters: number;
+            pointCount: number;
+            /** @enum {string} */
+            sourceMode: "TEST";
+            /** @enum {string} */
+            derivation: "DERIVED";
+            /** @enum {string} */
+            distanceKind: "ESTIMATED";
+            /** Format: date-time */
+            lastRecordedAt: string;
+            /** Format: date-time */
+            lastReceivedAt: string;
+            /** @enum {string} */
+            freshness: "FRESH" | "STALE" | "OFFLINE";
+            partial: boolean;
+            partialReasons: string[];
+            routeAvailable: boolean;
+            range: components["schemas"]["TripRange"];
+        };
+        TripPage: {
+            page: number;
+            limit: number;
+            total: number;
+            data: components["schemas"]["TripSummary"][];
+            range: components["schemas"]["TripRange"];
+            retentionDays: number;
+            /**
+             * Format: date-time
+             * @description Received-time retention cutoff; older retained latest fixes do not imply complete history.
+             */
+            retentionBoundaryAt: string;
+            candidatePointLimit: number;
+        };
+        TripPoint: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            recordedAt: string;
+            /** Format: date-time */
+            receivedAt: string;
+            latitude: number;
+            longitude: number;
+            speedKph: number;
+            heading: number;
+            ignition: boolean | null;
+            /** @enum {string} */
+            sourceMode: "TEST";
+            /** @description Start a new polyline here; never connect a physically implausible jump. */
+            breakBefore: boolean;
+        };
+        TripRoutePage: {
+            page: number;
+            limit: number;
+            total: number;
+            tripId: string;
+            data: components["schemas"]["TripPoint"][];
+            hasMore: boolean;
+            /** @enum {string} */
+            distanceKind: "ESTIMATED";
+            partial: boolean;
+            partialReasons: string[];
         };
         IngestionResponse: {
             duplicate: boolean;
@@ -5647,6 +5796,356 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LocationResponse"];
+                };
+            };
+            /** @description Standard API error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    TripController_list: {
+        parameters: {
+            query?: {
+                page?: components["schemas"]["Object"];
+                limit?: components["schemas"]["Object"];
+                vehicleId?: string;
+                rentalId?: string;
+                /** @description UTC range start; defaults to 24 hours before to. Maximum range 7 days. */
+                from?: string;
+                /** @description Exclusive range end; defaults to now. */
+                to?: string;
+                sort?: "asc" | "desc";
+            };
+            header?: {
+                "X-Business-Id"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TripPage"];
+                };
+            };
+            /** @description Standard API error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    TripController_route: {
+        parameters: {
+            query?: {
+                page?: components["schemas"]["Object"];
+                limit?: components["schemas"]["Object"];
+            };
+            header?: {
+                "X-Business-Id"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TripRoutePage"];
+                };
+            };
+            /** @description Standard API error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    TripController_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Business-Id"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TripSummary"];
                 };
             };
             /** @description Standard API error */

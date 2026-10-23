@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import type { Me } from "@rental-fleet/contracts";
 import { Button, Panel, PanelHeader } from "@/components/ui/primitives";
 import { Pagination } from "@/components/data-display/table";
-import { queryString } from "@/features/vehicles/query";
+import { queryString } from "@/lib/query";
 import { rentalStatuses, type RentalFilters } from "./query";
 import { RentalTable } from "./rental-table";
 import type { RentalPage } from "./types";

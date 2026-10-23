@@ -9,6 +9,7 @@ describe('Permission boundaries', () => {
       'gps.read',
       'customer.read',
       'rental.read',
+      'trip.read',
     ])
       expect(permissionsFor('OPERATIONS')).toContain(permission);
     for (const permission of [

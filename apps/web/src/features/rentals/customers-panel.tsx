@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/primitives";
 import { DataTable, Pagination } from "@/components/data-display/table";
 import { MutationNotice } from "@/components/feedback/mutation-notice";
-import { queryString } from "@/features/vehicles/query";
+import { queryString } from "@/lib/query";
 import { CustomerEditor } from "./customer-editor";
 import type { Customer, CustomerPage } from "./types";
 import type { CustomerFilters } from "./query";

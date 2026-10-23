@@ -1,9 +1,9 @@
-import { LiveFleetMap } from "@/features/gps/live-fleet-map";
-import type { LocationPage } from "@/features/gps/types";
+import { LiveFleetMap } from "@/features/telematics/gps/live-fleet-map";
+import type { LocationPage } from "@/features/telematics/gps/types";
 import Link from "next/link";
 import { RentalDashboard } from "@/features/rentals/rental-dashboard";
 import type { RentalPage } from "@/features/rentals/types";
-import { pageNumber, type SearchParams } from "@/features/vehicles/query";
+import { pageNumber, type SearchParams } from "@/lib/query";
 import type { Branch, Membership, Page } from "@rental-fleet/contracts";
 import { api, currentContext } from "@/lib/api";
 import {

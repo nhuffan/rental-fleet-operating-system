@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { Me } from "@rental-fleet/contracts";
 import { Button, Panel, PanelHeader } from "@/components/ui/primitives";
 import { MutationNotice } from "@/components/feedback/mutation-notice";
-import { formatDate } from "@/features/vehicles/query";
+import { formatDate, queryString } from "@/lib/query";
 import { formatMoney } from "./query";
 import { RentalStatus } from "./rental-status";
 import { RentalActionEditor, type RentalAction } from "./rental-action-editor";
@@ -13,10 +13,12 @@ export function RentalDetail({
   rental,
   context,
   initialMessage = "",
+  tripRange,
 }: {
   rental: Rental;
   context: Me;
   initialMessage?: string;
+  tripRange: { from: string; to: string } | null;
 }) {
   const [editor, setEditor] = useState<RentalAction | null>(null);
   const [message, setMessage] = useState(initialMessage);
@@ -33,6 +35,16 @@ export function RentalDetail({
   return (
     <>
       <MutationNotice error="" message={message} />
+      {context.permissions.includes("trip.read") && (
+        <div className="rental-form-actions">
+          <Link
+            className="button button-secondary"
+            href={`/app/trips?${queryString({ rentalId: rental.id, vehicleId: rental.vehicleId, ...(tripRange ?? {}) })}`}
+          >
+            Xem hành trình giao cắt lịch thuê
+          </Link>
+        </div>
+      )}
       {rental.isOverdue && (
         <div className="notice notice-danger" role="status">
           Hợp đồng đang thuê đã quá giờ trả dự kiến. Quá hạn được tính theo thời

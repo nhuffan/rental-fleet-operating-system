@@ -1,14 +1,11 @@
+import { vehicleFilters } from "@/features/fleet/vehicles/query";
 import { api } from "@/lib/api";
 import { PageHeader } from "@/components/ui/primitives";
-import { FleetTabs } from "@/features/vehicles/fleet-tabs";
-import { VehiclesPanel } from "@/features/vehicles/vehicles-panel";
-import { fleetContext, tenantBranches } from "@/features/vehicles/server";
-import {
-  queryString,
-  vehicleFilters,
-  type SearchParams,
-} from "@/features/vehicles/query";
-import type { VehiclePage } from "@/features/vehicles/types";
+import { FleetTabs } from "@/features/fleet/vehicles/fleet-tabs";
+import { VehiclesPanel } from "@/features/fleet/vehicles/vehicles-panel";
+import { fleetContext, tenantBranches } from "@/features/fleet/vehicles/server";
+import { queryString, type SearchParams } from "@/lib/query";
+import type { VehiclePage } from "@/features/fleet/vehicles/types";
 export default async function VehiclesPage({
   searchParams,
 }: {

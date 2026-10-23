@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { DataTable } from "@/components/data-display/table";
-import { formatDate } from "@/features/vehicles/query";
+import { formatDate } from "@/lib/query";
 import { formatMoney } from "./query";
 import { RentalStatus } from "./rental-status";
 import type { Rental } from "./types";
