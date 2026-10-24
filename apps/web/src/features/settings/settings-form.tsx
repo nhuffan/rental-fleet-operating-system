@@ -1,4 +1,5 @@
 "use client";
+import { Icon } from "@/components/ui/icon";
 import type { Me, Settings } from "@rental-fleet/contracts";
 import {
   useMutation,
@@ -69,6 +70,7 @@ export function SettingsForm({
                   Đặt lại
                 </Button>
                 <Button type="submit" disabled={mutation.busy}>
+                  <Icon name="check" />
                   {mutation.busy ? "Đang lưu…" : "Lưu cài đặt"}
                 </Button>
               </div>

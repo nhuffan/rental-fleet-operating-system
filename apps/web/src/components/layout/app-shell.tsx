@@ -2,29 +2,14 @@
 import Link from "next/link";
 import { BrandLockup } from "@/components/ui/brand-lockup";
 import { usePathname } from "next/navigation";
-import {
-  useEffect,
-  useRef,
-  useState,
-  useSyncExternalStore,
-  type ReactNode,
-} from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { PlatformMe } from "@/features/platform/live/types";
 import type { Me } from "@rental-fleet/contracts";
 import { BusinessSwitcher } from "@/app/app/shell-controls";
 import { UserAccountMenu } from "./user-account-menu";
+import { WorkspaceContext } from "./workspace-context";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { Button } from "@/components/ui/primitives";
-const compactNavigationQuery = "(max-height: 960px)";
-function subscribeNavigationSize(onChange: () => void) {
-  const query = window.matchMedia(compactNavigationQuery);
-  query.addEventListener("change", onChange);
-  return () => query.removeEventListener("change", onChange);
-}
-const navigationIsCompact = () =>
-  window.matchMedia(compactNavigationQuery).matches;
-const serverNavigationIsCompact = () => false;
-
 type NavItem = {
   href: string;
   label: string;
@@ -65,15 +50,6 @@ export function AppShell({
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const compactNavigation = useSyncExternalStore(
-    subscribeNavigationSize,
-    navigationIsCompact,
-    serverNavigationIsCompact,
-  );
-  const [navigationChoice, setNavigationChoice] = useState<{
-    path: string;
-    group: string | null;
-  } | null>(null);
   const sidebarRef = useRef<HTMLElement>(null);
   const contentScrollRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -282,48 +258,19 @@ export function AppShell({
       </Link>
     ));
   }
-  const activeNavigationGroup = management.some(
-    (item) => pathname === item.href || pathname.startsWith(`${item.href}/`),
-  )
-    ? "management"
-    : "core";
-  const expandedNavigationGroup =
-    navigationChoice?.path === pathname
-      ? navigationChoice.group
-      : activeNavigationGroup;
   function navigationGroup(
     group: string,
     title: string,
     label: string,
     items: NavItem[],
   ) {
-    const expanded = !compactNavigation || expandedNavigationGroup === group;
     return (
       <section className="sidebar-group" key={group}>
-        {compactNavigation ? (
-          <button
-            className="nav-label nav-group-toggle"
-            type="button"
-            aria-expanded={expanded}
-            aria-controls={`sidebar-group-${group}`}
-            onClick={() =>
-              setNavigationChoice({
-                path: pathname,
-                group: expanded ? null : group,
-              })
-            }
-          >
-            <span>{title}</span>
-            <Icon name="chevron" size={14} />
-          </button>
-        ) : (
-          <div className="nav-label">{title}</div>
-        )}
+        <h2 className="nav-label">{title}</h2>
         <nav
           id={`sidebar-group-${group}`}
           aria-label={label}
           className="sidebar-nav"
-          hidden={!expanded}
         >
           {nav(items)}
         </nav>
@@ -348,7 +295,7 @@ export function AppShell({
         id="workspace-navigation"
         aria-label="Điều hướng không gian làm việc"
       >
-        {/* Stable intrinsic sizing includes every live label, even when a group is collapsed. */}
+        {/* Stable intrinsic sizing includes every approved navigation label. */}
         <div className="sidebar-width-guide" aria-hidden="true">
           {[
             ...fleetItems,
@@ -430,22 +377,18 @@ export function AppShell({
               <Icon name="menu" />
             </Button>
             {platform ? (
-              <div className="platform-context">
-                <Icon name="globe" />
-                <span>Platform Console</span>
-                {preview && <small>Preview</small>}
-              </div>
+              <WorkspaceContext
+                icon="globe"
+                label="Platform Console"
+                preview={preview}
+              />
             ) : context ? (
               <BusinessSwitcher
                 businesses={context.businesses}
                 selected={context.business.id}
               />
             ) : (
-              <div className="platform-context" title="Doanh nghiệp minh họa">
-                <Icon name="business" />
-                <span>Minh An Mobility</span>
-                <small>Preview</small>
-              </div>
+              <WorkspaceContext icon="business" label="Minh An Mobility" preview />
             )}
           </div>
           <UserAccountMenu
@@ -457,7 +400,7 @@ export function AppShell({
                   ? "Owner"
                   : "Dữ liệu minh họa"
             }
-            settingsHref={`${prefix}/settings`}
+            settingsHref={platform ? undefined : `${prefix}/settings`}
             preview={preview}
           />
         </header>

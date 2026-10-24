@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { Button } from "./primitives";
-import { Icon } from "./icon";
+import { Icon, type IconName } from "./icon";
 
 const CloseContext = createContext<(() => void) | null>(null);
 function snapshot(dialog: HTMLDialogElement) {
@@ -213,6 +213,7 @@ function DialogShell({
                   Tiếp tục chỉnh sửa
                 </Button>
                 <Button type="button" onClick={onClose}>
+                  <Icon name="close" />
                   Bỏ thay đổi
                 </Button>
               </footer>
@@ -235,6 +236,7 @@ export function DialogActions({
   onCancel,
   onSubmit,
   submitLabel = "Lưu thay đổi",
+  submitIcon = "check",
   cancelLabel = "Hủy",
   submitDisabled = false,
 }: {
@@ -243,6 +245,7 @@ export function DialogActions({
   onCancel?: () => void;
   onSubmit?: () => void;
   submitLabel?: string;
+  submitIcon?: IconName;
   cancelLabel?: string;
   submitDisabled?: boolean;
 }) {
@@ -264,6 +267,7 @@ export function DialogActions({
         disabled={submitDisabled}
         onClick={formId ? undefined : onSubmit}
       >
+        {!busy && <Icon name={submitIcon} />}
         {busy ? "Đang xử lý…" : submitLabel}
       </Button>
     </div>

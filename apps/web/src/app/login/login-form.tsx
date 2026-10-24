@@ -107,8 +107,8 @@ export function LoginForm({
               </p>
             )}
             <Button loading={pending} type="submit">
-              {pending ? "Đang đăng nhập…" : "Đăng nhập"}
               {!pending && <Icon name="arrow" size={16} />}
+              {pending ? "Đang đăng nhập…" : "Đăng nhập"}
             </Button>
           </form>
           <p className="login-help">

@@ -1,4 +1,5 @@
 "use client";
+import { Icon } from "@/components/ui/icon";
 import Link from "next/link";
 import { Combobox, FilterBar, SearchField } from "@/components/ui/controls";
 import { useTransition } from "react";
@@ -47,6 +48,7 @@ export function RentalsPanel({
         action={
           context.permissions.includes("rental.manage") && (
             <Link className="button button-primary" href="/app/rentals/new">
+              <Icon name="plus" />
               Tạo hợp đồng
             </Link>
           )

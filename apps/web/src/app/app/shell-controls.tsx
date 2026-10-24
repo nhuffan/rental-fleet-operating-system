@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import type { Me } from "@rental-fleet/contracts";
 import { Combobox } from "@/components/ui/controls";
 import { Icon } from "@/components/ui/icon";
+import { WorkspaceContext } from "@/components/layout/workspace-context";
 import { browserClient } from "@/lib/supabase/client";
 export function Logout({
   menuItem = false,
@@ -66,11 +67,15 @@ export function BusinessSwitcher({
   selected: string;
 }) {
   return (
-    <div className="business-switcher">
-      <span className="business-switcher-icon">
-        <Icon name="business" />
-      </span>
+    <WorkspaceContext
+      icon="business"
+      label={
+        businesses.find((business) => business.id === selected)?.name ||
+        "Doanh nghiệp hiện tại"
+      }
+    >
       <Combobox
+        className="business-switcher"
         id="current-business"
         label="Doanh nghiệp hiện tại"
         hideLabel
@@ -91,6 +96,6 @@ export function BusinessSwitcher({
           window.location.reload();
         }}
       />
-    </div>
+    </WorkspaceContext>
   );
 }

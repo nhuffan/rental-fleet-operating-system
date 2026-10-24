@@ -28,12 +28,20 @@
   border-radius: var(--radius-md);
   padding: 11px 13px;
 }
+/* Focus follows the control edge, without an offset ring or exterior glow. */
 .form-control:focus-visible,
 .login-form input:focus-visible,
-.search-input:focus-within {
-  border-color: var(--focus);
-  outline: 2px solid color-mix(in srgb, var(--focus) 25%, transparent);
-  outline-offset: 2px;
+.filter-select:focus-visible,
+.calendar-time input:focus-visible,
+.search-input:focus-within,
+.combobox-search:focus-within,
+.combobox-trigger[aria-expanded="true"],
+.select-trigger[aria-expanded="true"],
+.date-trigger[aria-expanded="true"] {
+  border-color: var(--control-focus-color, var(--focus));
+  outline: none;
+  outline-offset: 0;
+  box-shadow: inset 0 0 0 1px var(--control-focus-color, var(--focus));
 }
 .form-control::placeholder,
 .login-form input::placeholder {
@@ -41,8 +49,10 @@
   opacity: 1;
 }
 .form-control[aria-invalid="true"],
+.search-input:has(input[aria-invalid="true"]),
 .select-control:has(.native-control-bridge:user-invalid) > .select-trigger,
 .date-control:has(.native-control-bridge:user-invalid) > .date-trigger {
+  --control-focus-color: var(--danger);
   border-color: var(--danger);
 }
 .form-control:disabled,
@@ -98,11 +108,6 @@ fieldset:disabled .form-control {
 .date-trigger > svg {
   flex-shrink: 0;
   color: var(--text-secondary);
-}
-.select-trigger[aria-expanded="true"],
-.date-trigger[aria-expanded="true"] {
-  border-color: var(--focus);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--focus) 12%, transparent);
 }
 .control-placeholder {
   color: var(--text-muted);

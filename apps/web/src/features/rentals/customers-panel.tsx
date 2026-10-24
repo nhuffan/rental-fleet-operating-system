@@ -1,4 +1,5 @@
 "use client";
+import { Icon } from "@/components/ui/icon";
 import Link from "next/link";
 import { Combobox, FilterBar, SearchField } from "@/components/ui/controls";
 import { useState, useTransition } from "react";
@@ -47,7 +48,10 @@ export function CustomersPanel({
           icon="users"
           action={
             canEdit && (
-              <Button onClick={() => setEditing("new")}>Thêm khách hàng</Button>
+              <Button onClick={() => setEditing("new")}>
+                <Icon name="plus" />
+                Thêm khách hàng
+              </Button>
             )
           }
         />

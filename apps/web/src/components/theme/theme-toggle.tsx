@@ -53,6 +53,7 @@ export function ThemeToggle() {
       role="menuitemcheckbox"
       aria-checked={dark}
       className="account-menu-item"
+      aria-label="Giao diện tối"
       onClick={() => {
         const next = getSnapshot() ? "light" : "dark";
         try {
@@ -67,7 +68,10 @@ export function ThemeToggle() {
       <span className="account-item-icon">
         <Icon name="moon" size={18} />
       </span>
-      <span className="account-item-label">Dark Mode</span>
+      <span className="account-item-copy">
+        <span className="account-item-label">Giao diện tối</span>
+        <small>{dark ? "Đang bật" : "Đang tắt"}</small>
+      </span>
       <span className="theme-switch" aria-hidden="true">
         <span />
       </span>

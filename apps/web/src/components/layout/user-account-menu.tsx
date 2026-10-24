@@ -16,11 +16,13 @@ export function UserAccountMenu({
   email,
   role,
   settingsHref,
+  settingsLabel = "Cài đặt doanh nghiệp",
   preview = false,
 }: {
   email?: string;
   role: string;
-  settingsHref: string;
+  settingsHref?: string;
+  settingsLabel?: string;
   preview?: boolean;
 }) {
   const [open, setOpen] = useState(false);
@@ -61,8 +63,7 @@ export function UserAccountMenu({
     updatePosition();
     setOpen(true);
   }
-  const title = email || "Design workspace";
-  const initials = Array.from(title).slice(0, 2).join("").toUpperCase();
+  const title = email || (preview ? "Design workspace" : "Tài khoản");
   useEffect(() => {
     if (!open) return;
     updatePosition();
@@ -116,7 +117,7 @@ export function UserAccountMenu({
   const content = (
     <>
       <span className="avatar account-avatar" aria-hidden="true">
-        {initials}
+        <Icon name="user" size={22} />
       </span>
       <span className="account-trigger-copy">
         <strong title={title}>{title}</strong>
@@ -175,33 +176,56 @@ export function UserAccountMenu({
           style={position}
           role="menu"
           aria-label="Menu tài khoản"
+          aria-busy={busy}
           onKeyDown={navigate}
         >
           <div className="account-menu-summary" role="presentation">
             <span className="avatar account-avatar" aria-hidden="true">
-              {initials}
+              <Icon name="user" size={24} />
             </span>
             <div className="account-menu-identity">
-              <span className="account-menu-eyebrow">Tài khoản</span>
               <strong title={title}>{title}</strong>
               <span className="account-role-badge">{role}</span>
             </div>
           </div>
-          <ThemeToggle />
-          <Link
-            role="menuitem"
-            className="account-menu-item"
-            href={settingsHref}
-            onClick={close}
+          {settingsHref && (
+            <div
+              className="account-menu-section"
+              role="group"
+              aria-label="Không gian làm việc"
+            >
+              <div className="account-menu-section-label" role="presentation">
+                Không gian làm việc
+              </div>
+              <Link
+                role="menuitem"
+                className="account-menu-item"
+                href={settingsHref}
+                onClick={close}
+              >
+                <span className="account-item-icon">
+                  <Icon name="settings" size={18} />
+                </span>
+                <span className="account-item-copy">
+                  <span className="account-item-label">{settingsLabel}</span>
+                  <small>Cấu hình hoạt động doanh nghiệp</small>
+                </span>
+                <span className="account-item-arrow">
+                  <Icon name="chevron" size={16} />
+                </span>
+              </Link>
+            </div>
+          )}
+          <div
+            className="account-menu-section"
+            role="group"
+            aria-label="Giao diện"
           >
-            <span className="account-item-icon">
-              <Icon name="settings" size={18} />
-            </span>
-            <span className="account-item-label">Cài đặt</span>
-            <span className="account-item-arrow">
-              <Icon name="chevron" size={16} />
-            </span>
-          </Link>
+            <div className="account-menu-section-label" role="presentation">
+              Giao diện
+            </div>
+            <ThemeToggle />
+          </div>
           <div role="separator" className="account-menu-separator" />
           <Logout menuItem onPendingChange={setBusy} />
         </div>

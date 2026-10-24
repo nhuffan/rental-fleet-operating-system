@@ -1,4 +1,5 @@
 "use client";
+import { Icon } from "@/components/ui/icon";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -241,7 +242,10 @@ export function RentalWizard({
                   />
                 </label>
               </div>
-              <Button type="submit">Tìm xe sẵn sàng</Button>
+              <Button type="submit">
+                <Icon name="search" />
+                Tìm xe sẵn sàng
+              </Button>
             </form>
           )}
           {step === 1 && (
@@ -269,6 +273,7 @@ export function RentalWizard({
                   Quay lại
                 </Button>
                 <Button disabled={!vehicle} onClick={() => setStep(2)}>
+                  <Icon name="users" />
                   Chọn khách hàng →
                 </Button>
               </div>
@@ -307,6 +312,7 @@ export function RentalWizard({
                   Quay lại
                 </Button>
                 <Button disabled={!customer} onClick={() => setStep(3)}>
+                  <Icon name="rental" />
                   Xem lại hợp đồng →
                 </Button>
               </div>
@@ -427,6 +433,7 @@ export function RentalWizard({
                   Lưu bản nháp
                 </Button>
                 <Button type="submit" disabled={mutation.busy}>
+                  <Icon name="check" />
                   {mutation.busy
                     ? "Đang xử lý…"
                     : created
@@ -448,6 +455,7 @@ export function RentalWizard({
               onCancel={() => setDiscarding(false)}
               cancelLabel="Tiếp tục chỉnh sửa"
               submitLabel="Bỏ thay đổi"
+              submitIcon="close"
             />
           }
         >

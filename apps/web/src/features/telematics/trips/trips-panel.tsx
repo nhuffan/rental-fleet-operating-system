@@ -1,4 +1,5 @@
 "use client";
+import { Icon } from "@/components/ui/icon";
 import Link from "next/link";
 import { Combobox, DateInput, FilterBar } from "@/components/ui/controls";
 import { useState, useTransition } from "react";
@@ -204,6 +205,7 @@ export function TripsPanel({
           />
           <div className="filter-bar-actions">
             <Button type="submit" loading={pending}>
+              {!pending && <Icon name="search" />}
               {pending ? "Đang tải…" : "Áp dụng bộ lọc"}
             </Button>
             <Link className="button button-ghost" href="/app/trips">

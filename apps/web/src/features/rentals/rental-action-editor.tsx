@@ -74,6 +74,7 @@ export function RentalActionEditor({
           busy={mutation.busy}
           onCancel={onClose}
           submitLabel={titles[action]}
+          submitIcon={action === "cancel" ? "close" : "check"}
         />
       }
       onClose={() => {

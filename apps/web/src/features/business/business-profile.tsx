@@ -1,4 +1,5 @@
 "use client";
+import { Icon } from "@/components/ui/icon";
 import type { Business, Me } from "@rental-fleet/contracts";
 import { useMutation } from "@/lib/api-client/use-mutation";
 import {
@@ -89,6 +90,7 @@ export function BusinessProfile({
                     Đặt lại
                   </Button>
                   <Button type="submit" disabled={mutation.busy}>
+                    <Icon name="check" />
                     {mutation.busy ? "Đang lưu…" : "Lưu thay đổi"}
                   </Button>
                 </div>

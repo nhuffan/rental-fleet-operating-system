@@ -1,4 +1,5 @@
 "use client";
+import { Icon } from "@/components/ui/icon";
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -159,16 +160,19 @@ export function RentalDetail({
               <div className="rental-form-actions">
                 {rental.status === "DRAFT" && (
                   <Button onClick={() => setEditor("reserve")}>
+                    <Icon name="check" />
                     Xác nhận đặt xe
                   </Button>
                 )}
                 {rental.status === "RESERVED" && (
                   <Button onClick={() => setEditor("handover")}>
+                    <Icon name="car" />
                     Bàn giao xe
                   </Button>
                 )}
                 {rental.status === "ACTIVE" && (
                   <Button onClick={() => setEditor("return")}>
+                    <Icon name="check" />
                     Nhận trả xe
                   </Button>
                 )}

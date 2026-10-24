@@ -1,4 +1,5 @@
 "use client";
+import { Icon } from "@/components/ui/icon";
 import { useParams } from "next/navigation";
 import { tripHistoryHref } from "@/features/telematics/trips/query";
 import Link from "next/link";
@@ -14,7 +15,10 @@ export default function ErrorPage({ retry }: { retry: () => void }) {
           hãy chọn ít ngày hơn hoặc chọn một xe.
         </p>
         <div className="inline">
-          <Button onClick={retry}>Thử lại</Button>
+          <Button onClick={retry}>
+            <Icon name="retry" />
+            Thử lại
+          </Button>
           <Link
             className="button button-secondary"
             href={tripHistoryHref(params.id)}

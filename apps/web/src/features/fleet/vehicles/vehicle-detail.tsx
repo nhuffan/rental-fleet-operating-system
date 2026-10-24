@@ -1,4 +1,5 @@
 "use client";
+import { Icon } from "@/components/ui/icon";
 import { VehicleRentalPanel } from "@/features/rentals/vehicle-rental-panel";
 import type { VehicleRentalState } from "@/features/rentals/types";
 import Link from "next/link";
@@ -149,6 +150,7 @@ export function VehicleDetail({
                   }
                   onClick={() => setEditor("assign")}
                 >
+                  <Icon name="plus" />
                   Gắn thiết bị
                 </Button>
               ))
