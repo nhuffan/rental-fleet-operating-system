@@ -438,3 +438,31 @@ Input: `Stage_11_Commercial_Core_Implementation.md`, plus the direct request for
 
 - Extend from the exact recorded-movement model and immutable corrections; preserve tenant locks/RLS/audit, explicit deposit liability, exact VND arithmetic and disposable test cleanup. Review currency conversion as a separate domain before supporting other currencies.
 - Choose VETC/toll readiness or operational alerts from actual priorities; retain one shared Login and independent server-side grants. Final Validation should cover full historical workflows and broader UI/error/accessibility behavior without mutating named accounts.
+
+
+## Stage 12 output
+
+Input: `Stage_12_Operational_Alerts_and_UX_Refinement.md` plus the direct request to standardize date, dropdown, text fields and reusable dialogs. Implemented 2026-10-23–24 on clean `main`, baseline **eb0e9b2**. Source, generated contracts, focused tests and this output form **this stage's implementation commit**; Git history is authoritative for its SHA.
+
+### Delivered
+
+- Desktop sidebar now fits all live navigation labels/icons/badges within **270–310px**, with a persistent intrinsic sizing guide so collapsed categories/routes do not change its width. Browser measured **282.9px**, equal **12px** left/right menu insets, aligned row/logo/category starts and no normal desktop menu scrolling. Fixed topbar/content-only scrolling and mobile overlay remain; shorter desktops reduce row spacing, with a hidden-scrollbar accessibility fallback only at extremely short heights ≤420px.
+- Added reusable centered **FormDialog** (800/940px) and compact **ConfirmDialog** (480px), with bounded mobile layouts, scrollable body, persistent header/footer and shared DialogActions. Migrated Commercial, Rental actions, Vehicle/Device/Assignment, Customer, Owner access and Branch editors; the multi-step Rental Wizard now renders on its own page. Preserved API validation, exact-money behavior, permissions and pending/errors. Named-control changes plus external picker state trigger same-modal unsaved confirmation; guarded Cancel/Escape/backdrop, pending protection, beforeunload and focus return are shared.
+- Standardized live text fields/selects/date inputs across shared primitives, forms, filters, Business, Settings and GPS. Themed custom selection supports keyboard/typeahead; calendar/date-time supports day/month/keyboard selection, bounds, clear/today/time and Vietnamese validation. Native bridges retain FormData, required constraints, value/defaultValue/change/reset behavior and existing Vietnam-time conversion. Popups use the closest dialog's top layer, avoiding inert/clipped controls. No dependency added.
+- Added **LIVE read-only Owner Alerts** API/page/sidebar entry: ACTIVE overdue returns, returns due in 24 hours and stale actual current-assignment GPS **TEST** fixes (>120 seconds; critical >600 seconds). No-data/unassigned/ended/future/inactive GPS conditions do not fabricate alerts. One database timestamp drives bounded pagination, counts and severity/time ordering; guards and SQL recheck tenant Owner/profile/business access. Filters, scoped counts, entity links, visible-tab refresh, loading/empty/error states use actual API data. No acknowledgment state or migration was needed for this derived inbox.
+
+### Minimal Verification
+
+- `pnpm --filter api typecheck`, `pnpm --filter api lint`, `pnpm --filter api build`: **PASS**. `pnpm --filter api exec vitest run src/alerts src/auth/guards.spec.ts src/auth/permissions.spec.ts src/commercial/domain.spec.ts`: **28/28 PASS**, including production alert SQL in PGlite, time rules, current assignment/tenant isolation, filters/counts/pagination, active Owner boundaries and exact-money regression. `pnpm openapi`: **PASS**, without starting an HTTP listener.
+- `pnpm --filter web typecheck`, `pnpm --filter web lint`, `pnpm --filter web build`: **PASS**. `node --test apps/web/test/date-control.test.mjs`: **4/4 PASS** (calendar/leap/year boundaries and date/time constraints); existing Node module-type warning only. `git diff --check`: **PASS**.
+- Focused browser smoke **PASS** against existing dev services: live empty Alerts and GPS filter URL/results; stable sidebar width across pages/category changes; 940px centered Commercial editor with contained scroll/footer; dropdown selection and datetime changes matched native bridge values; Escape closed only the calendar; Cancel/keep/discard retained or removed the draft and returned focus; Rental Wizard stayed full-page and required date errors were Vietnamese with first-invalid focus. No operational data was posted. Signed QA out/closed its owned tab. Reused user-owned Web **4000 PID 78262** and API **9000 PID 96133** (final watcher child); no server was started/stopped or Digital Twin touched.
+
+### Boundaries & Remaining
+
+- No schema/remote data/account/grant mutation, staging/production migration, push/email, cron, VETC, billing or Customer portal. GPS remains TEST; timestamp staleness is not proof of physical connectivity. Preview-only raw controls/read-only drawers and the Trip range slider remain outside the live editing migration.
+- Full historical E2E, nonempty online alert fixtures, production preview HTTP regression, exhaustive accessibility/viewport/theme matrices, forced pending/network races and dirty browser-back behavior were **NOT RUN**, reserved for Final Validation. No screenshots, QA manifest or separate stage report created.
+
+### Next-stage Handoff
+
+- Reuse shared FormDialog/ConfirmDialog and field primitives for future live forms; preserve guarded close, native form semantics, modal popup ownership and tenant API authorization. Keep alerts derived unless a concrete acknowledgment/history workflow justifies tenant-safe state and audited writes.
+- Final Validation should exercise remaining nonempty workflows, small/short viewports, assistive technology, browser navigation with drafts and network failures without mutating named personal accounts.

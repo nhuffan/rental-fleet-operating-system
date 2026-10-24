@@ -5,11 +5,13 @@ import type { Branch, Me, Page } from "@rental-fleet/contracts";
 import { useMutation } from "@/lib/api-client/use-mutation";
 import {
   Button,
+  Input,
+  Select,
   Panel,
   PanelHeader,
   StatusBadge,
 } from "@/components/ui/primitives";
-import { Drawer } from "@/components/ui/drawer";
+import { DialogActions, FormDialog } from "@/components/ui/form-dialog";
 import { Icon } from "@/components/ui/icon";
 import {
   DataTable,
@@ -60,7 +62,7 @@ export function BranchesPanel({
         />
         <div className="table-toolbar">
           <SearchInput value={query} onChange={setQuery} />
-          <select
+          <Select
             className="filter-select"
             aria-label="Lọc trạng thái chi nhánh"
             value={status}
@@ -69,7 +71,7 @@ export function BranchesPanel({
             <option value="ALL">Tất cả trạng thái</option>
             <option value="ACTIVE">Hoạt động</option>
             <option value="DISABLED">Đã vô hiệu hóa</option>
-          </select>
+          </Select>
         </div>
         <DataTable
           rows={rows}
@@ -120,15 +122,25 @@ export function BranchesPanel({
         Tìm kiếm và bộ lọc áp dụng cho trang hiện tại.
       </p>
       {editing && (
-        <Drawer
+        <FormDialog
+          busy={mutation.busy}
+          footer={
+            <DialogActions
+              formId="branch-form"
+              busy={mutation.busy}
+              onCancel={() => setEditing(null)}
+              submitLabel="Lưu chi nhánh"
+            />
+          }
           title={branch ? "Chỉnh sửa chi nhánh" : "Thêm chi nhánh"}
           onClose={() => {
             if (!mutation.busy) setEditing(null);
           }}
         >
-          <div className="panel-body">
+          <div>
             <MutationNotice {...mutation} />
             <form
+              id="branch-form"
               onSubmit={async (e) => {
                 e.preventDefault();
                 const f = new FormData(e.currentTarget);
@@ -155,7 +167,7 @@ export function BranchesPanel({
               <fieldset disabled={mutation.busy}>
                 <label className="form-field">
                   Tên chi nhánh
-                  <input
+                  <Input
                     name="name"
                     defaultValue={branch?.name ?? ""}
                     required
@@ -166,7 +178,7 @@ export function BranchesPanel({
                 </label>
                 <label className="form-field">
                   Địa chỉ
-                  <input
+                  <Input
                     name="address"
                     defaultValue={branch?.address ?? ""}
                     maxLength={500}
@@ -175,28 +187,16 @@ export function BranchesPanel({
                 {branch && (
                   <label className="form-field">
                     Trạng thái
-                    <select name="status" defaultValue={branch.status}>
+                    <Select name="status" defaultValue={branch.status}>
                       <option value="ACTIVE">Hoạt động</option>
                       <option value="DISABLED">Vô hiệu hóa</option>
-                    </select>
+                    </Select>
                   </label>
                 )}
-                <div className="inline">
-                  <Button type="submit" disabled={mutation.busy}>
-                    {mutation.busy ? "Đang lưu…" : "Lưu chi nhánh"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() => setEditing(null)}
-                  >
-                    Hủy
-                  </Button>
-                </div>
               </fieldset>
             </form>
           </div>
-        </Drawer>
+        </FormDialog>
       )}
     </>
   );

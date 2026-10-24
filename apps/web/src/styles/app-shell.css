@@ -11,6 +11,8 @@ body:has(.workspace) {
   overflow: hidden;
   grid-template-rows: minmax(0, 1fr);
   --topbar-height: 88px;
+  --sidebar-inset: 12px;
+  grid-template-columns: minmax(270px, max-content) minmax(0, 1fr);
 }
 .app-sidebar {
   position: relative;
@@ -20,13 +22,16 @@ body:has(.workspace) {
   min-height: 0;
   overflow: hidden;
   align-self: stretch;
+  width: max-content;
+  min-width: 270px;
+  max-width: 310px;
 }
 .sidebar-brand-area {
   display: flex;
   align-items: center;
   flex-shrink: 0;
   min-height: var(--topbar-height);
-  padding: 18px 24px;
+  padding: 18px calc(var(--sidebar-inset) + 18px);
   border-bottom: 1px solid var(--border);
   background: var(--surface);
 }
@@ -37,9 +42,9 @@ body:has(.workspace) {
 .sidebar-menu {
   flex: 1;
   min-height: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 8px 14px 12px;
+  overflow: hidden;
+  width: 100%;
+  padding: 8px var(--sidebar-inset) 12px;
   overscroll-behavior: contain;
   scrollbar-width: thin;
 }
@@ -66,13 +71,13 @@ body:has(.workspace) {
 .sidebar-bottom {
   flex-shrink: 0;
   margin: 0;
-  padding: 4px 16px 10px;
+  padding: 4px var(--sidebar-inset) 10px;
 }
 .sidebar-bottom:empty {
   display: none;
 }
 .sidebar-bottom .preview-entry {
-  padding: 8px 12px;
+  padding: 8px 18px;
 }
 .workspace-main {
   display: flex;
@@ -157,29 +162,28 @@ body:has(.workspace) {
 .business-switcher .combobox-trigger {
   font-weight: 600;
 }
-@media (min-width: 1101px) and (max-width: 1439px) {
+@media (max-width: 1023px) {
   .workspace {
-    --sidebar-width: 280px;
+    grid-template-columns: minmax(0, 1fr);
   }
-  .sidebar-brand-area {
-    padding-inline: 20px;
+  .sidebar-width-guide {
+    display: none;
   }
   .sidebar-menu {
-    padding-inline: 10px;
+    overflow-y: auto;
   }
-}
-@media (max-width: 1023px) {
   .app-sidebar {
     position: fixed;
     top: 0;
     height: 100dvh;
     min-height: 0;
-    width: min(340px, calc(100vw - 40px));
+    width: min(310px, calc(100vw - 24px));
+    min-width: 0;
     left: -360px;
     padding: 0;
   }
   .sidebar-brand-area {
-    padding: 14px 54px 14px 20px;
+    padding: 14px 30px;
   }
   .sidebar-brand-area .sidebar-close {
     top: calc(var(--topbar-height) / 2);
@@ -264,7 +268,8 @@ body:has(.workspace) {
   height: var(--icon-sidebar);
 }
 .nav-link span {
-  overflow-wrap: anywhere;
+  white-space: nowrap;
+  overflow-wrap: normal;
 }
 @media (max-height: 960px) {
   .sidebar-group + .sidebar-group {
@@ -292,4 +297,86 @@ body {
 .empty-icon > .ui-icon {
   width: var(--icon-empty);
   height: var(--icon-empty);
+}
+
+/* The zero-height guide participates in intrinsic width without adding focus stops. */
+.sidebar-width-guide {
+  flex: 0 0 0;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  width: max-content;
+  padding-inline: var(--sidebar-inset);
+  pointer-events: none;
+}
+.sidebar-size-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13.5px 18px;
+  font-size: var(--text-nav);
+  font-weight: 600;
+  white-space: nowrap;
+  border-inline: 1px solid transparent;
+}
+.sidebar-size-row > .ui-icon {
+  width: var(--icon-sidebar);
+  height: var(--icon-sidebar);
+}
+.sidebar-size-row small {
+  font-size: var(--text-xs);
+  padding: 2px 4px;
+}
+.sidebar-size-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 18px;
+  font-size: var(--text-category);
+  font-weight: 650;
+  letter-spacing: 0.65px;
+  white-space: nowrap;
+}
+@media (min-width: 1024px) and (max-height: 780px) {
+  .nav-link {
+    min-height: 40px;
+    padding-block: 7px;
+  }
+  .nav-label {
+    padding-block: 8px;
+  }
+  .sidebar-menu {
+    padding-block: 4px;
+  }
+}
+@media (min-width: 1024px) and (max-height: 600px) {
+  .workspace {
+    --topbar-height: 68px;
+  }
+  .nav-link {
+    min-height: 34px;
+    padding-block: 4px;
+  }
+  .nav-label {
+    padding-block: 5px;
+  }
+  .sidebar-bottom {
+    display: none;
+  }
+}
+@media (min-width: 1024px) and (max-height: 420px) {
+  .nav-link {
+    min-height: 30px;
+    padding-block: 2px;
+  }
+  .nav-label {
+    padding-block: 3px;
+  }
+  .sidebar-menu {
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+  .sidebar-menu::-webkit-scrollbar {
+    display: none;
+  }
 }

@@ -188,6 +188,15 @@ export function AppShell({
         ...(!preview && context?.permissions.includes("trip.read")
           ? [{ href: "/app/trips", label: "Hành trình", icon: "trip" as const }]
           : []),
+        ...(!preview && context?.permissions.includes("alert.read")
+          ? [
+              {
+                href: "/app/alerts",
+                label: "Cảnh báo vận hành",
+                icon: "alert" as const,
+              },
+            ]
+          : []),
         ...(!preview && context?.permissions.includes("commercial.read")
           ? [
               {
@@ -339,6 +348,27 @@ export function AppShell({
         id="workspace-navigation"
         aria-label="Điều hướng không gian làm việc"
       >
+        {/* Stable intrinsic sizing includes every live label, even when a group is collapsed. */}
+        <div className="sidebar-width-guide" aria-hidden="true">
+          {[
+            ...fleetItems,
+            ...platformItems,
+            ["alerts", "Cảnh báo vận hành", "alert"],
+            ["users", "Quyền truy cập Owner", "users"],
+            ["audit", "Nhật ký hoạt động", "audit"],
+          ].map(([path, label, icon], index) => (
+            <span className="sidebar-size-row" key={`${path}:${index}`}>
+              <Icon name={icon as IconName} />
+              <span>{label}</span>
+              {["features", "integrations"].includes(path) && (
+                <small>Chưa có</small>
+              )}
+            </span>
+          ))}
+          <span className="sidebar-size-heading">
+            KHÔNG GIAN VẬN HÀNH <Icon name="chevron" size={14} />
+          </span>
+        </div>
         <div className="sidebar-brand-area">
           <Link href={prefix} className="brand">
             <BrandLockup />

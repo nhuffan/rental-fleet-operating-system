@@ -4,7 +4,11 @@ import { useRouter } from "next/navigation";
 import { browserClient } from "@/lib/supabase/client";
 import { publicEnv } from "@/lib/env";
 import { useMutation } from "@/lib/api-client/use-mutation";
-import { Drawer } from "@/components/ui/drawer";
+import {
+  ConfirmDialog,
+  DialogActions,
+  FormDialog,
+} from "@/components/ui/form-dialog";
 import { Button, EmptyState, Input } from "@/components/ui/primitives";
 import { Pagination } from "@/components/data-display/table";
 import { MutationNotice } from "@/components/feedback/mutation-notice";
@@ -24,80 +28,82 @@ export function AssignmentEditor({
   onSaved?: () => void;
 }) {
   const mutation = useMutation(businessId);
-  return (
-    <Drawer
-      busy={mutation.busy}
-      title={ending ? "Tháo thiết bị khỏi xe" : "Gắn thiết bị GPS"}
-      onClose={() => {
-        if (!mutation.busy) onClose();
-      }}
-    >
-      <div className="panel-body">
+  if (ending) {
+    return (
+      <ConfirmDialog
+        busy={mutation.busy}
+        title="Tháo thiết bị khỏi xe"
+        onClose={onClose}
+        footer={
+          <DialogActions
+            formId="end-device-assignment-form"
+            busy={mutation.busy}
+            onCancel={onClose}
+            submitLabel="Xác nhận tháo thiết bị"
+          />
+        }
+      >
         <MutationNotice {...mutation} />
-        <p className="fleet-assignment-context">
+        <p>
           <strong>{vehicle.licensePlate}</strong> · {vehicle.make}{" "}
           {vehicle.model}
         </p>
-        {ending ? (
-          <>
-            <p>
-              Tháo thiết bị{" "}
-              <strong>{ending.device.label || ending.device.deviceUid}</strong>{" "}
-              khỏi xe này? Lịch sử gắn được giữ lại.
-            </p>
-            <div className="inline">
-              <Button
-                disabled={mutation.busy}
-                onClick={async () => {
-                  const ok = await mutation.mutate({
-                    path: `/vehicles/${vehicle.id}/device-assignments/${ending.id}/end`,
-                    method: "POST",
-                  });
-                  if (ok) {
-                    onSaved?.();
-                    onClose();
-                  }
-                }}
-              >
-                {mutation.busy ? "Đang tháo…" : "Xác nhận tháo thiết bị"}
-              </Button>
-              <Button
-                variant="secondary"
-                disabled={mutation.busy}
-                onClick={onClose}
-              >
-                Hủy
-              </Button>
-            </div>
-          </>
-        ) : (
-          <AvailableDevicePicker
-            businessId={businessId}
-            busy={mutation.busy}
-            onAssign={async (deviceId) => {
-              const ok = await mutation.mutate({
-                path: `/vehicles/${vehicle.id}/device-assignments`,
-                method: "POST",
-                body: { deviceId },
-              });
-              if (ok) {
-                onSaved?.();
-                onClose();
-              }
-            }}
-          />
-        )}
-      </div>
-    </Drawer>
+        <p>
+          Tháo thiết bị{" "}
+          <strong>{ending.device.label || ending.device.deviceUid}</strong> khỏi
+          xe này? Lịch sử gắn được giữ lại.
+        </p>
+        <form
+          id="end-device-assignment-form"
+          onSubmit={async (event) => {
+            event.preventDefault();
+            const ok = await mutation.mutate({
+              path: `/vehicles/${vehicle.id}/device-assignments/${ending.id}/end`,
+              method: "POST",
+            });
+            if (ok) {
+              onSaved?.();
+              onClose();
+            }
+          }}
+        />
+      </ConfirmDialog>
+    );
+  }
+  return (
+    <AvailableDevicePicker
+      businessId={businessId}
+      vehicle={vehicle}
+      busy={mutation.busy}
+      errorNotice={mutation.error}
+      onClose={onClose}
+      onAssign={async (deviceId) => {
+        const ok = await mutation.mutate({
+          path: `/vehicles/${vehicle.id}/device-assignments`,
+          method: "POST",
+          body: { deviceId },
+        });
+        if (ok) {
+          onSaved?.();
+          onClose();
+        }
+      }}
+    />
   );
 }
 function AvailableDevicePicker({
   businessId,
+  vehicle,
   busy,
+  errorNotice,
+  onClose,
   onAssign,
 }: {
   businessId: string;
+  vehicle: Vehicle;
   busy: boolean;
+  errorNotice: string;
+  onClose: () => void;
   onAssign: (deviceId: string) => Promise<void>;
 }) {
   const router = useRouter();
@@ -172,7 +178,32 @@ function AvailableDevicePicker({
     return () => controller.abort();
   }, [businessId, query, router]);
   return (
-    <>
+    <FormDialog
+      title="Gắn thiết bị GPS"
+      onClose={onClose}
+      busy={busy}
+      dirty={!!selected}
+      footer={
+        <DialogActions
+          formId="device-assignment-form"
+          busy={busy}
+          onCancel={onClose}
+          submitLabel="Gắn thiết bị đã chọn"
+          submitDisabled={loading || !!error || !selected}
+        />
+      }
+    >
+      <MutationNotice error={errorNotice} message="" />
+      <p>
+        <strong>{vehicle.licensePlate}</strong> · {vehicle.make} {vehicle.model}
+      </p>
+      <form
+        id="device-assignment-form"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (!busy && !loading && !error && selected) void onAssign(selected);
+        }}
+      />
       <p className="quiet">
         Chỉ hiển thị thiết bị đang hoạt động và chưa gắn vào xe. Tìm kiếm áp
         dụng cho toàn bộ danh mục.
@@ -249,13 +280,6 @@ function AvailableDevicePicker({
           />
         </>
       )}
-      <Button
-        type="button"
-        disabled={busy || loading || !!error || !selected}
-        onClick={() => void onAssign(selected)}
-      >
-        {busy ? "Đang gắn…" : "Gắn thiết bị đã chọn"}
-      </Button>
-    </>
+    </FormDialog>
   );
 }

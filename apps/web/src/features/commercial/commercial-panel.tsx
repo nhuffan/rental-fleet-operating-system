@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/controls";
 import { DataTable, Pagination } from "@/components/data-display/table";
 import { RecordPicker } from "@/components/data-display/record-picker";
-import { Drawer } from "@/components/ui/drawer";
+import { DialogActions, FormDialog } from "@/components/ui/form-dialog";
 import { MutationNotice } from "@/components/feedback/mutation-notice";
 import type { Rental } from "@/features/rentals/types";
 import type { Vehicle } from "@/features/fleet/vehicles/types";
@@ -340,13 +340,62 @@ export function CommercialPanel({
         />
       )}
       {referencePicker && (
-        <Drawer
+        <FormDialog
+          size="wide"
+          dirty={
+            referenceId !==
+            (referencePicker === "vehicle"
+              ? filters.vehicleId
+              : filters.rentalId)
+          }
+          busy={pending}
+          footer={
+            <>
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={pending}
+                onClick={() => {
+                  navigate({
+                    ...filters,
+                    page: 1,
+                    [referencePicker === "vehicle" ? "vehicleId" : "rentalId"]:
+                      "",
+                  });
+                  setReferencePicker(null);
+                }}
+              >
+                Bỏ lọc liên kết này
+              </Button>
+              <DialogActions
+                formId="commercial-reference-filter"
+                busy={pending}
+                onCancel={() => setReferencePicker(null)}
+                submitLabel="Áp dụng liên kết"
+                submitDisabled={!referenceId}
+              />
+            </>
+          }
           title={
             referencePicker === "vehicle" ? "Lọc theo xe" : "Lọc theo hợp đồng"
           }
           onClose={() => setReferencePicker(null)}
         >
-          <div className="panel-body">
+          <div>
+            <form
+              id="commercial-reference-filter"
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (!referenceId || pending) return;
+                navigate({
+                  ...filters,
+                  page: 1,
+                  vehicleId: referencePicker === "vehicle" ? referenceId : "",
+                  rentalId: referencePicker === "rental" ? referenceId : "",
+                });
+                setReferencePicker(null);
+              }}
+            />
             {referencePicker === "vehicle" ? (
               <RecordPicker<Vehicle>
                 businessId={context.business.id}
@@ -380,38 +429,8 @@ export function CommercialPanel({
                 )}
               />
             )}
-            <div className="rental-form-actions">
-              <Button
-                disabled={!referenceId}
-                onClick={() => {
-                  navigate({
-                    ...filters,
-                    page: 1,
-                    vehicleId: referencePicker === "vehicle" ? referenceId : "",
-                    rentalId: referencePicker === "rental" ? referenceId : "",
-                  });
-                  setReferencePicker(null);
-                }}
-              >
-                Áp dụng liên kết
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  navigate({
-                    ...filters,
-                    page: 1,
-                    [referencePicker === "vehicle" ? "vehicleId" : "rentalId"]:
-                      "",
-                  });
-                  setReferencePicker(null);
-                }}
-              >
-                Bỏ lọc liên kết này
-              </Button>
-            </div>
           </div>
-        </Drawer>
+        </FormDialog>
       )}
     </>
   );

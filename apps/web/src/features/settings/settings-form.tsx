@@ -4,7 +4,7 @@ import {
   useMutation,
   type SettingsUpdate,
 } from "@/lib/api-client/use-mutation";
-import { Button, Panel, PanelHeader } from "@/components/ui/primitives";
+import { Button, Panel, PanelHeader, Select } from "@/components/ui/primitives";
 import { MutationNotice } from "@/components/feedback/mutation-notice";
 export function SettingsForm({
   settings,
@@ -40,13 +40,13 @@ export function SettingsForm({
             <div className="form-section">
               <label className="form-field">
                 Ngôn ngữ ưu tiên
-                <select
+                <Select
                   name="locale"
                   defaultValue={settings.config.locale ?? "vi"}
                 >
                   <option value="vi">Tiếng Việt</option>
                   <option value="en">English</option>
-                </select>
+                </Select>
                 <small>
                   Lưu tùy chọn cho doanh nghiệp. Giao diện hiện tại sử dụng
                   tiếng Việt.
@@ -54,13 +54,13 @@ export function SettingsForm({
               </label>
               <label className="form-field">
                 Định dạng ngày
-                <select
+                <Select
                   name="dateFormat"
                   defaultValue={settings.config.dateFormat ?? "DMY"}
                 >
                   <option value="DMY">Ngày / Tháng / Năm</option>
                   <option value="ISO">Năm - Tháng - Ngày</option>
-                </select>
+                </Select>
               </label>
             </div>
             {editable && (

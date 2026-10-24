@@ -1,6 +1,6 @@
 "use client";
-import { Drawer } from "@/components/ui/drawer";
-import { Button, Input, Select } from "@/components/ui/primitives";
+import { DialogActions, FormDialog } from "@/components/ui/form-dialog";
+import { Input, Select } from "@/components/ui/primitives";
 import { MutationNotice } from "@/components/feedback/mutation-notice";
 import { useMutation } from "@/lib/api-client/use-mutation";
 import type { GpsDevice, GpsDeviceCreate, GpsDeviceUpdate } from "./types";
@@ -17,16 +17,25 @@ export function DeviceEditor({
 }) {
   const mutation = useMutation(businessId);
   return (
-    <Drawer
+    <FormDialog
       busy={mutation.busy}
       title={device ? "Chỉnh sửa thiết bị GPS" : "Đăng ký thiết bị GPS"}
       onClose={() => {
         if (!mutation.busy) onClose();
       }}
+      footer={
+        <DialogActions
+          formId="device-form"
+          busy={mutation.busy}
+          onCancel={onClose}
+          submitLabel="Lưu thiết bị"
+        />
+      }
     >
-      <div className="panel-body">
+      <div>
         <MutationNotice {...mutation} />
         <form
+          id="device-form"
           onSubmit={async (e) => {
             e.preventDefault();
             const form = new FormData(e.currentTarget);
@@ -111,17 +120,9 @@ export function DeviceEditor({
                 động.
               </small>
             </label>
-            <div className="inline">
-              <Button type="submit" loading={mutation.busy}>
-                {mutation.busy ? "Đang lưu…" : "Lưu thiết bị"}
-              </Button>
-              <Button type="button" variant="secondary" onClick={onClose}>
-                Hủy
-              </Button>
-            </div>
           </fieldset>
         </form>
       </div>
-    </Drawer>
+    </FormDialog>
   );
 }

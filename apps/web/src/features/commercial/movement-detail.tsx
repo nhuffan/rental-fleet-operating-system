@@ -9,7 +9,7 @@ import {
   PanelHeader,
   Textarea,
 } from "@/components/ui/primitives";
-import { Drawer } from "@/components/ui/drawer";
+import { DialogActions, FormDialog } from "@/components/ui/form-dialog";
 import { MutationNotice } from "@/components/feedback/mutation-notice";
 import { useMutation } from "@/lib/api-client/use-mutation";
 import { formatDate } from "@/lib/query";
@@ -144,14 +144,22 @@ export function MovementDetail({
         </div>
       </Panel>
       {reversing && (
-        <Drawer
+        <FormDialog
           title="Đảo giao dịch"
+          footer={
+            <DialogActions
+              formId="commercial-reversal-form"
+              busy={mutation.busy}
+              onCancel={() => setReversing(false)}
+              submitLabel="Xác nhận đảo"
+            />
+          }
           busy={mutation.busy}
           onClose={() => {
             if (!mutation.busy) setReversing(false);
           }}
         >
-          <div className="panel-body">
+          <div>
             <MutationNotice error={mutation.error} message="" />
             <p>
               Đảo {commercialMoney(movement.amount)} ·{" "}
@@ -159,6 +167,7 @@ export function MovementDetail({
               lại trước khi lưu; không xóa giao dịch gốc.
             </p>
             <form
+              id="commercial-reversal-form"
               onSubmit={async (event) => {
                 event.preventDefault();
                 const reason = String(
@@ -189,22 +198,10 @@ export function MovementDetail({
                     required
                   />
                 </label>
-                <div className="rental-form-actions">
-                  <Button type="submit" loading={mutation.busy}>
-                    Xác nhận đảo
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() => setReversing(false)}
-                  >
-                    Đóng
-                  </Button>
-                </div>
               </fieldset>
             </form>
           </div>
-        </Drawer>
+        </FormDialog>
       )}
     </>
   );

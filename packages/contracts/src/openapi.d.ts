@@ -20,6 +20,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/alerts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AlertsController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/commercial/movements": {
         parameters: {
             query?: never;
@@ -739,6 +755,61 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         Object: Record<string, never>;
+        AlertResponse: {
+            /** @description Stable derived identity; not a persisted event or authorization credential. */
+            id: string;
+            /** @enum {string} */
+            kind: "RENTAL_OVERDUE" | "RENTAL_DUE_SOON" | "GPS_STALE";
+            /** @enum {string} */
+            severity: "CRITICAL" | "WARNING";
+            /** Format: uuid */
+            vehicleId: string;
+            licensePlate: string;
+            /** Format: uuid */
+            rentalId: string | null;
+            /** Format: date-time */
+            dueAt: string | null;
+            /** Format: date-time */
+            lastSeenAt: string | null;
+            /** @enum {string|null} */
+            gpsState: "STALE" | "OFFLINE" | null;
+            /** @enum {string|null} */
+            sourceMode: "TEST" | null;
+            /** @description Elapsed seconds since dueAt or lastSeenAt. Zero for returns that are not yet due; use dueAt and asOf for remaining time. */
+            ageSeconds: number;
+        };
+        AlertStatsResponse: {
+            total: number;
+            critical: number;
+            warning: number;
+            rentalOverdue: number;
+            rentalDueSoon: number;
+            gpsStale: number;
+        };
+        AlertRulesResponse: {
+            /** @enum {number} */
+            dueSoonSeconds: 86400;
+            /** @enum {number} */
+            gpsStaleAfterSeconds: 120;
+            /** @enum {number} */
+            gpsOfflineAfterSeconds: 600;
+        };
+        AlertPageResponse: {
+            page: number;
+            limit: number;
+            total: number;
+            data: components["schemas"]["AlertResponse"][];
+            /**
+             * Format: date-time
+             * @description Database time shared by calculations, counts and page rows.
+             */
+            asOf: string;
+            /** @description Counts respect vehicle/rental filters, before kind/severity filters. */
+            stats: components["schemas"]["AlertStatsResponse"];
+            rules: components["schemas"]["AlertRulesResponse"];
+            /** @enum {number} */
+            pollAfterSeconds: 60;
+        };
         CommercialMovementResponse: {
             /** Format: uuid */
             id: string;
@@ -1634,6 +1705,124 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Standard API error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    AlertsController_list: {
+        parameters: {
+            query?: {
+                page?: components["schemas"]["Object"];
+                limit?: components["schemas"]["Object"];
+                kind?: "RENTAL_OVERDUE" | "RENTAL_DUE_SOON" | "GPS_STALE";
+                severity?: "CRITICAL" | "WARNING";
+                vehicleId?: string;
+                rentalId?: string;
+            };
+            header?: {
+                "X-Business-Id"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlertPageResponse"];
+                };
             };
             /** @description Standard API error */
             400: {

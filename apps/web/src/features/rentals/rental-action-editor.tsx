@@ -1,6 +1,10 @@
 "use client";
 import { useState } from "react";
-import { Drawer } from "@/components/ui/drawer";
+import {
+  ConfirmDialog,
+  DialogActions,
+  FormDialog,
+} from "@/components/ui/form-dialog";
 import { Button, Input, Textarea } from "@/components/ui/primitives";
 import { MutationNotice } from "@/components/feedback/mutation-notice";
 import { useMutation } from "@/lib/api-client/use-mutation";
@@ -52,15 +56,31 @@ export function RentalActionEditor({
   const startAt = utcDateTime(range.startAt);
   const endAt = utcDateTime(range.endAt);
   const validRange = !!startAt && !!endAt && endAt > startAt;
+  const ActionDialog = action === "reserve" ? ConfirmDialog : FormDialog;
   return (
-    <Drawer
+    <ActionDialog
       busy={mutation.busy}
       title={titles[action]}
+      size={action === "edit" ? "wide" : undefined}
+      dirty={
+        range.startAt !== localDateTime(rental.startAt) ||
+        range.endAt !== localDateTime(rental.endAt) ||
+        customerId !== rental.customerId ||
+        vehicleId !== rental.vehicleId
+      }
+      footer={
+        <DialogActions
+          formId="rental-edit-action"
+          busy={mutation.busy}
+          onCancel={onClose}
+          submitLabel={titles[action]}
+        />
+      }
       onClose={() => {
         if (!mutation.busy) onClose();
       }}
     >
-      <div className="panel-body">
+      <div>
         <p>
           <strong>{rental.vehicle.licensePlate}</strong> ·{" "}
           {rental.customer.name}
@@ -380,17 +400,9 @@ export function RentalActionEditor({
                 </label>
               </>
             )}
-            <div className="rental-form-actions">
-              <Button type="submit" loading={mutation.busy}>
-                {mutation.busy ? "Đang xử lý…" : titles[action]}
-              </Button>
-              <Button type="button" variant="secondary" onClick={onClose}>
-                Đóng
-              </Button>
-            </div>
           </fieldset>
         </form>
       </div>
-    </Drawer>
+    </ActionDialog>
   );
 }

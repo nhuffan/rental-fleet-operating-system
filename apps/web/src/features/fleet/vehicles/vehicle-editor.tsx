@@ -1,7 +1,7 @@
 "use client";
 import type { Branch } from "@rental-fleet/contracts";
-import { Drawer } from "@/components/ui/drawer";
-import { Button, Input, Select } from "@/components/ui/primitives";
+import { DialogActions, FormDialog } from "@/components/ui/form-dialog";
+import { Input, Select } from "@/components/ui/primitives";
 import { MutationNotice } from "@/components/feedback/mutation-notice";
 import { useMutation } from "@/lib/api-client/use-mutation";
 import type { Vehicle, VehicleCreate, VehicleUpdate } from "./types";
@@ -20,16 +20,25 @@ export function VehicleEditor({
 }) {
   const mutation = useMutation(businessId);
   return (
-    <Drawer
+    <FormDialog
       busy={mutation.busy}
       title={vehicle ? "Chỉnh sửa xe" : "Thêm xe"}
       onClose={() => {
         if (!mutation.busy) onClose();
       }}
+      footer={
+        <DialogActions
+          formId="vehicle-form"
+          busy={mutation.busy}
+          onCancel={onClose}
+          submitLabel="Lưu xe"
+        />
+      }
     >
-      <div className="panel-body">
+      <div>
         <MutationNotice {...mutation} />
         <form
+          id="vehicle-form"
           onSubmit={async (e) => {
             e.preventDefault();
             const form = new FormData(e.currentTarget);
@@ -149,17 +158,9 @@ export function VehicleEditor({
                 </small>
               )}
             </label>
-            <div className="inline">
-              <Button type="submit" loading={mutation.busy}>
-                {mutation.busy ? "Đang lưu…" : "Lưu xe"}
-              </Button>
-              <Button variant="secondary" type="button" onClick={onClose}>
-                Hủy
-              </Button>
-            </div>
           </fieldset>
         </form>
       </div>
-    </Drawer>
+    </FormDialog>
   );
 }

@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { browserClient } from "@/lib/supabase/client";
 import { publicEnv } from "@/lib/env";
-import { Drawer } from "@/components/ui/drawer";
+import { DialogActions, FormDialog } from "@/components/ui/form-dialog";
 import { Button, Input, Select, Textarea } from "@/components/ui/primitives";
 import { MutationNotice } from "@/components/feedback/mutation-notice";
 import { RecordPicker } from "@/components/data-display/record-picker";
@@ -96,14 +96,29 @@ export function MovementEditor({
     return () => controller.abort();
   }, [businessId, rentalId, balanceScope, requiresRental, retry]);
   return (
-    <Drawer
+    <FormDialog
       title={kindLabels[kind]}
+      size="wide"
+      dirty={
+        rentalId !== (rental?.id ?? "") ||
+        !!vehicleId ||
+        link !== (rental ? "rental" : "none")
+      }
+      footer={
+        <DialogActions
+          formId="commercial-movement-form"
+          busy={mutation.busy}
+          onCancel={onClose}
+          submitLabel="Ghi nhận"
+          submitDisabled={needsBalance && !rentalBalance?.data}
+        />
+      }
       busy={mutation.busy}
       onClose={() => {
         if (!mutation.busy) onClose();
       }}
     >
-      <div className="panel-body">
+      <div>
         <MutationNotice error={error || mutation.error} message="" />
         <p className="quiet">
           Ghi nhận thủ công bằng VND nguyên đồng, không kết nối ngân hàng hoặc
@@ -211,6 +226,7 @@ export function MovementEditor({
           </div>
         )}
         <form
+          id="commercial-movement-form"
           onSubmit={async (event) => {
             event.preventDefault();
             setError("");
@@ -286,29 +302,31 @@ export function MovementEditor({
                 </Select>
               </label>
             )}
-            <label className="form-field">
-              Số tiền (VND){" "}
-              <Input
-                name="amount"
-                inputMode="numeric"
-                pattern="[1-9][0-9]{0,14}"
-                maxLength={15}
-                required
-                placeholder="Ví dụ: 1500000"
-              />
-              <small>
-                Nhập số nguyên dương; loại giao dịch xác định chiều thu/chi.
-              </small>
-            </label>
-            <label className="form-field">
-              Thời điểm giao dịch (giờ Việt Nam){" "}
-              <Input
-                name="occurredAt"
-                type="datetime-local"
-                required
-                defaultValue={localDateTime(new Date().toISOString())}
-              />
-            </label>
+            <div className="form-grid">
+              <label className="form-field">
+                Số tiền (VND){" "}
+                <Input
+                  name="amount"
+                  inputMode="numeric"
+                  pattern="[1-9][0-9]{0,14}"
+                  maxLength={15}
+                  required
+                  placeholder="Ví dụ: 1500000"
+                />
+                <small>
+                  Nhập số nguyên dương; loại giao dịch xác định chiều thu/chi.
+                </small>
+              </label>
+              <label className="form-field">
+                Thời điểm giao dịch (giờ Việt Nam){" "}
+                <Input
+                  name="occurredAt"
+                  type="datetime-local"
+                  required
+                  defaultValue={localDateTime(new Date().toISOString())}
+                />
+              </label>
+            </div>
             <label className="form-field">
               Mã tham chiếu <Input name="reference" maxLength={120} />
             </label>
@@ -326,21 +344,9 @@ export function MovementEditor({
                 Hoàn cọc không được vượt số dư cọc hiện có của hợp đồng.
               </p>
             )}
-            <div className="rental-form-actions">
-              <Button
-                type="submit"
-                loading={mutation.busy}
-                disabled={needsBalance && !rentalBalance?.data}
-              >
-                Ghi nhận
-              </Button>
-              <Button type="button" variant="secondary" onClick={onClose}>
-                Đóng
-              </Button>
-            </div>
           </fieldset>
         </form>
       </div>
-    </Drawer>
+    </FormDialog>
   );
 }

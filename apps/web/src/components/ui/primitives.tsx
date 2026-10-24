@@ -1,11 +1,13 @@
 import type {
   ButtonHTMLAttributes,
-  InputHTMLAttributes,
-  SelectHTMLAttributes,
   TextareaHTMLAttributes,
   ReactNode,
 } from "react";
 import { Icon, type IconName } from "./icon";
+export {
+  InputControl as Input,
+  SelectControl as Select,
+} from "./field-controls";
 export function Button({
   variant = "primary",
   className = "",
@@ -129,23 +131,6 @@ export function Skeleton({ className = "" }: { className?: string }) {
   return <div aria-hidden="true" className={`skeleton ${className}`} />;
 }
 
-export function Input({
-  className = "",
-  ...props
-}: InputHTMLAttributes<HTMLInputElement>) {
-  return (
-    <input
-      className={`${props.type === "checkbox" || props.type === "radio" ? "choice-control" : "form-control"} ${className}`}
-      {...props}
-    />
-  );
-}
-export function Select({
-  className = "",
-  ...props
-}: SelectHTMLAttributes<HTMLSelectElement>) {
-  return <select className={`form-control ${className}`} {...props} />;
-}
 export function Textarea({
   className = "",
   ...props

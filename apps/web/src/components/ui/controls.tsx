@@ -12,7 +12,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { Icon } from "./icon";
-import { Input } from "./primitives";
+export { DateControl as DateInput } from "./field-controls";
 
 export function FilterBar({
   className = "",
@@ -59,16 +59,6 @@ export function SearchField({
   );
 }
 
-// Date and datetime values remain native, including browser validation and local/UTC conversion at call sites.
-export function DateInput({
-  type = "date",
-  ...props
-}: Omit<InputHTMLAttributes<HTMLInputElement>, "type"> & {
-  type?: "date" | "datetime-local";
-}) {
-  return <Input type={type} {...props} />;
-}
-
 export type SelectOption = { value: string; label: string; disabled?: boolean };
 export function Combobox({
   id,
@@ -106,6 +96,7 @@ export function Combobox({
   const root = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const popover = useRef<HTMLDivElement>(null);
+  const [portalHost, setPortalHost] = useState<HTMLElement | null>(null);
   const [position, setPosition] = useState({
     left: 0,
     top: 0,
@@ -176,6 +167,7 @@ export function Combobox({
   function show(last = false) {
     if (disabled || loading) return;
     updatePosition();
+    setPortalHost(root.current?.closest("dialog") ?? document.body);
     setQuery("");
     const available = options.filter((option) => !option.disabled);
     const selectedIndex = available.findIndex(
@@ -282,6 +274,7 @@ export function Combobox({
         <Icon name="chevron" size={15} />
       </button>
       {open &&
+        portalHost &&
         createPortal(
           <div
             ref={popover}
@@ -357,7 +350,7 @@ export function Combobox({
               </p>
             )}
           </div>,
-          document.body,
+          portalHost,
         )}
     </div>
   );

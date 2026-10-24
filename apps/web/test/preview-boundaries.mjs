@@ -31,6 +31,7 @@ for (const path of [
   "/app/users",
   "/app/audit",
   "/app/commercial",
+  "/app/alerts",
   "/app/commercial/00000000-0000-4000-8000-000000000001",
   "/app/fleet-map",
   "/app/trips",

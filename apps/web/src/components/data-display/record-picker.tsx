@@ -5,6 +5,7 @@ import { browserClient } from "@/lib/supabase/client";
 import { publicEnv } from "@/lib/env";
 import {
   Button,
+  Input,
   EmptyState,
   RefreshStatus,
   Skeleton,
@@ -112,7 +113,7 @@ export function RecordPicker<T extends { id: string }>({
   }, [businessId, path, query, router, scope]);
   const pending = loading || (!result && !error);
   return (
-    <div className="rental-picker">
+    <div className="rental-picker" data-dirty-ignore>
       <form
         className="fleet-device-search"
         onSubmit={(e) => {
@@ -175,7 +176,7 @@ export function RecordPicker<T extends { id: string }>({
             <legend>{title}</legend>
             {result.data.map((item) => (
               <label className="fleet-device-option" key={item.id}>
-                <input
+                <Input
                   type="radio"
                   name={title}
                   checked={selected === item.id}

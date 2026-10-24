@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import {
   Badge,
   Button,
+  Input,
+  Select,
   EmptyState,
   Panel,
   PanelHeader,
@@ -144,14 +146,14 @@ export function LiveFleetMap({
             setSelected(null);
           }}
         >
-          <input
+          <Input
             className="search-input"
             aria-label="Tìm xe trên bản đồ"
             placeholder="Biển số, hãng, dòng xe…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
-          <select
+          <Select
             className="filter-select"
             aria-label="Trạng thái GPS"
             value={filters.state}
@@ -166,7 +168,7 @@ export function LiveFleetMap({
                 {label}
               </option>
             ))}
-          </select>
+          </Select>
           <Button type="submit" variant="secondary">
             Tìm xe
           </Button>

@@ -5,11 +5,13 @@ import type { Me, Membership, Page } from "@rental-fleet/contracts";
 import { useMutation } from "@/lib/api-client/use-mutation";
 import {
   Button,
+  Input,
+  Select,
   Panel,
   PanelHeader,
   StatusBadge,
 } from "@/components/ui/primitives";
-import { Drawer } from "@/components/ui/drawer";
+import { DialogActions, FormDialog } from "@/components/ui/form-dialog";
 import { Icon } from "@/components/ui/icon";
 import {
   DataTable,
@@ -105,7 +107,7 @@ export function MembersPanel({
         />
         <div className="table-toolbar">
           <SearchInput value={query} onChange={setQuery} />
-          <select
+          <Select
             className="filter-select"
             aria-label="Lọc trạng thái Owner"
             value={status}
@@ -114,7 +116,7 @@ export function MembersPanel({
             <option value="ALL">Tất cả trạng thái</option>
             <option value="ACTIVE">Hoạt động</option>
             <option value="DISABLED">Đã vô hiệu hóa</option>
-          </select>
+          </Select>
         </div>
         <DataTable
           rows={rows}
@@ -131,13 +133,22 @@ export function MembersPanel({
         quản lý doanh nghiệp. Luôn giữ ít nhất một Owner hoạt động.
       </p>
       {editing && (
-        <Drawer
+        <FormDialog
+          busy={mutation.busy}
+          footer={
+            <DialogActions
+              formId="owner-access-form"
+              busy={mutation.busy}
+              onCancel={() => setEditing(null)}
+              submitLabel="Lưu quyền truy cập"
+            />
+          }
           title={member ? "Cập nhật quyền truy cập Owner" : "Thêm Owner"}
           onClose={() => {
             if (!mutation.busy) setEditing(null);
           }}
         >
-          <div className="panel-body">
+          <div>
             <MutationNotice {...mutation} />
             <p className="quiet">
               {member
@@ -145,6 +156,7 @@ export function MembersPanel({
                 : "Nhập User ID của tài khoản đã được tạo trong Supabase Auth để cấp toàn quyền Owner. Thao tác này không gửi thư mời email."}
             </p>
             <form
+              id="owner-access-form"
               onSubmit={async (e) => {
                 e.preventDefault();
                 const f = new FormData(e.currentTarget);
@@ -167,7 +179,7 @@ export function MembersPanel({
                 {!member && (
                   <label className="form-field">
                     Supabase Auth User ID
-                    <input
+                    <Input
                       name="userId"
                       required
                       pattern="[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
@@ -179,28 +191,16 @@ export function MembersPanel({
                 {member && (
                   <label className="form-field">
                     Trạng thái
-                    <select name="status" defaultValue={member.status}>
+                    <Select name="status" defaultValue={member.status}>
                       <option value="ACTIVE">Hoạt động</option>
                       <option value="DISABLED">Vô hiệu hóa</option>
-                    </select>
+                    </Select>
                   </label>
                 )}
-                <div className="inline">
-                  <Button type="submit" disabled={mutation.busy}>
-                    {mutation.busy ? "Đang lưu…" : "Lưu quyền truy cập"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() => setEditing(null)}
-                  >
-                    Hủy
-                  </Button>
-                </div>
               </fieldset>
             </form>
           </div>
-        </Drawer>
+        </FormDialog>
       )}
     </>
   );

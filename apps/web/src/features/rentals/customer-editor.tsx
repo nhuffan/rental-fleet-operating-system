@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
-import { Drawer } from "@/components/ui/drawer";
-import { Button, Input, Select, Textarea } from "@/components/ui/primitives";
+import { DialogActions, FormDialog } from "@/components/ui/form-dialog";
+import { Input, Select, Textarea } from "@/components/ui/primitives";
 import { MutationNotice } from "@/components/feedback/mutation-notice";
 import { useMutation } from "@/lib/api-client/use-mutation";
 import type { Customer, CustomerCreate } from "./types";
@@ -19,19 +19,28 @@ export function CustomerEditor({
   const mutation = useMutation(businessId);
   const [validation, setValidation] = useState("");
   return (
-    <Drawer
+    <FormDialog
       busy={mutation.busy}
       title={customer ? "Chỉnh sửa khách hàng" : "Thêm khách hàng"}
       onClose={() => {
         if (!mutation.busy) onClose();
       }}
+      footer={
+        <DialogActions
+          formId="customer-form"
+          busy={mutation.busy}
+          onCancel={onClose}
+          submitLabel="Lưu khách hàng"
+        />
+      }
     >
-      <div className="panel-body">
+      <div>
         <MutationNotice
           error={validation || mutation.error}
           message={mutation.message}
         />
         <form
+          id="customer-form"
           onSubmit={async (e) => {
             e.preventDefault();
             const form = new FormData(e.currentTarget);
@@ -81,28 +90,30 @@ export function CustomerEditor({
                 defaultValue={customer?.name}
               />
             </label>
-            <label className="form-field">
-              Số điện thoại
-              <Input
-                name="phone"
-                type="tel"
-                maxLength={32}
-                defaultValue={customer?.phone ?? ""}
-              />
-              <small>
-                Nhập số điện thoại hoặc email; thông tin liên hệ có thể dùng
-                chung.
-              </small>
-            </label>
-            <label className="form-field">
-              Email
-              <Input
-                name="email"
-                type="email"
-                maxLength={254}
-                defaultValue={customer?.email ?? ""}
-              />
-            </label>
+            <div className="form-grid">
+              <label className="form-field">
+                Số điện thoại
+                <Input
+                  name="phone"
+                  type="tel"
+                  maxLength={32}
+                  defaultValue={customer?.phone ?? ""}
+                />
+                <small>
+                  Nhập số điện thoại hoặc email; thông tin liên hệ có thể dùng
+                  chung.
+                </small>
+              </label>
+              <label className="form-field">
+                Email
+                <Input
+                  name="email"
+                  type="email"
+                  maxLength={254}
+                  defaultValue={customer?.email ?? ""}
+                />
+              </label>
+            </div>
             <label className="form-field">
               Trạng thái
               <Select name="status" defaultValue={customer?.status ?? "ACTIVE"}>
@@ -119,17 +130,9 @@ export function CustomerEditor({
                 defaultValue={customer?.notes ?? ""}
               />
             </label>
-            <div className="inline">
-              <Button type="submit" loading={mutation.busy}>
-                {mutation.busy ? "Đang lưu…" : "Lưu khách hàng"}
-              </Button>
-              <Button type="button" variant="secondary" onClick={onClose}>
-                Hủy
-              </Button>
-            </div>
           </fieldset>
         </form>
       </div>
-    </Drawer>
+    </FormDialog>
   );
 }

@@ -1,3 +1,5 @@
+import { AlertsController } from './alerts/alerts.controller.js';
+import { AlertsService } from './alerts/alerts.service.js';
 import { CommercialController } from './commercial/commercial.controller.js';
 import { CommercialService } from './commercial/commercial.service.js';
 import { PlatformController } from './platform/platform.controller.js';
@@ -24,6 +26,7 @@ import { AuthGuard, TenantGuard, PermissionGuard } from './auth/guards.js';
 @Module({
   controllers: [
     AppController,
+    AlertsController,
     CommercialController,
     PlatformController,
     CoreController,
@@ -35,6 +38,7 @@ import { AuthGuard, TenantGuard, PermissionGuard } from './auth/guards.js';
   ],
   providers: [
     Database,
+    AlertsService,
     CommercialService,
     PlatformService,
     PlatformGuard,

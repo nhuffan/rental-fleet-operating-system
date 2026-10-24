@@ -201,6 +201,299 @@
         ]
       }
     },
+    "/api/v1/alerts": {
+      "get": {
+        "operationId": "AlertsController_list",
+        "parameters": [
+          {
+            "name": "X-Business-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/Object"
+                }
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/Object"
+                }
+              ]
+            }
+          },
+          {
+            "name": "kind",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "RENTAL_OVERDUE",
+                "RENTAL_DUE_SOON",
+                "GPS_STALE"
+              ]
+            }
+          },
+          {
+            "name": "severity",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "CRITICAL",
+                "WARNING"
+              ]
+            }
+          },
+          {
+            "name": "vehicleId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "rentalId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertPageResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Operational alerts"
+        ]
+      }
+    },
     "/api/v1/commercial/movements": {
       "get": {
         "operationId": "CommercialController_list",
@@ -14782,6 +15075,196 @@
       "Object": {
         "type": "object",
         "properties": {}
+      },
+      "AlertResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Stable derived identity; not a persisted event or authorization credential."
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "RENTAL_OVERDUE",
+              "RENTAL_DUE_SOON",
+              "GPS_STALE"
+            ]
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "CRITICAL",
+              "WARNING"
+            ]
+          },
+          "vehicleId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "licensePlate": {
+            "type": "string"
+          },
+          "rentalId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "dueAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "lastSeenAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "gpsState": {
+            "type": "string",
+            "enum": [
+              "STALE",
+              "OFFLINE"
+            ],
+            "nullable": true
+          },
+          "sourceMode": {
+            "type": "string",
+            "enum": [
+              "TEST"
+            ],
+            "nullable": true
+          },
+          "ageSeconds": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Elapsed seconds since dueAt or lastSeenAt. Zero for returns that are not yet due; use dueAt and asOf for remaining time."
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "severity",
+          "vehicleId",
+          "licensePlate",
+          "rentalId",
+          "dueAt",
+          "lastSeenAt",
+          "gpsState",
+          "sourceMode",
+          "ageSeconds"
+        ]
+      },
+      "AlertStatsResponse": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "number"
+          },
+          "critical": {
+            "type": "number"
+          },
+          "warning": {
+            "type": "number"
+          },
+          "rentalOverdue": {
+            "type": "number"
+          },
+          "rentalDueSoon": {
+            "type": "number"
+          },
+          "gpsStale": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "total",
+          "critical",
+          "warning",
+          "rentalOverdue",
+          "rentalDueSoon",
+          "gpsStale"
+        ]
+      },
+      "AlertRulesResponse": {
+        "type": "object",
+        "properties": {
+          "dueSoonSeconds": {
+            "type": "number",
+            "enum": [
+              86400
+            ]
+          },
+          "gpsStaleAfterSeconds": {
+            "type": "number",
+            "enum": [
+              120
+            ]
+          },
+          "gpsOfflineAfterSeconds": {
+            "type": "number",
+            "enum": [
+              600
+            ]
+          }
+        },
+        "required": [
+          "dueSoonSeconds",
+          "gpsStaleAfterSeconds",
+          "gpsOfflineAfterSeconds"
+        ]
+      },
+      "AlertPageResponse": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AlertResponse"
+            }
+          },
+          "asOf": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Database time shared by calculations, counts and page rows."
+          },
+          "stats": {
+            "description": "Counts respect vehicle/rental filters, before kind/severity filters.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AlertStatsResponse"
+              }
+            ]
+          },
+          "rules": {
+            "$ref": "#/components/schemas/AlertRulesResponse"
+          },
+          "pollAfterSeconds": {
+            "type": "number",
+            "enum": [
+              60
+            ]
+          }
+        },
+        "required": [
+          "page",
+          "limit",
+          "total",
+          "data",
+          "asOf",
+          "stats",
+          "rules",
+          "pollAfterSeconds"
+        ]
       },
       "CommercialMovementResponse": {
         "type": "object",

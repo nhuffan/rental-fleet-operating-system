@@ -1,0 +1,156 @@
+/* Centered editors share one modal shell and never inherit narrow drawer geometry. */
+.form-dialog {
+  position: fixed;
+  inset: 0;
+  width: min(800px, calc(100vw - 48px));
+  max-width: 960px;
+  height: fit-content;
+  max-height: calc(100dvh - 64px);
+  margin: auto;
+  padding: 0;
+  overflow: visible;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-popover);
+}
+.form-dialog::backdrop {
+  background: var(--scrim);
+}
+.form-dialog-wide {
+  width: min(940px, calc(100vw - 48px));
+}
+.confirm-dialog {
+  width: min(480px, calc(100vw - 48px));
+}
+.form-dialog-frame {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100dvh - 66px);
+  min-height: 0;
+  overflow: hidden;
+  border-radius: inherit;
+}
+.form-dialog-heading {
+  display: flex;
+  flex-shrink: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 22px 26px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.form-dialog-heading h2 {
+  margin: 0;
+  padding-top: 7px;
+  font-size: var(--text-lg);
+  letter-spacing: -0.3px;
+}
+.form-dialog-heading p {
+  max-width: 640px;
+  margin: 7px 0 0;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+.form-dialog-heading > .button {
+  min-height: 36px;
+  width: 36px;
+  padding: 8px;
+  flex-shrink: 0;
+}
+.form-dialog-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding: 24px 26px;
+}
+.form-dialog-body > .panel-body,
+.form-dialog-body > .form-section,
+.form-dialog-body > form {
+  padding: 0;
+}
+.form-dialog-body .form-grid {
+  gap: 4px 20px;
+}
+.form-dialog-body .form-field:last-child {
+  margin-bottom: 0;
+}
+.form-dialog-body .form-stack {
+  max-width: none;
+}
+.form-dialog-body .rental-form-actions,
+.form-dialog-body .form-actions {
+  margin: 0;
+}
+.form-dialog-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  flex-shrink: 0;
+  gap: 10px;
+  padding: 16px 26px;
+  border-top: 1px solid var(--border);
+  background: var(--surface-muted);
+}
+.form-dialog-footer[hidden],
+.form-dialog-body[hidden] {
+  display: none;
+}
+.dialog-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  width: 100%;
+}
+.form-dialog-discard {
+  padding: 30px 26px;
+  max-width: 660px;
+}
+.form-dialog-discard p {
+  margin: 16px 0 0;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+.dialog-symbol {
+  display: inline-grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  color: var(--warning);
+  background: var(--warning-muted);
+  border: 1px solid var(--warning-border);
+  border-radius: var(--radius-card);
+}
+@media (max-width: 640px) {
+  .form-dialog,
+  .form-dialog-wide,
+  .confirm-dialog {
+    width: calc(100vw - 24px);
+    max-height: calc(100dvh - 24px);
+    border-radius: 12px;
+  }
+  .form-dialog-frame {
+    max-height: calc(100dvh - 26px);
+  }
+  .form-dialog-heading,
+  .form-dialog-footer {
+    padding: 16px;
+  }
+  .form-dialog-body,
+  .form-dialog-discard {
+    padding: 20px 16px;
+  }
+  .form-dialog-body .form-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+  .dialog-actions > .button {
+    flex: 1;
+  }
+}

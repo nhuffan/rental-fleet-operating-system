@@ -3,6 +3,7 @@ import type { Business, Me } from "@rental-fleet/contracts";
 import { useMutation } from "@/lib/api-client/use-mutation";
 import {
   Button,
+  Input,
   Panel,
   PanelHeader,
   StatusBadge,
@@ -49,7 +50,7 @@ export function BusinessProfile({
                 <p>Thông tin này áp dụng cho toàn bộ doanh nghiệp.</p>
                 <label className="form-field">
                   Tên doanh nghiệp
-                  <input
+                  <Input
                     name="name"
                     defaultValue={business.name}
                     maxLength={120}
@@ -61,7 +62,7 @@ export function BusinessProfile({
                 <div className="form-grid">
                   <label className="form-field">
                     Múi giờ
-                    <input
+                    <Input
                       name="timezone"
                       defaultValue={business.timezone}
                       maxLength={80}
@@ -71,7 +72,7 @@ export function BusinessProfile({
                   </label>
                   <label className="form-field">
                     Tiền tệ
-                    <input
+                    <Input
                       name="currency"
                       defaultValue={business.currency}
                       pattern="[A-Z]{3}"
