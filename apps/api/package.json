@@ -28,9 +28,12 @@
     "gps:poc": "tsx scripts/telematics/traccar-poc.ts",
     "gps:plans": "tsx scripts/telematics/query-plans.ts",
     "gps:retention:verify": "tsx scripts/telematics/retention-verify.ts",
-    "platform:seed": "tsx scripts/platform-seed.ts"
+    "platform:seed": "tsx scripts/platform-seed.ts",
+    "evidence:storage": "tsx scripts/evidence-storage.ts provision",
+    "evidence:cleanup": "tsx scripts/evidence-storage.ts cleanup"
   },
   "dependencies": {
+    "@ffprobe-installer/ffprobe": "2.1.2",
     "@nestjs/common": "^12.0.1",
     "@nestjs/core": "^12.0.1",
     "@nestjs/platform-express": "^12.0.1",
@@ -40,9 +43,11 @@
     "class-validator": "0.15.1",
     "drizzle-orm": "0.45.3",
     "express": "5.2.1",
+    "ffmpeg-static": "5.3.0",
     "pg": "8.23.0",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "sharp": "0.35.4"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.8",

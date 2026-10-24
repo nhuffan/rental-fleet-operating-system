@@ -1,3 +1,6 @@
+import { EvidenceCleanup } from './evidence/evidence-cleanup.js';
+import { EvidenceController } from './evidence/evidence.controller.js';
+import { EvidenceService } from './evidence/evidence.service.js';
 import { AlertsController } from './alerts/alerts.controller.js';
 import { AlertsService } from './alerts/alerts.service.js';
 import { CommercialController } from './commercial/commercial.controller.js';
@@ -31,6 +34,7 @@ import { AuthGuard, TenantGuard, PermissionGuard } from './auth/guards.js';
     PlatformController,
     CoreController,
     RentalController,
+    EvidenceController,
     FleetController,
     GpsController,
     TripController,
@@ -48,6 +52,8 @@ import { AuthGuard, TenantGuard, PermissionGuard } from './auth/guards.js';
     GpsIngress,
     TripService,
     RentalService,
+    EvidenceService,
+    EvidenceCleanup,
     AuthGuard,
     TenantGuard,
     PermissionGuard,

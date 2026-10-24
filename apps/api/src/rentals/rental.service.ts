@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
+import { attachEvidence } from '../evidence/evidence.service.js';
 import { validateSync } from 'class-validator';
 import {
   and,
@@ -720,16 +721,28 @@ export class RentalService {
         const timestamp = new Date(
           Math.max(now.getTime(), before.reservedAt?.getTime() ?? 0),
         );
-        await tx.insert(rentalInspections).values({
-          ...inspection,
-          businessId: c.businessId,
-          rentalId: id,
-          vehicleId: before.vehicleId,
-          type: 'HANDOVER',
-          actorId: c.userId,
-          recordedAt: timestamp,
-          odometer: body.odometerStart,
-        });
+        const [snapshot] = await tx
+          .insert(rentalInspections)
+          .values({
+            ...inspection,
+            businessId: c.businessId,
+            rentalId: id,
+            vehicleId: before.vehicleId,
+            type: 'HANDOVER',
+            actorId: c.userId,
+            recordedAt: timestamp,
+            odometer: body.odometerStart,
+          })
+          .returning({ id: rentalInspections.id });
+        await attachEvidence(
+          tx,
+          c,
+          before,
+          snapshot.id,
+          'HANDOVER',
+          body.evidenceUploadIds,
+          timestamp,
+        );
         await tx
           .update(rentals)
           .set({
@@ -810,16 +823,28 @@ export class RentalService {
         const timestamp = new Date(
           Math.max(now.getTime(), before.handedOverAt?.getTime() ?? 0),
         );
-        await tx.insert(rentalInspections).values({
-          ...inspection,
-          businessId: c.businessId,
-          rentalId: id,
-          vehicleId: before.vehicleId,
-          type: 'RETURN',
-          actorId: c.userId,
-          recordedAt: timestamp,
-          odometer: body.odometerEnd,
-        });
+        const [snapshot] = await tx
+          .insert(rentalInspections)
+          .values({
+            ...inspection,
+            businessId: c.businessId,
+            rentalId: id,
+            vehicleId: before.vehicleId,
+            type: 'RETURN',
+            actorId: c.userId,
+            recordedAt: timestamp,
+            odometer: body.odometerEnd,
+          })
+          .returning({ id: rentalInspections.id });
+        await attachEvidence(
+          tx,
+          c,
+          before,
+          snapshot.id,
+          'RETURN',
+          body.evidenceUploadIds,
+          timestamp,
+        );
         await tx
           .update(rentals)
           .set({

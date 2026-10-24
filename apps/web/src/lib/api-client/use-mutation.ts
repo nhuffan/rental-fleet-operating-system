@@ -107,6 +107,12 @@ export function useMutation(businessId: string) {
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
         const messages: Record<string, string> = {
+          EVIDENCE_INVALID_UPLOAD:
+            "Có file chứng cứ chưa sẵn sàng hoặc đã hết hạn. Bỏ file đó và chọn lại trước khi xác nhận biên bản.",
+          EVIDENCE_UPLOAD_EXPIRED:
+            "Phiên chứng cứ đã hết hạn. Bỏ file đó và chọn lại trước khi xác nhận biên bản.",
+          EVIDENCE_QUOTA_EXCEEDED:
+            "Chứng cứ vượt giới hạn đã cấu hình của biên bản. Hãy bỏ bớt file rồi thử lại.",
           COMMERCIAL_MOVEMENT_NOT_FOUND:
             "Không tìm thấy giao dịch trong doanh nghiệp hiện tại.",
           COMMERCIAL_ALREADY_REVERSED:

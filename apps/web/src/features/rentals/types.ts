@@ -16,3 +16,10 @@ export type RentalInspectionInput = Schemas["RentalInspectionInput"];
 export type RentalInspections = Schemas["RentalInspectionsResponse"];
 export type VehicleLatestInspection =
   Schemas["VehicleLatestInspectionResponse"];
+
+export type Evidence = Schemas["EvidenceResponse"];
+export type RentalEvidence = Schemas["RentalEvidenceResponse"];
+export type EvidenceUpload = Schemas["EvidenceUploadResponse"];
+export type EvidenceUploadAuthorization =
+  Schemas["EvidenceUploadAuthorization"];
+export type EvidenceReadAuthorization = Schemas["EvidenceReadAuthorization"];

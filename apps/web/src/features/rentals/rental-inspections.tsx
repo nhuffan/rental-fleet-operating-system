@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { EvidenceGallery } from "./evidence/evidence-gallery";
 import {
   Badge,
   EmptyState,
@@ -114,8 +115,12 @@ function SignedNumber({ value, unit }: { value: number; unit: string }) {
 }
 export function RentalInspections({
   inspections,
+  rentalId,
+  businessId,
 }: {
   inspections: RentalInspection[];
+  rentalId: string;
+  businessId: string;
 }) {
   const handover = inspections.find((item) => item.type === "HANDOVER");
   const returned = inspections.find((item) => item.type === "RETURN");
@@ -156,7 +161,14 @@ export function RentalInspections({
               }
             />
             {inspection ? (
-              <InspectionSnapshot inspection={inspection} />
+              <>
+                <InspectionSnapshot inspection={inspection} />
+                <EvidenceGallery
+                  rentalId={rentalId}
+                  businessId={businessId}
+                  type={inspection.type}
+                />
+              </>
             ) : (
               <EmptyState
                 title="Chưa có biên bản"

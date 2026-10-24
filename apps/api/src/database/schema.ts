@@ -452,6 +452,13 @@ export const rentalInspections = pgTable(
       columns: [table.businessId, table.rentalId, table.vehicleId],
       foreignColumns: [rentals.businessId, rentals.id, rentals.vehicleId],
     }).onDelete('restrict'),
+    unique('rental_inspections_evidence_identity_unique').on(
+      table.businessId,
+      table.id,
+      table.rentalId,
+      table.vehicleId,
+      table.type,
+    ),
     unique('rental_inspections_rental_type_unique').on(
       table.businessId,
       table.rentalId,
@@ -498,6 +505,199 @@ export const rentalInspections = pgTable(
       table.vehicleId,
       table.recordedAt.desc(),
       table.id.desc(),
+    ),
+  ],
+);
+
+// SQL owns bounded metadata/path checks, immutable evidence triggers and read-only RLS.
+export const evidenceUploads = pgTable(
+  'inspection_uploads',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    businessId: uuid('business_id')
+      .notNull()
+      .references(() => businesses.id, { onDelete: 'restrict' }),
+    rentalId: uuid('rental_id').notNull(),
+    vehicleId: uuid('vehicle_id').notNull(),
+    type: text().notNull().$type<'HANDOVER' | 'RETURN'>(),
+    kind: text().notNull().$type<'IMAGE' | 'VIDEO'>(),
+    category: text()
+      .notNull()
+      .$type<
+        | 'FRONT'
+        | 'REAR'
+        | 'LEFT'
+        | 'RIGHT'
+        | 'INTERIOR'
+        | 'DASHBOARD'
+        | 'DAMAGE'
+        | 'OTHER'
+      >(),
+    uploadedBy: uuid('uploaded_by').notNull(),
+    idempotencyKey: uuid('idempotency_key').notNull(),
+    status: text()
+      .notNull()
+      .default('PENDING')
+      .$type<
+        | 'PENDING'
+        | 'VERIFYING'
+        | 'VERIFIED'
+        | 'ATTACHED'
+        | 'CANCELLED'
+        | 'REJECTED'
+        | 'PURGED'
+      >(),
+    bucket: text().notNull(),
+    pendingKey: text('pending_key').notNull(),
+    objectKey: text('object_key').notNull(),
+    declaredMime: text('declared_mime').notNull(),
+    declaredBytes: integer('declared_bytes').notNull(),
+    mimeType: text('mime_type'),
+    bytes: integer(),
+    width: integer(),
+    height: integer(),
+    durationSeconds: doublePrecision('duration_seconds'),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    holdUntil: timestamp('hold_until', { withTimezone: true }),
+    verifiedAt: timestamp('verified_at', { withTimezone: true }),
+    leaseUntil: timestamp('lease_until', { withTimezone: true }),
+    reservedBytes: integer('reserved_bytes').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    foreignKey({
+      name: 'inspection_uploads_rental_tenant_fk',
+      columns: [table.businessId, table.rentalId, table.vehicleId],
+      foreignColumns: [rentals.businessId, rentals.id, rentals.vehicleId],
+    }).onDelete('restrict'),
+    unique('inspection_uploads_idempotency_unique').on(
+      table.businessId,
+      table.uploadedBy,
+      table.idempotencyKey,
+    ),
+    unique('inspection_uploads_identity_unique').on(
+      table.businessId,
+      table.id,
+      table.rentalId,
+      table.vehicleId,
+      table.type,
+    ),
+    unique('inspection_uploads_pending_unique').on(
+      table.bucket,
+      table.pendingKey,
+    ),
+    unique('inspection_uploads_object_unique').on(
+      table.bucket,
+      table.objectKey,
+    ),
+    index('inspection_uploads_milestone').on(
+      table.businessId,
+      table.rentalId,
+      table.type,
+      table.status,
+    ),
+    index('inspection_uploads_cleanup')
+      .on(table.holdUntil, table.id)
+      .where(sql`${table.holdUntil} is not null`),
+  ],
+);
+
+export const evidenceAttachments = pgTable(
+  'inspection_evidence',
+  {
+    id: uuid().primaryKey(),
+    businessId: uuid('business_id')
+      .notNull()
+      .references(() => businesses.id, { onDelete: 'restrict' }),
+    rentalId: uuid('rental_id').notNull(),
+    vehicleId: uuid('vehicle_id').notNull(),
+    inspectionId: uuid('inspection_id').notNull(),
+    type: text().notNull().$type<'HANDOVER' | 'RETURN'>(),
+    kind: text().notNull().$type<'IMAGE' | 'VIDEO'>(),
+    category: text()
+      .notNull()
+      .$type<
+        | 'FRONT'
+        | 'REAR'
+        | 'LEFT'
+        | 'RIGHT'
+        | 'INTERIOR'
+        | 'DASHBOARD'
+        | 'DAMAGE'
+        | 'OTHER'
+      >(),
+    uploadedBy: uuid('uploaded_by').notNull(),
+    bucket: text().notNull(),
+    objectKey: text('object_key').notNull(),
+    mimeType: text('mime_type').notNull(),
+    bytes: integer().notNull(),
+    width: integer().notNull(),
+    height: integer().notNull(),
+    durationSeconds: doublePrecision('duration_seconds'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    foreignKey({
+      name: 'inspection_evidence_inspection_tenant_fk',
+      columns: [
+        table.businessId,
+        table.inspectionId,
+        table.rentalId,
+        table.vehicleId,
+        table.type,
+      ],
+      foreignColumns: [
+        rentalInspections.businessId,
+        rentalInspections.id,
+        rentalInspections.rentalId,
+        rentalInspections.vehicleId,
+        rentalInspections.type,
+      ],
+    }).onDelete('restrict'),
+    foreignKey({
+      name: 'inspection_evidence_upload_tenant_fk',
+      columns: [
+        table.businessId,
+        table.id,
+        table.rentalId,
+        table.vehicleId,
+        table.type,
+      ],
+      foreignColumns: [
+        evidenceUploads.businessId,
+        evidenceUploads.id,
+        evidenceUploads.rentalId,
+        evidenceUploads.vehicleId,
+        evidenceUploads.type,
+      ],
+    }).onDelete('restrict'),
+    unique('inspection_evidence_object_unique').on(
+      table.bucket,
+      table.objectKey,
+    ),
+    index('inspection_evidence_rental').on(
+      table.businessId,
+      table.rentalId,
+      table.type,
+      table.createdAt,
+      table.id,
+    ),
+    index('inspection_evidence_vehicle').on(
+      table.businessId,
+      table.vehicleId,
+      table.createdAt.desc(),
+      table.id,
+    ),
+    index('inspection_evidence_inspection').on(
+      table.businessId,
+      table.inspectionId,
+      table.rentalId,
+      table.vehicleId,
+      table.type,
     ),
   ],
 );

@@ -11,3 +11,10 @@ allowBuilds:
   unrs-resolver: true
 
   "@scarf/scarf": false
+  ffmpeg-static: true
+  '@ffprobe-installer/darwin-arm64': true
+  '@ffprobe-installer/darwin-x64': true
+  '@ffprobe-installer/linux-arm': true
+  '@ffprobe-installer/linux-arm64': true
+  '@ffprobe-installer/linux-ia32': true
+  '@ffprobe-installer/linux-x64': true

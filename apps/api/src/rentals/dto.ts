@@ -2,6 +2,9 @@ import { Transform, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsBoolean,
+  IsArray,
+  ArrayMaxSize,
+  ArrayUnique,
   IsDefined,
   IsObject,
   IsIn,
@@ -341,6 +344,13 @@ export class RentalInspectionInput {
   notes?: string;
 }
 export class RentalHandover {
+  @ApiPropertyOptional({ type: [String], format: 'uuid', maxItems: 9 })
+  @ValidateIf(optional)
+  @IsArray()
+  @ArrayMaxSize(9)
+  @ArrayUnique()
+  @IsUUID('all', { each: true })
+  evidenceUploadIds?: string[];
   @ApiProperty({ minimum: 0, maximum: 2147483647 })
   @IsInt()
   @Min(0)
@@ -354,6 +364,13 @@ export class RentalHandover {
   inspection!: RentalInspectionInput;
 }
 export class RentalReturn {
+  @ApiPropertyOptional({ type: [String], format: 'uuid', maxItems: 9 })
+  @ValidateIf(optional)
+  @IsArray()
+  @ArrayMaxSize(9)
+  @ArrayUnique()
+  @IsUUID('all', { each: true })
+  evidenceUploadIds?: string[];
   @ApiProperty({ minimum: 0, maximum: 2147483647 })
   @IsInt()
   @Min(0)

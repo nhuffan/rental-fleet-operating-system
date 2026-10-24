@@ -4,6 +4,8 @@ import { FormDialog, DialogActions } from "@/components/ui/form-dialog";
 import { Input, Select, Textarea } from "@/components/ui/primitives";
 import { MutationNotice } from "@/components/feedback/mutation-notice";
 import { useMutation } from "@/lib/api-client/use-mutation";
+import { EvidenceUploader } from "./evidence/evidence-uploader";
+import { useEvidenceDraft } from "./evidence/use-evidence-draft";
 import {
   conditionLabels,
   checklistLabels,
@@ -25,6 +27,11 @@ export function RentalInspectionEditor({
   onSaved: (message: string) => void;
 }) {
   const mutation = useMutation(businessId);
+  const evidence = useEvidenceDraft(
+    rental.id,
+    businessId,
+    action === "return" ? "RETURN" : "HANDOVER",
+  );
   const submitting = useRef(false);
   const [error, setError] = useState("");
   const [exterior, setExterior] = useState("");
@@ -41,12 +48,19 @@ export function RentalInspectionEditor({
       description={`${rental.vehicle.licensePlate} · ${rental.customer.name}`}
       size="wide"
       busy={mutation.busy}
+      dirty={evidence.tasks.length > 0}
       onClose={onClose}
       footer={
         <DialogActions
           formId={formId}
           busy={mutation.busy}
           submitLabel={returning ? "Xác nhận nhận trả" : "Xác nhận bàn giao"}
+          submitDisabled={
+            evidence.working ||
+            evidence.tasks.some(
+              (item) => !["verified", "cancelled"].includes(item.stage),
+            )
+          }
         />
       }
     >
@@ -114,6 +128,11 @@ export function RentalInspectionEditor({
             setError("Xác nhận đã kiểm tra thực tế trước khi lưu biên bản.");
             return;
           }
+          const evidenceIssue = evidence.validate();
+          if (evidenceIssue) {
+            setError(evidenceIssue);
+            return;
+          }
           const inspection: RentalInspectionInput = {
             fuelPercent,
             exteriorCondition:
@@ -140,14 +159,23 @@ export function RentalInspectionEditor({
               ? await mutation.mutate({
                   path: `/rentals/${rental.id}/return`,
                   method: "POST",
-                  body: { odometerEnd: odometer, inspection },
+                  body: {
+                    odometerEnd: odometer,
+                    inspection,
+                    evidenceUploadIds: evidence.uploadedIds,
+                  },
                 })
               : await mutation.mutate({
                   path: `/rentals/${rental.id}/handover`,
                   method: "POST",
-                  body: { odometerStart: odometer, inspection },
+                  body: {
+                    odometerStart: odometer,
+                    inspection,
+                    evidenceUploadIds: evidence.uploadedIds,
+                  },
                 });
             if (ok) {
+              evidence.markAttached();
               onSaved(
                 returning
                   ? "Đã nhận trả xe, hoàn thành hợp đồng và lưu biên bản."
@@ -303,6 +331,7 @@ export function RentalInspectionEditor({
               <Textarea name="notes" rows={3} maxLength={2000} />
             </label>
           </section>
+          <EvidenceUploader draft={evidence} disabled={mutation.busy} />
           <div className="inspection-confirmation">
             <label className="rental-checkbox">
               <Input name="confirmed" type="checkbox" required />

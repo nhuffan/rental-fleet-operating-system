@@ -79,8 +79,9 @@ export function disposableFixture(options: { includeCustomer?: boolean } = {}) {
         const ids = [ownedBusinesses];
         // These exact run-created tenants own every affected row, including writes
         // whose response was lost. Immutable synthetic inspection history must
-        // survive cleanup: retain only its rentals and referenced vehicles,
+        // survive cleanup: retain its rentals and referenced vehicles,
         // customers and branches under the disabled tenant tombstones below.
+        // Staged uploads also retain their rental until trusted Storage cleanup.
         // Never delete snapshots or alter their historical actor references.
         for (const table of ['commercial_movements', 'gps_positions'])
           await db.query(
@@ -88,7 +89,7 @@ export function disposableFixture(options: { includeCustomer?: boolean } = {}) {
             ids,
           );
         await db.query(
-          'delete from public.rentals r where r.business_id=any($1::uuid[]) and not exists(select 1 from public.rental_inspections i where i.business_id=r.business_id and i.rental_id=r.id)',
+          'delete from public.rentals r where r.business_id=any($1::uuid[]) and not exists(select 1 from public.rental_inspections i where i.business_id=r.business_id and i.rental_id=r.id) and not exists(select 1 from public.inspection_uploads u where u.business_id=r.business_id and u.rental_id=r.id)',
           ids,
         );
         await db.query(
@@ -132,7 +133,7 @@ export function disposableFixture(options: { includeCustomer?: boolean } = {}) {
           [ownedBusinesses, 'E2E retired ' + runId],
         );
         await db.query(
-          'delete from public.businesses b where b.id=any($1::uuid[]) and not exists(select 1 from public.audit_logs a where a.business_id=b.id) and not exists(select 1 from public.rental_inspections i where i.business_id=b.id)',
+          'delete from public.businesses b where b.id=any($1::uuid[]) and not exists(select 1 from public.audit_logs a where a.business_id=b.id) and not exists(select 1 from public.rental_inspections i where i.business_id=b.id) and not exists(select 1 from public.inspection_uploads u where u.business_id=b.id)',
           ids,
         );
         await db.query('commit');

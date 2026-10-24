@@ -212,7 +212,11 @@ export function RentalDetail({
         </Panel>
       </div>
       <div id="rental-inspections">
-        <RentalInspections inspections={inspections} />
+        <RentalInspections
+          inspections={inspections}
+          rentalId={rental.id}
+          businessId={context.business.id}
+        />
       </div>
       {commercial && (
         <RentalCommercialPanel
