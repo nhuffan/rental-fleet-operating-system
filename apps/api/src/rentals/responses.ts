@@ -1,6 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { PageMeta } from '../core/responses.js';
-import { RENTAL_STATUSES } from './dto.js';
+import {
+  INSPECTION_CHECK_STATES,
+  INSPECTION_CONDITIONS,
+  RENTAL_STATUSES,
+  type InspectionCheckState,
+  type InspectionCondition,
+} from './dto.js';
 export class CustomerResponse {
   @ApiProperty({ format: 'uuid' }) id!: string;
   @ApiProperty({ format: 'uuid' }) businessId!: string;
@@ -82,4 +88,41 @@ export class VehicleRentalStateResponse {
   currentRental!: RentalResponse | null;
   @ApiProperty({ type: RentalResponse, nullable: true })
   nextRental!: RentalResponse | null;
+}
+
+export class RentalInspectionResponse {
+  @ApiProperty({ format: 'uuid' }) id!: string;
+  @ApiProperty({ format: 'uuid' }) businessId!: string;
+  @ApiProperty({ format: 'uuid' }) rentalId!: string;
+  @ApiProperty({ format: 'uuid' }) vehicleId!: string;
+  @ApiProperty({ enum: ['HANDOVER', 'RETURN'] }) type!: 'HANDOVER' | 'RETURN';
+  @ApiProperty({ format: 'uuid' }) actorId!: string;
+  @ApiProperty({ format: 'date-time' }) recordedAt!: string;
+  @ApiProperty({ minimum: 0, maximum: 2147483647 }) odometer!: number;
+  @ApiProperty({ minimum: 0, maximum: 100 }) fuelPercent!: number;
+  @ApiProperty({ enum: INSPECTION_CONDITIONS })
+  exteriorCondition!: InspectionCondition;
+  @ApiProperty({ enum: INSPECTION_CONDITIONS })
+  interiorCondition!: InspectionCondition;
+  @ApiProperty({ enum: INSPECTION_CHECK_STATES })
+  spareTire!: InspectionCheckState;
+  @ApiProperty({ enum: INSPECTION_CHECK_STATES }) tools!: InspectionCheckState;
+  @ApiProperty({ enum: INSPECTION_CHECK_STATES })
+  registrationDocument!: InspectionCheckState;
+  @ApiProperty({ enum: INSPECTION_CHECK_STATES })
+  insuranceDocument!: InspectionCheckState;
+  @ApiProperty({ enum: INSPECTION_CHECK_STATES }) keys!: InspectionCheckState;
+  @ApiProperty({ maxLength: 2000 }) damageNotes!: string;
+  @ApiProperty({ maxLength: 2000 }) notes!: string;
+}
+export class RentalInspectionsResponse {
+  @ApiProperty({ format: 'uuid' }) rentalId!: string;
+  @ApiProperty({ format: 'uuid' }) vehicleId!: string;
+  @ApiProperty({ type: [RentalInspectionResponse], maxItems: 2 })
+  data!: RentalInspectionResponse[];
+}
+export class VehicleLatestInspectionResponse {
+  @ApiProperty({ format: 'uuid' }) vehicleId!: string;
+  @ApiProperty({ type: RentalInspectionResponse, nullable: true })
+  inspection!: RentalInspectionResponse | null;
 }

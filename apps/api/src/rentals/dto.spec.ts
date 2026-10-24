@@ -7,6 +7,7 @@ import {
   RentalCreate,
   RentalExtend,
   RentalHandover,
+  RentalInspectionInput,
   RentalQuery,
   RentalReturn,
   RentalUpdate,
@@ -167,4 +168,106 @@ it('rejects invalid pagination, ambiguous booleans and forged availability query
       )
     ).length,
   ).toBeGreaterThan(0);
+});
+
+const validInspection = {
+  fuelPercent: 75,
+  exteriorCondition: 'GOOD',
+  interiorCondition: 'GOOD',
+  spareTire: 'NOT_APPLICABLE',
+  tools: 'PRESENT',
+  registrationDocument: 'PRESENT',
+  insuranceDocument: 'MISSING',
+  keys: 'PRESENT',
+};
+it('requires a full inspection on both lifecycle actions and trims optional notes', async () => {
+  for (const [dto, body] of [
+    [RentalHandover, { odometerStart: 100 }],
+    [RentalReturn, { odometerEnd: 150 }],
+  ] as const) {
+    for (const inspection of [undefined, null, {}, [], 'unset'])
+      expect(
+        (
+          await validate(
+            plainToInstance<RentalHandover | RentalReturn, unknown>(dto, {
+              ...body,
+              inspection,
+            }),
+            options,
+          )
+        ).length,
+      ).toBeGreaterThan(0);
+    expect(
+      await validate(
+        plainToInstance<RentalHandover | RentalReturn, unknown>(dto, {
+          ...body,
+          inspection: validInspection,
+        }),
+        options,
+      ),
+    ).toEqual([]);
+  }
+  const inspection = plainToInstance(RentalInspectionInput, {
+    ...validInspection,
+    damageNotes: ' small dent ',
+    notes: ' private note ',
+  });
+  expect(inspection.damageNotes).toBe('small dent');
+  expect(inspection.notes).toBe('private note');
+  expect(await validate(inspection, options)).toEqual([]);
+});
+it.each([
+  { fuelPercent: -1 },
+  { fuelPercent: 101 },
+  { fuelPercent: 50.5 },
+  { fuelPercent: '50' },
+  { exteriorCondition: 'NOT_APPLICABLE' },
+  { interiorCondition: null },
+  { tools: undefined },
+  { keys: '' },
+  { spareTire: true },
+  { registrationDocument: 'UNSET' },
+  { insuranceDocument: null },
+  { exteriorCondition: 'DAMAGED' },
+  { interiorCondition: 'DAMAGED', damageNotes: '   ' },
+  { damageNotes: null },
+  { damageNotes: 'x'.repeat(2001) },
+  { notes: null },
+  { notes: 'x'.repeat(2001) },
+  { actorId: validRental.customerId },
+  { businessId: validRental.customerId },
+  { rentalId: validRental.customerId },
+  { vehicleId: validRental.vehicleId },
+  { type: 'HANDOVER' },
+  { recordedAt: validRental.startAt },
+  { odometer: 1 },
+])(
+  'rejects invalid, incomplete or spoofed inspection fields %#',
+  async (fields) => {
+    expect(
+      (
+        await validate(
+          plainToInstance(RentalHandover, {
+            odometerStart: 100,
+            inspection: { ...validInspection, ...fields },
+          }),
+          options,
+        )
+      ).length,
+    ).toBeGreaterThan(0);
+  },
+);
+it('accepts endpoint fuel boundaries and explicit damaged conditions with required nonblank notes', async () => {
+  for (const fuelPercent of [0, 100])
+    expect(
+      await validate(
+        plainToInstance(RentalInspectionInput, {
+          ...validInspection,
+          fuelPercent,
+          exteriorCondition: 'DAMAGED',
+          damageNotes: ' Dent on rear door ',
+        }),
+        options,
+      ),
+    ).toEqual([]);
 });

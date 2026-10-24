@@ -1,7 +1,9 @@
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsBoolean,
+  IsDefined,
+  IsObject,
   IsIn,
   IsInt,
   IsISO8601,
@@ -13,6 +15,11 @@ import {
   Max,
   Min,
   ValidateIf,
+  Validate,
+  ValidateNested,
+  ValidatorConstraint,
+  type ValidationArguments,
+  type ValidatorConstraintInterface,
 } from 'class-validator';
 import { PageQuery } from '../core/dto.js';
 const optional = (_o: unknown, value: unknown) => value !== undefined;
@@ -249,12 +256,102 @@ export class VehicleAvailabilityQuery extends PageQuery {
   @IsBoolean()
   availableOnly?: boolean;
 }
+export const INSPECTION_CONDITIONS = ['GOOD', 'DAMAGED'] as const;
+export const INSPECTION_CHECK_STATES = [
+  'PRESENT',
+  'MISSING',
+  'NOT_APPLICABLE',
+] as const;
+export type InspectionCondition = (typeof INSPECTION_CONDITIONS)[number];
+export type InspectionCheckState = (typeof INSPECTION_CHECK_STATES)[number];
+const hasDamage = (value: {
+  exteriorCondition?: unknown;
+  interiorCondition?: unknown;
+}) =>
+  value.exteriorCondition === 'DAMAGED' ||
+  value.interiorCondition === 'DAMAGED';
+@ValidatorConstraint({ name: 'damageNotesRequired', async: false })
+class DamageNotesRequired implements ValidatorConstraintInterface {
+  validate(value: unknown, args: ValidationArguments) {
+    return (
+      !hasDamage(
+        args.object as {
+          exteriorCondition?: unknown;
+          interiorCondition?: unknown;
+        },
+      ) ||
+      (typeof value === 'string' && value.trim().length > 0)
+    );
+  }
+  defaultMessage() {
+    return 'Describe the damage when exterior or interior condition is DAMAGED';
+  }
+}
+export class RentalInspectionInput {
+  @ApiProperty({
+    minimum: 0,
+    maximum: 100,
+    description: 'Fuel level as an integer percentage, 0 through 100.',
+  })
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  fuelPercent!: number;
+  @ApiProperty({ enum: INSPECTION_CONDITIONS })
+  @IsIn(INSPECTION_CONDITIONS)
+  exteriorCondition!: InspectionCondition;
+  @ApiProperty({ enum: INSPECTION_CONDITIONS })
+  @IsIn(INSPECTION_CONDITIONS)
+  interiorCondition!: InspectionCondition;
+  @ApiProperty({ enum: INSPECTION_CHECK_STATES })
+  @IsIn(INSPECTION_CHECK_STATES)
+  spareTire!: InspectionCheckState;
+  @ApiProperty({ enum: INSPECTION_CHECK_STATES })
+  @IsIn(INSPECTION_CHECK_STATES)
+  tools!: InspectionCheckState;
+  @ApiProperty({ enum: INSPECTION_CHECK_STATES })
+  @IsIn(INSPECTION_CHECK_STATES)
+  registrationDocument!: InspectionCheckState;
+  @ApiProperty({ enum: INSPECTION_CHECK_STATES })
+  @IsIn(INSPECTION_CHECK_STATES)
+  insuranceDocument!: InspectionCheckState;
+  @ApiProperty({ enum: INSPECTION_CHECK_STATES })
+  @IsIn(INSPECTION_CHECK_STATES)
+  keys!: InspectionCheckState;
+  @ApiPropertyOptional({
+    maxLength: 2000,
+    default: '',
+    description:
+      'Required and nonblank when exteriorCondition or interiorCondition is DAMAGED.',
+  })
+  @ValidateIf(
+    (inspection: RentalInspectionInput, value: unknown) =>
+      value !== undefined || hasDamage(inspection),
+  )
+  @Transform(trim)
+  @IsString()
+  @Length(0, 2000)
+  @Validate(DamageNotesRequired)
+  damageNotes?: string;
+  @ApiPropertyOptional({ maxLength: 2000, default: '' })
+  @ValidateIf(optional)
+  @Transform(trim)
+  @IsString()
+  @Length(0, 2000)
+  notes?: string;
+}
 export class RentalHandover {
   @ApiProperty({ minimum: 0, maximum: 2147483647 })
   @IsInt()
   @Min(0)
   @Max(2147483647)
   odometerStart!: number;
+  @ApiProperty({ type: RentalInspectionInput })
+  @IsDefined()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => RentalInspectionInput)
+  inspection!: RentalInspectionInput;
 }
 export class RentalReturn {
   @ApiProperty({ minimum: 0, maximum: 2147483647 })
@@ -262,6 +359,12 @@ export class RentalReturn {
   @Min(0)
   @Max(2147483647)
   odometerEnd!: number;
+  @ApiProperty({ type: RentalInspectionInput })
+  @IsDefined()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => RentalInspectionInput)
+  inspection!: RentalInspectionInput;
 }
 export class RentalExtend {
   @ApiProperty({ format: 'date-time' })

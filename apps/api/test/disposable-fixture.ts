@@ -7,7 +7,7 @@ const DEVELOPMENT_PROJECT = 'eeryymswcufnebibigqf';
 type Account = { id: string; email: string; password: string };
 
 /** Each suite owns its Auth identities and tenants. Never read personal login files. */
-export function disposableFixture() {
+export function disposableFixture(options: { includeCustomer?: boolean } = {}) {
   const runId = randomUUID();
   const data: {
     projectRef: string;
@@ -45,6 +45,25 @@ export function disposableFixture() {
       );
     return { ...c, secret };
   };
+  async function authCleanup<T extends { error: { status?: number } | null }>(
+    operation: () => Promise<T>,
+  ) {
+    // Retry only transient provider/network failures; never suppress a final failure.
+    let result = await operation();
+    for (
+      let attempt = 0;
+      attempt < 2 &&
+      result.error &&
+      (!result.error.status ||
+        result.error.status === 429 ||
+        result.error.status >= 500);
+      attempt++
+    ) {
+      await new Promise((resolve) => setTimeout(resolve, 250 * (attempt + 1)));
+      result = await operation();
+    }
+    return result;
+  }
   async function cleanup() {
     if (!ownedBusinesses.length && !ownedAccounts.size) return;
     const c = config();
@@ -58,20 +77,41 @@ export function disposableFixture() {
       try {
         await db.query('begin');
         const ids = [ownedBusinesses];
-        // Every row in these run-created tenants belongs to this suite, including
-        // successful writes whose response was lost before an individual ID was recorded.
-        for (const table of [
-          'commercial_movements',
-          'gps_positions',
-          'rentals',
-          'device_assignments',
-          'vehicles',
-          'gps_devices',
-          'customers',
-          'branches',
-          'business_settings',
-          'business_memberships',
-        ])
+        // These exact run-created tenants own every affected row, including writes
+        // whose response was lost. Immutable synthetic inspection history must
+        // survive cleanup: retain only its rentals and referenced vehicles,
+        // customers and branches under the disabled tenant tombstones below.
+        // Never delete snapshots or alter their historical actor references.
+        for (const table of ['commercial_movements', 'gps_positions'])
+          await db.query(
+            `delete from public.${table} where business_id=any($1::uuid[])`,
+            ids,
+          );
+        await db.query(
+          'delete from public.rentals r where r.business_id=any($1::uuid[]) and not exists(select 1 from public.rental_inspections i where i.business_id=r.business_id and i.rental_id=r.id)',
+          ids,
+        );
+        await db.query(
+          'delete from public.device_assignments where business_id=any($1::uuid[])',
+          ids,
+        );
+        await db.query(
+          'delete from public.vehicles v where v.business_id=any($1::uuid[]) and not exists(select 1 from public.rentals r where r.business_id=v.business_id and r.vehicle_id=v.id)',
+          ids,
+        );
+        await db.query(
+          'delete from public.gps_devices where business_id=any($1::uuid[])',
+          ids,
+        );
+        await db.query(
+          'delete from public.customers c where c.business_id=any($1::uuid[]) and not exists(select 1 from public.rentals r where r.business_id=c.business_id and r.customer_id=c.id)',
+          ids,
+        );
+        await db.query(
+          'delete from public.branches b where b.business_id=any($1::uuid[]) and not exists(select 1 from public.vehicles v where v.business_id=b.business_id and v.branch_id=b.id)',
+          ids,
+        );
+        for (const table of ['business_settings', 'business_memberships'])
           await db.query(
             `delete from public.${table} where business_id=any($1::uuid[])`,
             ids,
@@ -85,14 +125,14 @@ export function disposableFixture() {
           'delete from public.platform_memberships where user_id=any($1::uuid[])',
           [users],
         );
-        // Tenant audit has a business FK. Retain only a disabled tenant tombstone
-        // where evidence exists; never delete audit events or change their actor refs.
+        // Audit and immutable inspections retain tenant FKs. Keep disabled
+        // tombstones only where evidence exists, with no active membership/Auth.
         await db.query(
           "update public.businesses set status='DISABLED',name=$2 where id=any($1::uuid[])",
           [ownedBusinesses, 'E2E retired ' + runId],
         );
         await db.query(
-          'delete from public.businesses b where b.id=any($1::uuid[]) and not exists(select 1 from public.audit_logs a where a.business_id=b.id)',
+          'delete from public.businesses b where b.id=any($1::uuid[]) and not exists(select 1 from public.audit_logs a where a.business_id=b.id) and not exists(select 1 from public.rental_inspections i where i.business_id=b.id)',
           ids,
         );
         await db.query('commit');
@@ -114,9 +154,8 @@ export function disposableFixture() {
       );
       try {
         if (actor && tokens[actor]) {
-          const revoked = await admin.auth.admin.signOut(
-            tokens[actor],
-            'global',
+          const revoked = await authCleanup(() =>
+            admin.auth.admin.signOut(tokens[actor], 'global'),
           );
           if (
             revoked.error &&
@@ -124,7 +163,9 @@ export function disposableFixture() {
           )
             failures.push('session revocation');
         }
-        const removed = await admin.auth.admin.deleteUser(id);
+        const removed = await authCleanup(() =>
+          admin.auth.admin.deleteUser(id),
+        );
         if (removed.error) failures.push('Auth cleanup');
         else ownedAccounts.delete(id);
       } catch {
@@ -134,8 +175,8 @@ export function disposableFixture() {
     if (failures.length)
       throw new Error(
         'Disposable E2E cleanup incomplete (' +
-          failures.length +
-          ' steps); no unrelated IDs were touched',
+          failures.join(', ') +
+          '); no unrelated IDs were touched',
       );
   }
   async function start() {
@@ -152,6 +193,7 @@ export function disposableFixture() {
         'disabledA',
         'noMembership',
         'platformOperator',
+        ...(options.includeCustomer ? ['customer'] : []),
       ]) {
         const email = `rental-e2e-${actor.toLowerCase()}-${runId}@example.test`;
         const password = randomBytes(24).toString('base64url') + 'aA1!';

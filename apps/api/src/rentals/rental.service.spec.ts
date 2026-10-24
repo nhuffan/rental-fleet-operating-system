@@ -9,7 +9,12 @@ import { Database } from '../database/database.js';
 import * as schema from '../database/schema.js';
 import type { TenantContext } from '../auth/guards.js';
 import { FleetService } from '../fleet/vehicles/fleet.service.js';
-import { CustomerQuery, RentalQuery, VehicleAvailabilityQuery } from './dto.js';
+import {
+  CustomerQuery,
+  RentalQuery,
+  VehicleAvailabilityQuery,
+  type RentalInspectionInput,
+} from './dto.js';
 import { RentalService, translateRentalConflict } from './rental.service.js';
 let client: PGlite;
 let db: ReturnType<typeof drizzle<typeof schema>>;
@@ -20,6 +25,16 @@ let b: TenantContext;
 let revoked: TenantContext;
 const time = (delta: number) => new Date(Date.now() + delta).toISOString();
 const minute = 60_000;
+const inspection: RentalInspectionInput = {
+  fuelPercent: 75,
+  exteriorCondition: 'GOOD',
+  interiorCondition: 'GOOD',
+  spareTire: 'PRESENT',
+  tools: 'PRESENT',
+  registrationDocument: 'PRESENT',
+  insuranceDocument: 'PRESENT',
+  keys: 'PRESENT',
+};
 async function actor(businessId: string) {
   const role = 'OWNER' as const;
   const userId = randomUUID();
@@ -125,7 +140,7 @@ it('runs the complete lifecycle, exact monetary serialization, immutable termina
   const active = await service.handover(
     a,
     draft.id,
-    { odometerStart: 1000 },
+    { odometerStart: 1000, inspection },
     'handover',
   );
   expect(active.status).toBe('ACTIVE');
@@ -146,12 +161,17 @@ it('runs the complete lifecycle, exact monetary serialization, immutable termina
   );
   expect(extended.rentalAmount).toBe(250.75);
   await expect(
-    service.returnRental(a, draft.id, { odometerEnd: 999 }, 'bad-return'),
+    service.returnRental(
+      a,
+      draft.id,
+      { odometerEnd: 999, inspection },
+      'bad-return',
+    ),
   ).rejects.toMatchObject({ response: { code: 'INVALID_ODOMETER' } });
   const completed = await service.returnRental(
     a,
     draft.id,
-    { odometerEnd: 1100 },
+    { odometerEnd: 1100, inspection },
     'return',
   );
   expect(completed).toMatchObject({
@@ -168,7 +188,12 @@ it('runs the complete lifecycle, exact monetary serialization, immutable termina
     service.updateRental(a, draft.id, { notes: 'rewritten' }, 'terminal'),
   ).rejects.toMatchObject({ response: { code: 'INVALID_RENTAL_STATE' } });
   await expect(
-    service.returnRental(a, draft.id, { odometerEnd: 1100 }, 'repeat'),
+    service.returnRental(
+      a,
+      draft.id,
+      { odometerEnd: 1100, inspection },
+      'repeat',
+    ),
   ).rejects.toMatchObject({ response: { code: 'INVALID_RENTAL_STATE' } });
   expect((await fleet.vehicle(a, vehicle.id)).status).toBe('ACTIVE');
   const audits = await db
@@ -307,7 +332,7 @@ it('rejects expired periods, premature handover, invalid extension and inverted 
   );
   await service.reserve(a, future.id, 'reserve');
   await expect(
-    service.handover(a, future.id, { odometerStart: 0 }, 'early'),
+    service.handover(a, future.id, { odometerStart: 0, inspection }, 'early'),
   ).rejects.toMatchObject({ response: { code: 'RENTAL_NOT_STARTED' } });
   await expect(
     service.extend(
@@ -322,7 +347,12 @@ it('derives overdue, conservatively blocks later reservations, returns safely an
   const { body } = await fixtures();
   const draft = await service.createRental(a, body, 'draft');
   await service.reserve(a, draft.id, 'reserve');
-  await service.handover(a, draft.id, { odometerStart: 500 }, 'handover');
+  await service.handover(
+    a,
+    draft.id,
+    { odometerStart: 500, inspection },
+    'handover',
+  );
   await db
     .update(schema.rentals)
     .set({
@@ -362,7 +392,12 @@ it('derives overdue, conservatively blocks later reservations, returns safely an
       )
     ).data.map((row) => row.id),
   ).toEqual([draft.id]);
-  await service.returnRental(a, draft.id, { odometerEnd: 500 }, 'return');
+  await service.returnRental(
+    a,
+    draft.id,
+    { odometerEnd: 500, inspection },
+    'return',
+  );
   await service.reserve(a, later.id, 'released');
   expect((await service.vehicleRentalState(a, body.vehicleId)).state).toBe(
     'AVAILABLE',
@@ -383,12 +418,18 @@ it('keeps expired reservations from handover but permits a validated future exte
     })
     .where(eq(schema.rentals.id, rental.id));
   await expect(
-    service.handover(a, rental.id, { odometerStart: 1 }, 'expired'),
+    service.handover(a, rental.id, { odometerStart: 1, inspection }, 'expired'),
   ).rejects.toMatchObject({ response: { code: 'RENTAL_EXPIRED' } });
   await service.extend(a, rental.id, { endAt: time(60 * minute) }, 'extend');
   expect(
-    (await service.handover(a, rental.id, { odometerStart: 1 }, 'handover'))
-      .status,
+    (
+      await service.handover(
+        a,
+        rental.id,
+        { odometerStart: 1, inspection },
+        'handover',
+      )
+    ).status,
   ).toBe('ACTIVE');
 });
 it('scopes all reads, writes, foreign resources, availability and vehicle-state to the verified tenant', async () => {
@@ -407,9 +448,21 @@ it('scopes all reads, writes, foreign resources, availability and vehicle-state 
   for (const action of [
     () => service.updateRental(b, rental.id, { notes: 'forged' }, 'forged'),
     () => service.reserve(b, rental.id, 'forged'),
-    () => service.handover(b, rental.id, { odometerStart: 1 }, 'forged'),
+    () =>
+      service.handover(
+        b,
+        rental.id,
+        { odometerStart: 1, inspection },
+        'forged',
+      ),
     () => service.extend(b, rental.id, { endAt: time(120 * minute) }, 'forged'),
-    () => service.returnRental(b, rental.id, { odometerEnd: 1 }, 'forged'),
+    () =>
+      service.returnRental(
+        b,
+        rental.id,
+        { odometerEnd: 1, inspection },
+        'forged',
+      ),
     () => service.cancel(b, rental.id, {}, 'forged'),
   ])
     await expect(action()).rejects.toMatchObject({
@@ -568,6 +621,7 @@ it('translates known wrapped PostgreSQL race constraints without leaking databas
   for (const [code, constraint, expected] of [
     ['23P01', 'rentals_blocking_vehicle_time_exclusion', 'RENTAL_CONFLICT'],
     ['23505', 'rentals_active_vehicle_unique', 'VEHICLE_RENTED'],
+    ['23505', 'rental_inspections_rental_type_unique', 'INVALID_RENTAL_STATE'],
   ]) {
     try {
       translateRentalConflict({

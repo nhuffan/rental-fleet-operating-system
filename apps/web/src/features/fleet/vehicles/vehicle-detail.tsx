@@ -1,7 +1,11 @@
 "use client";
 import { Icon } from "@/components/ui/icon";
 import { VehicleRentalPanel } from "@/features/rentals/vehicle-rental-panel";
-import type { VehicleRentalState } from "@/features/rentals/types";
+import { VehicleInspectionPanel } from "@/features/rentals/rental-inspections";
+import type {
+  VehicleLatestInspection,
+  VehicleRentalState,
+} from "@/features/rentals/types";
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -27,12 +31,14 @@ export function VehicleDetail({
   branches,
   context,
   rentalState,
+  latestInspection,
 }: {
   vehicle: Vehicle;
   history: DeviceAssignmentPage;
   branches: Branch[];
   context: Me;
   rentalState: VehicleRentalState | null;
+  latestInspection: VehicleLatestInspection | null;
 }) {
   const router = useRouter();
   const [message, setMessage] = useState("");
@@ -200,6 +206,12 @@ export function VehicleDetail({
         </Panel>
       </div>
       {rentalState && <VehicleRentalPanel rentalState={rentalState} />}
+      {latestInspection && (
+        <VehicleInspectionPanel
+          inspection={latestInspection.inspection}
+          canReadRental={context.permissions.includes("rental.read")}
+        />
+      )}
       <Panel>
         <PanelHeader
           title="Lịch sử gắn thiết bị"

@@ -424,6 +424,23 @@ export interface paths {
         patch: operations["RentalController_updateRental"];
         trace?: never;
     };
+    "/api/v1/rentals/{id}/inspections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Immutable handover and return snapshots for this rental, in recorded order. Legacy rentals can have no snapshots. */
+        get: operations["RentalController_rentalInspections"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/rentals/{id}/reserve": {
         parameters: {
             query?: never;
@@ -450,7 +467,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** @description RESERVED to ACTIVE within the planned rental period; records the handover odometer and database time. */
+        /** @description RESERVED to ACTIVE within the planned rental period; atomically records the required immutable inspection, handover odometer, actor and database time. Repeated actions return 409. */
         post: operations["RentalController_handover"];
         delete?: never;
         options?: never;
@@ -484,7 +501,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** @description ACTIVE to COMPLETED, including overdue rentals; end odometer must be at least the handover reading. */
+        /** @description ACTIVE to COMPLETED, including overdue and legacy rentals; atomically records the required immutable return inspection. End odometer must be at least the handover reading. Inspection never creates charges or Commercial movements. */
         post: operations["RentalController_returnRental"];
         delete?: never;
         options?: never;
@@ -517,6 +534,23 @@ export interface paths {
         };
         /** @description Half-open [startAt,endAt) availability. Active overdue vehicles block future intervals until returned. Results are advisory; every reservation write rechecks availability. */
         get: operations["RentalController_availability"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/vehicles/{id}/latest-inspection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Most recent immutable inspection for the selected tenant vehicle, or null when no inspection was recorded. */
+        get: operations["RentalController_vehicleLatestInspection"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1295,6 +1329,47 @@ export interface components {
             total: number;
             data: components["schemas"]["RentalResponse"][];
         };
+        RentalInspectionResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            businessId: string;
+            /** Format: uuid */
+            rentalId: string;
+            /** Format: uuid */
+            vehicleId: string;
+            /** @enum {string} */
+            type: "HANDOVER" | "RETURN";
+            /** Format: uuid */
+            actorId: string;
+            /** Format: date-time */
+            recordedAt: string;
+            odometer: number;
+            fuelPercent: number;
+            /** @enum {string} */
+            exteriorCondition: "GOOD" | "DAMAGED";
+            /** @enum {string} */
+            interiorCondition: "GOOD" | "DAMAGED";
+            /** @enum {string} */
+            spareTire: "PRESENT" | "MISSING" | "NOT_APPLICABLE";
+            /** @enum {string} */
+            tools: "PRESENT" | "MISSING" | "NOT_APPLICABLE";
+            /** @enum {string} */
+            registrationDocument: "PRESENT" | "MISSING" | "NOT_APPLICABLE";
+            /** @enum {string} */
+            insuranceDocument: "PRESENT" | "MISSING" | "NOT_APPLICABLE";
+            /** @enum {string} */
+            keys: "PRESENT" | "MISSING" | "NOT_APPLICABLE";
+            damageNotes: string;
+            notes: string;
+        };
+        RentalInspectionsResponse: {
+            /** Format: uuid */
+            rentalId: string;
+            /** Format: uuid */
+            vehicleId: string;
+            data: components["schemas"]["RentalInspectionResponse"][];
+        };
         RentalCreate: {
             /** Format: uuid */
             customerId: string;
@@ -1330,8 +1405,34 @@ export interface components {
             depositReceived?: boolean;
             notes?: string;
         };
+        RentalInspectionInput: {
+            /** @description Fuel level as an integer percentage, 0 through 100. */
+            fuelPercent: number;
+            /** @enum {string} */
+            exteriorCondition: "GOOD" | "DAMAGED";
+            /** @enum {string} */
+            interiorCondition: "GOOD" | "DAMAGED";
+            /** @enum {string} */
+            spareTire: "PRESENT" | "MISSING" | "NOT_APPLICABLE";
+            /** @enum {string} */
+            tools: "PRESENT" | "MISSING" | "NOT_APPLICABLE";
+            /** @enum {string} */
+            registrationDocument: "PRESENT" | "MISSING" | "NOT_APPLICABLE";
+            /** @enum {string} */
+            insuranceDocument: "PRESENT" | "MISSING" | "NOT_APPLICABLE";
+            /** @enum {string} */
+            keys: "PRESENT" | "MISSING" | "NOT_APPLICABLE";
+            /**
+             * @description Required and nonblank when exteriorCondition or interiorCondition is DAMAGED.
+             * @default
+             */
+            damageNotes: string;
+            /** @default  */
+            notes: string;
+        };
         RentalHandover: {
             odometerStart: number;
+            inspection: components["schemas"]["RentalInspectionInput"];
         };
         RentalExtend: {
             /** Format: date-time */
@@ -1340,6 +1441,7 @@ export interface components {
         };
         RentalReturn: {
             odometerEnd: number;
+            inspection: components["schemas"]["RentalInspectionInput"];
         };
         RentalCancel: {
             /** @description Optional replacement notes, recorded on the rental rather than audit metadata. */
@@ -1370,6 +1472,11 @@ export interface components {
             limit: number;
             total: number;
             data: components["schemas"]["VehicleAvailabilityResponse"][];
+        };
+        VehicleLatestInspectionResponse: {
+            /** Format: uuid */
+            vehicleId: string;
+            inspection: components["schemas"]["RentalInspectionResponse"] | null;
         };
         VehicleRentalStateResponse: {
             /** Format: uuid */
@@ -5850,6 +5957,120 @@ export interface operations {
             };
         };
     };
+    RentalController_rentalInspections: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Select an active business membership. Defaults to oldest active membership. */
+                "X-Business-Id"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RentalInspectionsResponse"];
+                };
+            };
+            /** @description Standard API error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
     RentalController_reserve: {
         parameters: {
             query?: never;
@@ -6466,6 +6687,120 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["VehicleAvailabilityPage"];
+                };
+            };
+            /** @description Standard API error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    RentalController_vehicleLatestInspection: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Select an active business membership. Defaults to oldest active membership. */
+                "X-Business-Id"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VehicleLatestInspectionResponse"];
                 };
             };
             /** @description Standard API error */

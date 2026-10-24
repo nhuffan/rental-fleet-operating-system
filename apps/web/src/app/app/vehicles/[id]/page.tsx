@@ -6,13 +6,15 @@ import { api } from "@/lib/api";
 import { PageHeader } from "@/components/ui/primitives";
 import { VehicleDetail } from "@/features/fleet/vehicles/vehicle-detail";
 import { fleetContext, tenantBranches } from "@/features/fleet/vehicles/server";
-import {
-  pageNumber,
-  validId,
-  type SearchParams,
-} from "@/lib/query";
-import type { VehicleRentalState } from "@/features/rentals/types";
-import type { DeviceAssignmentPage, Vehicle } from "@/features/fleet/vehicles/types";
+import { pageNumber, validId, type SearchParams } from "@/lib/query";
+import type {
+  VehicleLatestInspection,
+  VehicleRentalState,
+} from "@/features/rentals/types";
+import type {
+  DeviceAssignmentPage,
+  Vehicle,
+} from "@/features/fleet/vehicles/types";
 export default async function VehiclePage({
   params,
   searchParams,
@@ -24,8 +26,8 @@ export default async function VehiclePage({
   const { id } = await params;
   if (!validId(id)) notFound();
   const page = pageNumber((await searchParams).page);
-  const [vehicle, history, branches, location, rentalState] = await Promise.all(
-    [
+  const [vehicle, history, branches, location, rentalState, latestInspection] =
+    await Promise.all([
       api<Vehicle>(`/vehicles/${id}`, { notFoundOn404: true }),
       api<DeviceAssignmentPage>(
         `/vehicles/${id}/device-assignments?page=${page}&limit=20`,
@@ -42,8 +44,12 @@ export default async function VehiclePage({
             notFoundOn404: true,
           })
         : Promise.resolve(null),
-    ],
-  );
+      context.permissions.includes("rental.read")
+        ? api<VehicleLatestInspection>(`/vehicles/${id}/latest-inspection`, {
+            notFoundOn404: true,
+          })
+        : Promise.resolve(null),
+    ]);
   return (
     <>
       <Link href="/app/vehicles" className="back-link">
@@ -61,6 +67,7 @@ export default async function VehiclePage({
         branches={branches}
         context={context}
         rentalState={rentalState}
+        latestInspection={latestInspection}
       />
     </>
   );

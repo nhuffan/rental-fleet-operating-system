@@ -152,6 +152,8 @@ export function useMutation(businessId: string) {
           INVALID_EXTENSION:
             "Thời gian trả mới phải sau thời gian trả hiện tại.",
           INVALID_ODOMETER: "Odometer trả phải bằng hoặc lớn hơn lúc bàn giao.",
+          INVALID_INSPECTION:
+            "Biên bản kiểm tra chưa hợp lệ. Kiểm tra mức nhiên liệu, tình trạng xe, checklist và mô tả hư hỏng rồi thử lại.",
           LAST_OWNER: "Doanh nghiệp phải có ít nhất một Owner hoạt động.",
           VEHICLE_NOT_FOUND: "Xe không tồn tại trong doanh nghiệp hiện tại.",
           DEVICE_NOT_FOUND:

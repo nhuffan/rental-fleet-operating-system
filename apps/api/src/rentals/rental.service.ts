@@ -5,6 +5,8 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { plainToInstance } from 'class-transformer';
+import { validateSync } from 'class-validator';
 import {
   and,
   asc,
@@ -32,6 +34,7 @@ import {
   memberships,
   profiles,
   rentals,
+  rentalInspections,
   vehicles,
 } from '../database/schema.js';
 import { denied, type TenantContext } from '../auth/guards.js';
@@ -44,6 +47,7 @@ import {
   RentalCreate,
   RentalExtend,
   RentalHandover,
+  RentalInspectionInput,
   RentalQuery,
   RentalReturn,
   RentalUpdate,
@@ -92,6 +96,14 @@ export function translateRentalConflict(error: unknown): never {
       throw rentalConflict(
         'VEHICLE_RENTED',
         'Vehicle already has an active rental',
+      );
+    if (
+      detail.code === '23505' &&
+      detail.constraint === 'rental_inspections_rental_type_unique'
+    )
+      throw rentalConflict(
+        'INVALID_RENTAL_STATE',
+        'An inspection already exists for this rental action',
       );
     if (
       detail.code === '23503' &&
@@ -347,6 +359,72 @@ export class RentalService {
       id,
       await this.now(this.database.db),
     );
+  }
+  async rentalInspections(c: TenantContext, id: string) {
+    const rental = await this.getRental(
+      this.database.db,
+      c,
+      id,
+      await this.now(this.database.db),
+    );
+    const data = await this.database.db
+      .select()
+      .from(rentalInspections)
+      .where(
+        and(
+          eq(rentalInspections.businessId, c.businessId),
+          eq(rentalInspections.rentalId, id),
+        ),
+      )
+      .orderBy(asc(rentalInspections.recordedAt), asc(rentalInspections.id))
+      .limit(2);
+    return { rentalId: rental.id, vehicleId: rental.vehicleId, data };
+  }
+  async vehicleLatestInspection(c: TenantContext, vehicleId: string) {
+    await this.getVehicle(this.database.db, c, vehicleId);
+    const [inspection] = await this.database.db
+      .select()
+      .from(rentalInspections)
+      .where(
+        and(
+          eq(rentalInspections.businessId, c.businessId),
+          eq(rentalInspections.vehicleId, vehicleId),
+        ),
+      )
+      .orderBy(desc(rentalInspections.recordedAt), desc(rentalInspections.id))
+      .limit(1);
+    return { vehicleId, inspection: inspection ?? null };
+  }
+  private inspectionValues(input: RentalInspectionInput) {
+    if (!input || typeof input !== 'object' || Array.isArray(input))
+      throw new BadRequestException({
+        code: 'INVALID_INSPECTION',
+        message: 'Complete all inspection fields and describe any damage',
+      });
+    const inspection = plainToInstance(RentalInspectionInput, input);
+    if (
+      validateSync(inspection, {
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        forbidUnknownValues: true,
+      }).length > 0
+    )
+      throw new BadRequestException({
+        code: 'INVALID_INSPECTION',
+        message: 'Complete all inspection fields and describe any damage',
+      });
+    return {
+      fuelPercent: inspection.fuelPercent,
+      exteriorCondition: inspection.exteriorCondition,
+      interiorCondition: inspection.interiorCondition,
+      spareTire: inspection.spareTire,
+      tools: inspection.tools,
+      registrationDocument: inspection.registrationDocument,
+      insuranceDocument: inspection.insuranceDocument,
+      keys: inspection.keys,
+      damageNotes: inspection.damageNotes ?? '',
+      notes: inspection.notes ?? '',
+    };
   }
   async listRentals(c: TenantContext, q: RentalQuery) {
     const now = await this.now(this.database.db);
@@ -609,6 +687,7 @@ export class RentalService {
       async (tx, now) => {
         const before = await this.getRental(tx, c, id, now);
         requireRentalStatus(before.status, ['RESERVED']);
+        const inspection = this.inspectionValues(body.inspection);
         if (before.startAt > now)
           throw rentalConflict(
             'RENTAL_NOT_STARTED',
@@ -641,6 +720,16 @@ export class RentalService {
         const timestamp = new Date(
           Math.max(now.getTime(), before.reservedAt?.getTime() ?? 0),
         );
+        await tx.insert(rentalInspections).values({
+          ...inspection,
+          businessId: c.businessId,
+          rentalId: id,
+          vehicleId: before.vehicleId,
+          type: 'HANDOVER',
+          actorId: c.userId,
+          recordedAt: timestamp,
+          odometer: body.odometerStart,
+        });
         await tx
           .update(rentals)
           .set({
@@ -653,7 +742,7 @@ export class RentalService {
         return {
           value: await this.getRental(tx, c, id, now),
           id,
-          fields: ['status', 'handedOverAt', 'odometerStart'],
+          fields: ['status', 'handedOverAt', 'odometerStart', 'inspection'],
         };
       },
     );
@@ -712,6 +801,7 @@ export class RentalService {
       async (tx, now) => {
         const before = await this.getRental(tx, c, id, now);
         requireRentalStatus(before.status, ['ACTIVE']);
+        const inspection = this.inspectionValues(body.inspection);
         if (body.odometerEnd < (before.odometerStart ?? 0))
           throw new BadRequestException({
             code: 'INVALID_ODOMETER',
@@ -720,6 +810,16 @@ export class RentalService {
         const timestamp = new Date(
           Math.max(now.getTime(), before.handedOverAt?.getTime() ?? 0),
         );
+        await tx.insert(rentalInspections).values({
+          ...inspection,
+          businessId: c.businessId,
+          rentalId: id,
+          vehicleId: before.vehicleId,
+          type: 'RETURN',
+          actorId: c.userId,
+          recordedAt: timestamp,
+          odometer: body.odometerEnd,
+        });
         await tx
           .update(rentals)
           .set({
@@ -732,7 +832,7 @@ export class RentalService {
         return {
           value: await this.getRental(tx, c, id, now),
           id,
-          fields: ['status', 'returnedAt', 'odometerEnd'],
+          fields: ['status', 'returnedAt', 'odometerEnd', 'inspection'],
         };
       },
     );

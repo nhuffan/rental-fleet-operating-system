@@ -8912,6 +8912,238 @@
         ]
       }
     },
+    "/api/v1/rentals/{id}/inspections": {
+      "get": {
+        "description": "Immutable handover and return snapshots for this rental, in recorded order. Legacy rentals can have no snapshots.",
+        "operationId": "RentalController_rentalInspections",
+        "parameters": [
+          {
+            "name": "X-Business-Id",
+            "in": "header",
+            "description": "Select an active business membership. Defaults to oldest active membership.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RentalInspectionsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Rental Core"
+        ]
+      }
+    },
     "/api/v1/rentals/{id}/reserve": {
       "post": {
         "description": "DRAFT to RESERVED, with overlap and active resource checks. Repeating a completed action returns 409 INVALID_RENTAL_STATE.",
@@ -9157,7 +9389,7 @@
     },
     "/api/v1/rentals/{id}/handover": {
       "post": {
-        "description": "RESERVED to ACTIVE within the planned rental period; records the handover odometer and database time.",
+        "description": "RESERVED to ACTIVE within the planned rental period; atomically records the required immutable inspection, handover odometer, actor and database time. Repeated actions return 409.",
         "operationId": "RentalController_handover",
         "parameters": [
           {
@@ -9641,7 +9873,7 @@
     },
     "/api/v1/rentals/{id}/return": {
       "post": {
-        "description": "ACTIVE to COMPLETED, including overdue rentals; end odometer must be at least the handover reading.",
+        "description": "ACTIVE to COMPLETED, including overdue and legacy rentals; atomically records the required immutable return inspection. End odometer must be at least the handover reading. Inspection never creates charges or Commercial movements.",
         "operationId": "RentalController_returnRental",
         "parameters": [
           {
@@ -10216,6 +10448,238 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/VehicleAvailabilityPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Rental Core"
+        ]
+      }
+    },
+    "/api/v1/vehicles/{id}/latest-inspection": {
+      "get": {
+        "description": "Most recent immutable inspection for the selected tenant vehicle, or null when no inspection was recorded.",
+        "operationId": "RentalController_vehicleLatestInspection",
+        "parameters": [
+          {
+            "name": "X-Business-Id",
+            "in": "header",
+            "description": "Select an active business membership. Defaults to oldest active membership.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VehicleLatestInspectionResponse"
                 }
               }
             }
@@ -16894,6 +17358,159 @@
           "data"
         ]
       },
+      "RentalInspectionResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "businessId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "rentalId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "vehicleId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "HANDOVER",
+              "RETURN"
+            ]
+          },
+          "actorId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "recordedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "odometer": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 2147483647
+          },
+          "fuelPercent": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "exteriorCondition": {
+            "type": "string",
+            "enum": [
+              "GOOD",
+              "DAMAGED"
+            ]
+          },
+          "interiorCondition": {
+            "type": "string",
+            "enum": [
+              "GOOD",
+              "DAMAGED"
+            ]
+          },
+          "spareTire": {
+            "type": "string",
+            "enum": [
+              "PRESENT",
+              "MISSING",
+              "NOT_APPLICABLE"
+            ]
+          },
+          "tools": {
+            "type": "string",
+            "enum": [
+              "PRESENT",
+              "MISSING",
+              "NOT_APPLICABLE"
+            ]
+          },
+          "registrationDocument": {
+            "type": "string",
+            "enum": [
+              "PRESENT",
+              "MISSING",
+              "NOT_APPLICABLE"
+            ]
+          },
+          "insuranceDocument": {
+            "type": "string",
+            "enum": [
+              "PRESENT",
+              "MISSING",
+              "NOT_APPLICABLE"
+            ]
+          },
+          "keys": {
+            "type": "string",
+            "enum": [
+              "PRESENT",
+              "MISSING",
+              "NOT_APPLICABLE"
+            ]
+          },
+          "damageNotes": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 2000
+          }
+        },
+        "required": [
+          "id",
+          "businessId",
+          "rentalId",
+          "vehicleId",
+          "type",
+          "actorId",
+          "recordedAt",
+          "odometer",
+          "fuelPercent",
+          "exteriorCondition",
+          "interiorCondition",
+          "spareTire",
+          "tools",
+          "registrationDocument",
+          "insuranceDocument",
+          "keys",
+          "damageNotes",
+          "notes"
+        ]
+      },
+      "RentalInspectionsResponse": {
+        "type": "object",
+        "properties": {
+          "rentalId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "vehicleId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "data": {
+            "maxItems": 2,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RentalInspectionResponse"
+            }
+          }
+        },
+        "required": [
+          "rentalId",
+          "vehicleId",
+          "data"
+        ]
+      },
       "RentalCreate": {
         "type": "object",
         "properties": {
@@ -16979,6 +17596,92 @@
           }
         }
       },
+      "RentalInspectionInput": {
+        "type": "object",
+        "properties": {
+          "fuelPercent": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100,
+            "description": "Fuel level as an integer percentage, 0 through 100."
+          },
+          "exteriorCondition": {
+            "type": "string",
+            "enum": [
+              "GOOD",
+              "DAMAGED"
+            ]
+          },
+          "interiorCondition": {
+            "type": "string",
+            "enum": [
+              "GOOD",
+              "DAMAGED"
+            ]
+          },
+          "spareTire": {
+            "type": "string",
+            "enum": [
+              "PRESENT",
+              "MISSING",
+              "NOT_APPLICABLE"
+            ]
+          },
+          "tools": {
+            "type": "string",
+            "enum": [
+              "PRESENT",
+              "MISSING",
+              "NOT_APPLICABLE"
+            ]
+          },
+          "registrationDocument": {
+            "type": "string",
+            "enum": [
+              "PRESENT",
+              "MISSING",
+              "NOT_APPLICABLE"
+            ]
+          },
+          "insuranceDocument": {
+            "type": "string",
+            "enum": [
+              "PRESENT",
+              "MISSING",
+              "NOT_APPLICABLE"
+            ]
+          },
+          "keys": {
+            "type": "string",
+            "enum": [
+              "PRESENT",
+              "MISSING",
+              "NOT_APPLICABLE"
+            ]
+          },
+          "damageNotes": {
+            "type": "string",
+            "maxLength": 2000,
+            "default": "",
+            "description": "Required and nonblank when exteriorCondition or interiorCondition is DAMAGED."
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 2000,
+            "default": ""
+          }
+        },
+        "required": [
+          "fuelPercent",
+          "exteriorCondition",
+          "interiorCondition",
+          "spareTire",
+          "tools",
+          "registrationDocument",
+          "insuranceDocument",
+          "keys"
+        ]
+      },
       "RentalHandover": {
         "type": "object",
         "properties": {
@@ -16986,10 +17689,14 @@
             "type": "number",
             "minimum": 0,
             "maximum": 2147483647
+          },
+          "inspection": {
+            "$ref": "#/components/schemas/RentalInspectionInput"
           }
         },
         "required": [
-          "odometerStart"
+          "odometerStart",
+          "inspection"
         ]
       },
       "RentalExtend": {
@@ -17016,10 +17723,14 @@
             "type": "number",
             "minimum": 0,
             "maximum": 2147483647
+          },
+          "inspection": {
+            "$ref": "#/components/schemas/RentalInspectionInput"
           }
         },
         "required": [
-          "odometerEnd"
+          "odometerEnd",
+          "inspection"
         ]
       },
       "RentalCancel": {
@@ -17123,6 +17834,28 @@
           "limit",
           "total",
           "data"
+        ]
+      },
+      "VehicleLatestInspectionResponse": {
+        "type": "object",
+        "properties": {
+          "vehicleId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "inspection": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RentalInspectionResponse"
+              }
+            ]
+          }
+        },
+        "required": [
+          "vehicleId",
+          "inspection"
         ]
       },
       "VehicleRentalStateResponse": {

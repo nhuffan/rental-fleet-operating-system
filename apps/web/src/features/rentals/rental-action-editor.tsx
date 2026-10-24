@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { RentalInspectionEditor } from "./rental-inspection-editor";
 import {
   ConfirmDialog,
   DialogActions,
@@ -27,20 +28,28 @@ const titles: Record<RentalAction, string> = {
   cancel: "Hủy hợp đồng",
   edit: "Chỉnh sửa hợp đồng",
 };
-export function RentalActionEditor({
-  rental,
-  action,
-  businessId,
-  currency,
-  onClose,
-  onSaved,
-}: {
+type ActionEditorProps = {
   rental: Rental;
   action: RentalAction;
   businessId: string;
   currency: string;
   onClose: () => void;
   onSaved: (message: string) => void;
+};
+export function RentalActionEditor(props: ActionEditorProps) {
+  if (props.action === "handover" || props.action === "return")
+    return <RentalInspectionEditor {...props} action={props.action} />;
+  return <RentalMetadataEditor {...props} action={props.action} />;
+}
+function RentalMetadataEditor({
+  rental,
+  action,
+  businessId,
+  currency,
+  onClose,
+  onSaved,
+}: Omit<ActionEditorProps, "action"> & {
+  action: Exclude<RentalAction, "handover" | "return">;
 }) {
   const mutation = useMutation(businessId);
   const [error, setError] = useState("");
@@ -198,24 +207,6 @@ export function RentalActionEditor({
                 path: `/rentals/${rental.id}/reserve`,
                 method: "POST",
               });
-            if (action === "handover")
-              ok = await mutation.mutate({
-                path: `/rentals/${rental.id}/handover`,
-                method: "POST",
-                body: { odometerStart: Number(form.get("odometerStart")) },
-              });
-            if (action === "return") {
-              const odometerEnd = Number(form.get("odometerEnd"));
-              if (odometerEnd < (rental.odometerStart ?? 0)) {
-                setError("Odometer khi trả không được nhỏ hơn lúc bàn giao.");
-                return;
-              }
-              ok = await mutation.mutate({
-                path: `/rentals/${rental.id}/return`,
-                method: "POST",
-                body: { odometerEnd },
-              });
-            }
             if (action === "cancel")
               ok = await mutation.mutate({
                 path: `/rentals/${rental.id}/cancel`,
@@ -278,45 +269,6 @@ export function RentalActionEditor({
                 Giữ lịch xe trong thời gian hợp đồng. Server sẽ kiểm tra lại xe
                 hoạt động, khách hàng và lịch trùng trước khi xác nhận.
               </p>
-            )}
-            {action === "handover" && (
-              <>
-                <p>
-                  Bàn giao sẽ chuyển hợp đồng sang Đang thuê. Chỉ bàn giao trong
-                  thời gian đặt xe, khi chưa có hợp đồng đang thuê khác.
-                </p>
-                <label className="form-field">
-                  Odometer bàn giao (km)
-                  <Input
-                    name="odometerStart"
-                    type="number"
-                    required
-                    min={0}
-                    max={2147483647}
-                    step={1}
-                  />
-                </label>
-              </>
-            )}
-            {action === "return" && (
-              <>
-                <p>Nhận trả sẽ hoàn thành hợp đồng và kết thúc việc giữ xe.</p>
-                <label className="form-field">
-                  Odometer nhận trả (km)
-                  <Input
-                    name="odometerEnd"
-                    type="number"
-                    required
-                    min={rental.odometerStart ?? 0}
-                    max={2147483647}
-                    step={1}
-                  />
-                  <small>
-                    Khi bàn giao:{" "}
-                    {rental.odometerStart?.toLocaleString("vi-VN")} km
-                  </small>
-                </label>
-              </>
             )}
             {action === "cancel" && (
               <>

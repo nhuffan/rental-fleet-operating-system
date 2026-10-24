@@ -10,3 +10,9 @@ export type RentalCreate = Schemas["RentalCreate"];
 export type RentalUpdate = Schemas["RentalUpdate"];
 export type VehicleAvailability = Schemas["VehicleAvailabilityResponse"];
 export type VehicleRentalState = Schemas["VehicleRentalStateResponse"];
+
+export type RentalInspection = Schemas["RentalInspectionResponse"];
+export type RentalInspectionInput = Schemas["RentalInspectionInput"];
+export type RentalInspections = Schemas["RentalInspectionsResponse"];
+export type VehicleLatestInspection =
+  Schemas["VehicleLatestInspectionResponse"];

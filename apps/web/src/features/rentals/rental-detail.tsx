@@ -10,7 +10,8 @@ import { formatDate, queryString } from "@/lib/query";
 import { formatMoney } from "./query";
 import { RentalStatus } from "./rental-status";
 import { RentalActionEditor, type RentalAction } from "./rental-action-editor";
-import type { Rental } from "./types";
+import type { Rental, RentalInspection } from "./types";
+import { RentalInspections } from "./rental-inspections";
 import { RentalCommercialPanel } from "@/features/commercial/rental-commercial-panel";
 import type { RentalCommercial } from "@/features/commercial/types";
 export function RentalDetail({
@@ -20,8 +21,10 @@ export function RentalDetail({
   tripRange,
   commercial,
   commercialIssue,
+  inspections,
 }: {
   rental: Rental;
+  inspections: RentalInspection[];
   context: Me;
   initialMessage?: string;
   tripRange: { from: string; to: string } | null;
@@ -207,6 +210,9 @@ export function RentalDetail({
             </p>
           </div>
         </Panel>
+      </div>
+      <div id="rental-inspections">
+        <RentalInspections inspections={inspections} />
       </div>
       {commercial && (
         <RentalCommercialPanel

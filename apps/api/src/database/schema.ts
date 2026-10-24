@@ -409,6 +409,99 @@ export const rentals = pgTable(
   ],
 );
 
+export const rentalInspections = pgTable(
+  'rental_inspections',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    businessId: uuid('business_id')
+      .notNull()
+      .references(() => businesses.id, { onDelete: 'restrict' }),
+    rentalId: uuid('rental_id').notNull(),
+    vehicleId: uuid('vehicle_id').notNull(),
+    type: text().notNull().$type<'HANDOVER' | 'RETURN'>(),
+    // No actor/profile FK: immutable historical attribution survives identity removal.
+    actorId: uuid('actor_id').notNull(),
+    recordedAt: timestamp('recorded_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    odometer: integer().notNull(),
+    fuelPercent: integer('fuel_percent').notNull(),
+    exteriorCondition: text('exterior_condition')
+      .notNull()
+      .$type<'GOOD' | 'DAMAGED'>(),
+    interiorCondition: text('interior_condition')
+      .notNull()
+      .$type<'GOOD' | 'DAMAGED'>(),
+    spareTire: text('spare_tire')
+      .notNull()
+      .$type<'PRESENT' | 'MISSING' | 'NOT_APPLICABLE'>(),
+    tools: text().notNull().$type<'PRESENT' | 'MISSING' | 'NOT_APPLICABLE'>(),
+    registrationDocument: text('registration_document')
+      .notNull()
+      .$type<'PRESENT' | 'MISSING' | 'NOT_APPLICABLE'>(),
+    insuranceDocument: text('insurance_document')
+      .notNull()
+      .$type<'PRESENT' | 'MISSING' | 'NOT_APPLICABLE'>(),
+    keys: text().notNull().$type<'PRESENT' | 'MISSING' | 'NOT_APPLICABLE'>(),
+    damageNotes: text('damage_notes').notNull().default(''),
+    notes: text().notNull().default(''),
+  },
+  (table) => [
+    foreignKey({
+      name: 'rental_inspections_rental_tenant_fk',
+      columns: [table.businessId, table.rentalId, table.vehicleId],
+      foreignColumns: [rentals.businessId, rentals.id, rentals.vehicleId],
+    }).onDelete('restrict'),
+    unique('rental_inspections_rental_type_unique').on(
+      table.businessId,
+      table.rentalId,
+      table.type,
+    ),
+    check(
+      'rental_inspections_type_check',
+      sql`${table.type} in ('HANDOVER', 'RETURN')`,
+    ),
+    check('rental_inspections_time_check', sql`isfinite(${table.recordedAt})`),
+    check(
+      'rental_inspections_odometer_check',
+      sql`${table.odometer} between 0 and 2147483647`,
+    ),
+    check(
+      'rental_inspections_fuel_check',
+      sql`${table.fuelPercent} between 0 and 100`,
+    ),
+    check(
+      'rental_inspections_condition_check',
+      sql`${table.exteriorCondition} in ('GOOD', 'DAMAGED') and ${table.interiorCondition} in ('GOOD', 'DAMAGED')`,
+    ),
+    check(
+      'rental_inspections_checklist_check',
+      sql`
+        ${table.spareTire} in ('PRESENT', 'MISSING', 'NOT_APPLICABLE') and
+        ${table.tools} in ('PRESENT', 'MISSING', 'NOT_APPLICABLE') and
+        ${table.registrationDocument} in ('PRESENT', 'MISSING', 'NOT_APPLICABLE') and
+        ${table.insuranceDocument} in ('PRESENT', 'MISSING', 'NOT_APPLICABLE') and
+        ${table.keys} in ('PRESENT', 'MISSING', 'NOT_APPLICABLE')
+      `,
+    ),
+    check(
+      'rental_inspections_notes_check',
+      sql`length(${table.notes}) <= 2000 and length(${table.damageNotes}) <= 2000`,
+    ),
+    check(
+      'rental_inspections_damage_notes_check',
+      sql`(${table.exteriorCondition} <> 'DAMAGED' and ${table.interiorCondition} <> 'DAMAGED') or ${table.damageNotes} !~ '^[[:space:]]*$'`,
+    ),
+    // UPDATE/DELETE immutability trigger and read-only browser RLS live in SQL.
+    index('rental_inspections_vehicle_recorded').on(
+      table.businessId,
+      table.vehicleId,
+      table.recordedAt.desc(),
+      table.id.desc(),
+    ),
+  ],
+);
+
 export const commercialMovements = pgTable(
   'commercial_movements',
   {

@@ -7,7 +7,7 @@ import { RentalDetail } from "@/features/rentals/rental-detail";
 import { rentalContext } from "@/features/rentals/server";
 import { validId, type SearchParams } from "@/lib/query";
 import type { RentalCommercial } from "@/features/commercial/types";
-import type { Rental } from "@/features/rentals/types";
+import type { Rental, RentalInspections } from "@/features/rentals/types";
 export default async function RentalPage({
   params,
   searchParams,
@@ -18,7 +18,12 @@ export default async function RentalPage({
   const context = await rentalContext("rental.read");
   const { id } = await params;
   if (!validId(id)) notFound();
-  const rental = await api<Rental>(`/rentals/${id}`, { notFoundOn404: true });
+  const [rental, inspections] = await Promise.all([
+    api<Rental>(`/rentals/${id}`, { notFoundOn404: true }),
+    api<RentalInspections>(`/rentals/${id}/inspections`, {
+      notFoundOn404: true,
+    }),
+  ]);
   let commercial: RentalCommercial | null = null;
   let commercialIssue: "currency" | "unavailable" | undefined;
   if (context.permissions.includes("commercial.read")) {
@@ -59,6 +64,7 @@ export default async function RentalPage({
       <RentalDetail
         key={`${context.business.id}:${id}`}
         rental={rental}
+        inspections={inspections.data}
         commercial={commercial}
         commercialIssue={commercialIssue}
         tripRange={tripRange}

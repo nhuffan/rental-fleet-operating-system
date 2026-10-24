@@ -1,0 +1,148 @@
+.inspection-sections {
+  display: grid;
+  gap: 24px;
+}
+.inspection-form-section + .inspection-form-section,
+.inspection-confirmation {
+  border-top: 1px solid var(--border);
+  padding-top: 22px;
+}
+.inspection-form-section h3,
+.inspection-notes h3,
+.inspection-damage-comparison h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.inspection-form-section > .quiet {
+  margin: 0 0 16px;
+}
+.inspection-form-section .form-field small {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+.inspection-confirmation .rental-checkbox {
+  align-items: flex-start;
+  white-space: normal;
+  margin: 0 0 10px;
+  font-weight: 500;
+}
+.inspection-confirmation .rental-checkbox input {
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+.inspection-confirmation p {
+  margin: 0;
+}
+.rental-inspections {
+  display: grid;
+  gap: 24px;
+}
+.rental-inspections > .rental-detail-grid {
+  margin: 0;
+  align-items: start;
+}
+#rental-inspections {
+  scroll-margin-top: 20px;
+}
+.inspection-summary .status-badge {
+  white-space: normal;
+  text-align: left;
+}
+.inspection-notes {
+  display: grid;
+  gap: 18px;
+  padding: 20px 24px;
+  border-top: 1px solid var(--border);
+}
+.inspection-notes p,
+.inspection-damage-comparison dd {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.inspection-recorded {
+  border-top: 1px solid var(--border);
+}
+.inspection-reference {
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.inspection-comparison {
+  padding: 20px 24px;
+}
+.inspection-deltas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin: 0 0 20px;
+}
+.inspection-deltas > div {
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-muted);
+}
+.inspection-deltas dt {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.inspection-deltas dd {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.inspection-changes {
+  margin: 0 0 20px;
+  padding: 0;
+  list-style: none;
+}
+.inspection-changes li {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr 1.3fr;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.inspection-changes span {
+  color: var(--text-secondary);
+}
+.inspection-damage-comparison {
+  border-top: 1px solid var(--border);
+  padding-top: 20px;
+  margin-top: 20px;
+}
+.inspection-damage-comparison dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  margin: 12px 0 20px;
+}
+.inspection-damage-comparison dt {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+@media (max-width: 640px) {
+  .inspection-notes,
+  .inspection-comparison {
+    padding: 18px 16px;
+  }
+  .inspection-deltas,
+  .inspection-damage-comparison dl,
+  .inspection-changes li {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .inspection-changes li {
+    gap: 6px;
+  }
+}

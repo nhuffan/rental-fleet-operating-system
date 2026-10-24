@@ -46,6 +46,8 @@ import {
   CustomerPage,
   CustomerResponse,
   RentalPage,
+  RentalInspectionsResponse,
+  VehicleLatestInspectionResponse,
   RentalResponse,
   VehicleAvailabilityPage,
   VehicleRentalStateResponse,
@@ -121,6 +123,19 @@ export class RentalController {
   rental(@Req() r: AuthRequest, @Param('id', ParseUUIDPipe) id: string) {
     return this.rentalService.rental(r.tenant, id);
   }
+  @Get('rentals/:id/inspections')
+  @RequirePermission('rental.read')
+  @ApiOkResponse({ type: RentalInspectionsResponse })
+  @ApiOperation({
+    description:
+      'Immutable handover and return snapshots for this rental, in recorded order. Legacy rentals can have no snapshots.',
+  })
+  rentalInspections(
+    @Req() r: AuthRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.rentalService.rentalInspections(r.tenant, id);
+  }
   @Post('rentals')
   @RequirePermission('rental.manage')
   @ApiCreatedResponse({ type: RentalResponse })
@@ -168,7 +183,7 @@ export class RentalController {
   @ApiCreatedResponse({ type: RentalResponse })
   @ApiOperation({
     description:
-      'RESERVED to ACTIVE within the planned rental period; records the handover odometer and database time.',
+      'RESERVED to ACTIVE within the planned rental period; atomically records the required immutable inspection, handover odometer, actor and database time. Repeated actions return 409.',
   })
   handover(
     @Req() r: AuthRequest,
@@ -196,7 +211,7 @@ export class RentalController {
   @ApiCreatedResponse({ type: RentalResponse })
   @ApiOperation({
     description:
-      'ACTIVE to COMPLETED, including overdue rentals; end odometer must be at least the handover reading.',
+      'ACTIVE to COMPLETED, including overdue and legacy rentals; atomically records the required immutable return inspection. End odometer must be at least the handover reading. Inspection never creates charges or Commercial movements.',
   })
   returnRental(
     @Req() r: AuthRequest,
@@ -225,6 +240,19 @@ export class RentalController {
   })
   availability(@Req() r: AuthRequest, @Query() q: VehicleAvailabilityQuery) {
     return this.rentalService.availability(r.tenant, q);
+  }
+  @Get('vehicles/:id/latest-inspection')
+  @RequirePermission('rental.read')
+  @ApiOkResponse({ type: VehicleLatestInspectionResponse })
+  @ApiOperation({
+    description:
+      'Most recent immutable inspection for the selected tenant vehicle, or null when no inspection was recorded.',
+  })
+  vehicleLatestInspection(
+    @Req() r: AuthRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.rentalService.vehicleLatestInspection(r.tenant, id);
   }
   @Get('vehicles/:id/rental-state')
   @RequirePermission('rental.read')

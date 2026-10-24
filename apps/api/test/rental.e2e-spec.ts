@@ -12,6 +12,16 @@ import { loadConfig } from '../dist/config.js';
 const fixture = disposableFixture();
 const demo = fixture.data;
 const tokens = fixture.tokens;
+const inspection = {
+  fuelPercent: 75,
+  exteriorCondition: 'GOOD',
+  interiorCondition: 'GOOD',
+  spareTire: 'PRESENT',
+  tools: 'PRESENT',
+  registrationDocument: 'PRESENT',
+  insuranceDocument: 'PRESENT',
+  keys: 'PRESENT',
+};
 let app: INestApplication | undefined;
 let database: Database | undefined;
 const stamp = () => randomUUID().replaceAll('-', '');
@@ -174,9 +184,9 @@ it('authorizes Owner Customer/Rental management and denies ungranted access', as
     .expect(403);
   for (const [name, body] of [
     ['reserve', {}],
-    ['handover', { odometerStart: 10 }],
+    ['handover', { odometerStart: 10, inspection }],
     ['extend', { endAt: iso(120) }],
-    ['return', { odometerEnd: 20 }],
+    ['return', { odometerEnd: 20, inspection }],
     ['cancel', {}],
   ] as const)
     await api('noMembership').post(action(r.id, name)).send(body).expect(403);
@@ -254,14 +264,14 @@ it('runs Customer → Draft → Reserve → Handover → Extend → Return with 
     await api().patch(path).send({ status: 'INACTIVE' }).expect(409);
   const handover = await api('ownerA')
     .post(action(r.id, 'handover'))
-    .send({ odometerStart: 12000 })
+    .send({ odometerStart: 12000, inspection })
     .expect(201);
   expect(handover.body.status).toBe('ACTIVE');
   expect(handover.body.odometerStart).toBe(12000);
   expect(handover.body.handedOverAt).toBeTruthy();
   await api()
     .post(action(r.id, 'handover'))
-    .send({ odometerStart: 12000 })
+    .send({ odometerStart: 12000, inspection })
     .expect(409);
   await api()
     .patch('/rentals/' + r.id)
@@ -277,14 +287,14 @@ it('runs Customer → Draft → Reserve → Handover → Extend → Return with 
   await api().post(action(r.id, 'extend')).send({ endAt: nextEnd }).expect(400);
   await api()
     .post(action(r.id, 'return'))
-    .send({ odometerEnd: 11999 })
+    .send({ odometerEnd: 11999, inspection })
     .expect(400);
   const current = await api().get(`/vehicles/${v.id}/rental-state`).expect(200);
   expect(current.body.state).toBe('RENTED');
   expect(current.body.currentRental.id).toBe(r.id);
   const returned = await api('ownerA')
     .post(action(r.id, 'return'))
-    .send({ odometerEnd: 12240 })
+    .send({ odometerEnd: 12240, inspection })
     .expect(201);
   expect(returned.body.status).toBe('COMPLETED');
   expect(returned.body.odometerEnd).toBe(12240);
@@ -294,7 +304,7 @@ it('runs Customer → Draft → Reserve → Handover → Extend → Return with 
   );
   await api()
     .post(action(r.id, 'return'))
-    .send({ odometerEnd: 12240 })
+    .send({ odometerEnd: 12240, inspection })
     .expect(409);
   await api().post(action(r.id, 'cancel')).expect(409);
   await api()
@@ -387,7 +397,7 @@ it('rejects extension overlap, inactive resources, premature handover and invali
   await api().post(action(b.id, 'reserve')).expect(201);
   await api()
     .post(action(a.id, 'handover'))
-    .send({ odometerStart: 100 })
+    .send({ odometerStart: 100, inspection })
     .expect(409);
   const auditBefore = await database!.pool.query<{ n: number }>(
     'select count(*)::int as n from public.audit_logs where business_id=$1 and entity_id=$2',
@@ -447,7 +457,7 @@ it('rejects extension overlap, inactive resources, premature handover and invali
   const draft = await rental((await vehicle()).id, c.id);
   await api()
     .post(action(draft.id, 'return'))
-    .send({ odometerEnd: 10 })
+    .send({ odometerEnd: 10, inspection })
     .expect(409);
   await api().post(action(draft.id, 'cancel')).expect(201);
   await api().post(action(draft.id, 'cancel')).expect(409);
@@ -482,7 +492,7 @@ it('derives overdue from the database clock and blocks overdue occupancy until a
   await api().post(action(contender.id, 'reserve')).expect(409);
   await api()
     .post(action(r.id, 'return'))
-    .send({ odometerEnd: 30 })
+    .send({ odometerEnd: 30, inspection })
     .expect(201);
   const released = await api()
     .get(availability(iso(10), iso(30)))
@@ -515,9 +525,9 @@ it('rejects known cross-tenant Customer/Rental IDs and tenant injection on every
     .expect(404);
   for (const [name, body] of [
     ['reserve', {}],
-    ['handover', { odometerStart: 0 }],
+    ['handover', { odometerStart: 0, inspection }],
     ['extend', { endAt: iso(180) }],
-    ['return', { odometerEnd: 10 }],
+    ['return', { odometerEnd: 10, inspection }],
     ['cancel', {}],
   ] as const)
     await api().post(action(foreign.id, name)).send(body).expect(404);
