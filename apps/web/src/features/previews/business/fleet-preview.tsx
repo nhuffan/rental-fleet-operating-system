@@ -7,6 +7,7 @@ import {
   Badge,
   Button,
 } from "@/components/ui/primitives";
+import { MetricCard } from "@/components/data-display/metric-card";
 import { Drawer } from "@/components/ui/drawer";
 import { Icon } from "@/components/ui/icon";
 import {
@@ -110,33 +111,14 @@ export function FleetPreview({ screen = "dashboard" }: { screen?: string }) {
         </Panel>
         <div className="stats-grid">
           {metricData.map(([label, value, tone, icon]) => (
-            <Panel className={`compact-stat stat-${tone}`} key={label}>
-              <div className="compact-stat-title">
-                <span>{label}</span>
-                <Icon name={icon} size={16} />
-              </div>
-              <strong>{String(value).padStart(2, "0")}</strong>
-              <div className="stat-bottom">
-                <span className="stat-indicator" />
-                <small>Dữ liệu minh họa</small>
-              </div>
-              <svg
-                viewBox="0 0 110 30"
-                className="stat-sparkline"
-                aria-hidden="true"
-              >
-                <path
-                  d={
-                    tone === "danger"
-                      ? "M1 23h24l8-8h15l9 5h14l10-13h27"
-                      : "M1 27 14 22 24 25 39 15 54 19 69 9 84 13 109 2"
-                  }
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                />
-              </svg>
-            </Panel>
+            <MetricCard
+              key={label}
+              label={label}
+              value={String(value).padStart(2, "0")}
+              tone={tone}
+              icon={icon}
+              description="Dữ liệu minh họa"
+            />
           ))}
         </div>
         <FleetSchedule onRental={openRental} />

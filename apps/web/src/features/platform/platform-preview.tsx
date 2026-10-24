@@ -9,6 +9,7 @@ import {
   Badge,
   Button,
 } from "@/components/ui/primitives";
+import { MetricCard } from "@/components/data-display/metric-card";
 import { Icon } from "@/components/ui/icon";
 import { DataTable, SearchInput } from "@/components/data-display/table";
 import { Drawer } from "@/components/ui/drawer";
@@ -307,24 +308,14 @@ export function PlatformPreview({
         {tenantHealth}
         <div className="stats-grid">
           {metrics.map(([label, value, icon], i) => (
-            <Panel
-              className={`compact-stat stat-${i === 3 ? "warning" : "success"}`}
+            <MetricCard
               key={label}
-            >
-              <div className="compact-stat-title">
-                <span>{label}</span>
-                <Icon name={icon} size={16} />
-              </div>
-              <strong>{String(value).padStart(2, "0")}</strong>
-              <div className="stat-bottom">
-                <small>Dữ liệu minh họa*</small>
-              </div>
-              <div className="platform-stat-bars" aria-hidden="true">
-                {[14, 22, 18, 26, 20, 29, 24, 32, 27].map((h, j) => (
-                  <i key={j} style={{ height: h }} />
-                ))}
-              </div>
-            </Panel>
+              label={label}
+              value={String(value).padStart(2, "0")}
+              icon={icon}
+              tone={i === 3 ? "warning" : "success"}
+              description="Dữ liệu minh họa*"
+            />
           ))}
         </div>
         {activity}

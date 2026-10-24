@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { RecordIdentity } from "@/components/data-display/record-identity";
 import { DataTable } from "@/components/data-display/table";
 import { formatDate } from "@/lib/query";
 import { formatMoney } from "./query";
@@ -20,15 +21,12 @@ export function RentalTable({
           key: "rental",
           label: "Hợp đồng / xe",
           render: (rental) => (
-            <Link
+            <RecordIdentity
+              icon="rental"
+              label={rental.vehicle.licensePlate}
+              detail={`#${rental.id.slice(0, 8)}`}
               href={`/app/rentals/${rental.id}`}
-              className="fleet-record-link"
-            >
-              <strong>{rental.vehicle.licensePlate}</strong>
-              <small className="fleet-cell-meta">
-                #{rental.id.slice(0, 8)}
-              </small>
-            </Link>
+            />
           ),
         },
         {

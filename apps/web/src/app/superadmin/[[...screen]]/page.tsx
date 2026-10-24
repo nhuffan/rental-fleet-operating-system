@@ -44,20 +44,36 @@ export default async function Superadmin({
   params: Promise<{ screen?: string[] }>;
   searchParams: Promise<SearchParams>;
 }) {
-  await platformContext();
+  const context = await platformContext();
   const { screen = [] } = await params;
   if (screen.length === 0) {
     await requirePlatformPermission("platform.overview.read");
-    const data = await platformApi<PlatformOverview>("/platform/overview");
+    const [data, businesses, activity] = await Promise.all([
+      platformApi<PlatformOverview>("/platform/overview"),
+      context.permissions.includes("platform.business.read")
+        ? platformApi<PlatformBusinessPage>(
+            "/platform/businesses?page=1&limit=6&sort=name&order=asc",
+          )
+        : Promise.resolve(undefined),
+      context.permissions.includes("platform.audit.read")
+        ? platformApi<PlatformAuditPage>(
+            "/platform/audit?page=1&limit=6&sort=createdAt&order=desc",
+          )
+        : Promise.resolve(undefined),
+    ]);
     return (
       <>
         <PageHeader
           eyebrow="PLATFORM CONSOLE"
           title="Tổng quan nền tảng"
-          description="Số liệu hiện tại từ API nền tảng được phân quyền độc lập với doanh nghiệp."
+          description="Doanh nghiệp, đội xe và hoạt động gần đây trên toàn nền tảng."
           action={<Badge tone="info">LIVE · Chỉ đọc</Badge>}
         />
-        <PlatformOverviewPanel data={data} />
+        <PlatformOverviewPanel
+          data={data}
+          businesses={businesses}
+          activity={activity}
+        />
       </>
     );
   }
@@ -74,7 +90,7 @@ export default async function Superadmin({
         <PageHeader
           eyebrow="PLATFORM CONSOLE"
           title="Nhật ký nền tảng"
-          description="Theo dõi sự kiện platform với bộ lọc được xử lý ở backend."
+          description="Theo dõi nhật ký theo thời gian, hành động và doanh nghiệp liên quan."
           action={<Badge tone="info">LIVE · Chỉ đọc</Badge>}
         />
         <SupportPanel mode="audit" key="audit" data={data} filters={resolved} />
@@ -115,7 +131,7 @@ export default async function Superadmin({
         <PageHeader
           eyebrow="PLATFORM CONSOLE"
           title="Người dùng & hỗ trợ"
-          description="Tra cứu hồ sơ duy nhất trên toàn nền tảng bằng quyền platform độc lập."
+          description="Tra cứu hồ sơ người dùng và các liên kết doanh nghiệp."
           action={<Badge tone="info">LIVE · Chỉ đọc</Badge>}
         />
         <SupportPanel mode="users" key="users" data={data} filters={filters} />
@@ -173,8 +189,8 @@ export default async function Superadmin({
         <Panel>
           <EmptyState
             icon="shield"
-            title="Chưa có API được phân quyền cho chức năng này"
-            description="Chức năng này sẽ được mở khi có backend và quyền tương ứng. Các thao tác quản trị tại đây chưa khả dụng."
+            title="Chức năng chưa sẵn sàng"
+            description="Phần này đang được phát triển; hiện chưa có thao tác quản trị khả dụng."
           />
           <div className="panel-body">
             <Link className="button button-secondary" href="/superadmin">

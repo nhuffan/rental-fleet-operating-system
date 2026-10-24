@@ -3,6 +3,7 @@ export default function Loading() {
   return (
     <LoadingState
       variant="dashboard"
+      statCount={4}
       label="Đang tải tổng quan doanh nghiệp…"
     />
   );

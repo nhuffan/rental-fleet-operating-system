@@ -12,6 +12,7 @@ import {
   PanelHeader,
   RefreshStatus,
 } from "@/components/ui/primitives";
+import { RecordIdentity } from "@/components/data-display/record-identity";
 import { DataTable, Pagination } from "@/components/data-display/table";
 import { RecordPicker } from "@/components/data-display/record-picker";
 import { Drawer } from "@/components/ui/drawer";
@@ -233,12 +234,12 @@ export function TripsPanel({
                     key: "vehicle",
                     label: "Xe",
                     render: (trip) => (
-                      <Link
-                        className="fleet-record-link"
+                      <RecordIdentity
+                        icon="trip"
+                        label={trip.licensePlate}
+                        detail="Hành trình suy ra · GPS TEST"
                         href={`/app/vehicles/${trip.vehicleId}`}
-                      >
-                        {trip.licensePlate}
-                      </Link>
+                      />
                     ),
                   },
                   {

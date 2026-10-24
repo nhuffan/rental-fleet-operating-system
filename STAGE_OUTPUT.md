@@ -466,3 +466,30 @@ Input: `Stage_12_Operational_Alerts_and_UX_Refinement.md` plus the direct reques
 
 - Reuse shared FormDialog/ConfirmDialog and field primitives for future live forms; preserve guarded close, native form semantics, modal popup ownership and tenant API authorization. Keep alerts derived unless a concrete acknowledgment/history workflow justifies tenant-safe state and audited writes.
 - Final Validation should exercise remaining nonempty workflows, small/short viewports, assistive technology, browser navigation with drafts and network failures without mutating named personal accounts.
+
+
+## Stage 13 output
+
+Input: `Stage_13_Preview_to_Live_UI_Implementation.md`. Implemented 2026-10-24 on clean `main`, baseline **b6850f0**. Source, focused tests and this output form **this stage's implementation commit**; Git history is authoritative for the resulting SHA. The user explicitly requested pushing after commits; that standing preference is recorded in AGENTS/development guidance and this commit is delivered to the configured remote without force-pushing.
+
+### Delivered
+
+- Applied the preview hierarchy to **LIVE Owner Overview**: compact real map/list + four shared KPI cards, followed by a Vietnam-time rental timeline and active/overdue queue cards. Existing tenant APIs supply exact total metadata, at most six rentals per schedule/queue page and twenty location rows. Availability is explicitly an advisory next-24-hour interval; timeline day/seven-day bars clip actual current-page rentals and never imply fleet capacity from blank space. Retained overdue filtering, pagination, detail links, map polling/cancellation and tenant-keyed reset.
+- Applied the **LIVE Superadmin overview** composition: real KPI cards, bounded business-health table, latest platform audit activity, attention summary and GPS freshness breakdown. It reads existing independently authorized overview + first six businesses + latest six audit records, with subset/total/time-window labels. Businesses/Users/Audit and details share clearer identities/tables/statuses; health uses actual assigned/unassigned counts and GPS TEST timestamp states. Unsupported Features/Integrations/Settings/writes remain unavailable; platform receives no tenant financial access.
+- Extracted data-free **MetricCard/RecordIdentity** presentation, reused MetricCard in both reference previews and live dashboards/Commercial/Alerts. Standardized headers, filters, table/empty/pagination/health visuals and entity cells across live Vehicle/Rental/Customer/Trip lists and details. Removed obsolete duplicated KPI/sparkline/old-dashboard CSS. Preserved Inter/Lucide/tokens, light/dark, centered forms/dialogs, account/business menus, intrinsic equal-padding sidebar and fixed header/content-only scrolling. Development previews remain labelled references, with no fixture imports in live graphs or fabricated trends/coordinates/revenue.
+
+### Minimal Verification
+
+- `pnpm --filter web typecheck`, `pnpm --filter web lint`, `pnpm --filter web build`: **PASS**. `node --test apps/web/test/live-presentation-boundaries.test.mjs apps/web/test/dashboard-schedule.test.mjs`: **8/8 PASS** for transitive live-route/fixture separation, presentation-only imports, Vietnam-day boundaries, exact interval clipping and half-open/overnight schedule behavior. Existing Node module-type warning only. `git diff --check`: **PASS**.
+- Focused browser smoke **PASS** using existing services: real empty Owner KPIs/map/schedule/queue, map/list toggle, overdue URL filter, mobile navigation and live Vehicle form opening/Escape; real Superadmin business health + six audit events, dashboard-to-Audit fixed-window deep link, business list/detail. Audit pagination retained **20 rows**, `aria-busy=true` and **zero initial skeletons** while refreshing. Sidebar remained **282.9px** and topbar at y=0. At **390×844**, Owner/Superadmin page widths matched viewport; Owner KPI stacking and **366px** form remained usable. Light/dark switching worked; restored original dark presentation and default viewport, signed QA out and closed the temporary tab.
+- Reused user-owned Web **4000 PID 78262** and API **9000 PID 96133**; no server was started/stopped or Digital Twin touched. No operational test records, account status/password/grants or schema changed. Existing platform reads continue to produce their authorized audit records.
+
+### Boundaries & Remaining
+
+- UI composition/presentation only: no API/domain/contract/Auth/RLS/schema/GPS-ingress/financial-rule change or migration. Customer portal and unsupported platform writes remain deferred; GPS stays TEST. No new preview routes, screenshots, separate stage report or QA manifest.
+- Full historical E2E, production-preview HTTP regression, nonempty online Owner rental/GPS workflows, exhaustive responsive/accessibility/error/performance matrices and computed dynamic-import analysis were **NOT RUN**; retain them for Final Validation. Static boundary checks cover current literal import/reexport graphs, not arbitrary runtime-generated paths.
+
+### Next-stage Handoff
+
+- Reuse the shared live presentation and actual API metadata; preserve explicit bounded-list scope, independent platform grants, exact financial formatting and tenant reset. Add new aggregation contracts only when a real widget needs them; never replace unavailable values with preview fixtures.
+- Continue one implementation commit with this cumulative output and push after committing unless the user explicitly requests otherwise. Final Validation should exercise nonempty operations, rapid filter/tenant transitions and remaining failure/accessibility states without mutating named accounts.

@@ -1,0 +1,373 @@
+.owner-dashboard-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1.8fr) minmax(290px, 1fr);
+  gap: var(--space-5);
+  align-items: stretch;
+}
+.owner-dashboard-context {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  margin: -4px 0 var(--space-5);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+}
+.owner-dashboard-context > span:not(.status-badge),
+.owner-dashboard-context > a,
+.owner-dashboard-footer p,
+.owner-dashboard-footer a {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.owner-dashboard-context > a {
+  margin-left: auto;
+}
+.owner-dashboard-map {
+  min-width: 0;
+  height: auto;
+}
+.owner-dashboard-map .gps-panel {
+  margin-bottom: 0;
+  height: 100%;
+}
+.owner-kpis {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+  min-width: 0;
+}
+.owner-kpis .metric-card {
+  min-width: 0;
+  height: 100%;
+}
+.owner-operation-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(330px, 1fr);
+  align-items: start;
+  gap: var(--space-5);
+}
+.owner-operation-grid > .panel {
+  min-width: 0;
+  overflow: hidden;
+}
+.owner-operation-grid .panel-heading {
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.owner-operation-grid .panel-heading .link-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+.owner-schedule-toolbar {
+  padding: 0 var(--space-5) var(--space-3);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+}
+.owner-schedule-toolbar small {
+  display: block;
+  margin-top: 5px;
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+}
+.owner-schedule-window-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid var(--border);
+  padding: 7px var(--space-3);
+  gap: var(--space-1);
+}
+.owner-schedule-scroll {
+  overflow-x: auto;
+}
+.owner-schedule-grid {
+  min-width: 570px;
+}
+.owner-schedule-header,
+.owner-schedule-row {
+  display: grid;
+  grid-template-columns: 138px minmax(0, 1fr);
+}
+.owner-schedule-header {
+  color: var(--text-secondary);
+  background: var(--surface-muted);
+  border-block: 1px solid var(--border);
+  font-size: var(--text-xs);
+}
+.owner-schedule-header > span {
+  padding: 13px;
+}
+.owner-schedule-header > div {
+  display: grid;
+}
+.owner-schedule-header > div > span {
+  padding: 13px 3px;
+  border-left: 1px solid var(--border);
+  text-align: center;
+  white-space: nowrap;
+}
+.owner-schedule-row {
+  min-height: 94px;
+  border-bottom: 1px solid var(--border);
+}
+.owner-schedule-vehicle {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 13px;
+  gap: 5px;
+}
+.owner-schedule-vehicle strong {
+  font-size: var(--text-sm);
+}
+.owner-schedule-vehicle small {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+.owner-schedule-track {
+  position: relative;
+  background-image: linear-gradient(
+    to right,
+    var(--border) 1px,
+    transparent 1px
+  );
+  overflow: hidden;
+}
+.owner-schedule-booking {
+  position: absolute;
+  top: 12px;
+  bottom: 12px;
+  min-width: 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 5px;
+  padding: 5px 0;
+  border: 1px solid var(--brand-border);
+  border-radius: var(--radius-sm);
+  color: var(--brand-strong);
+  background: var(--brand-muted);
+  overflow: hidden;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+.owner-schedule-booking:hover {
+  border-color: var(--brand-strong);
+}
+.owner-schedule-booking strong,
+.owner-schedule-booking small {
+  font-size: var(--text-xs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  padding-inline: 8px;
+  box-sizing: border-box;
+}
+.owner-schedule-outside {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 12px;
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+}
+.owner-schedule-outside:hover {
+  color: var(--brand-strong);
+}
+.owner-schedule-note {
+  padding: 14px var(--space-5);
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  line-height: 1.6;
+}
+.owner-schedule-key {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--brand-strong);
+  margin-right: 4px;
+}
+.owner-queue-tabs {
+  padding: 0 var(--space-5) var(--space-4);
+  border-bottom: 1px solid var(--border);
+}
+.owner-rental-queue {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+.owner-queue-card {
+  display: block;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  color: var(--text-primary);
+  background: var(--surface);
+  transition:
+    background-color 160ms,
+    border-color 160ms;
+}
+.owner-queue-card:hover {
+  background: var(--surface-muted);
+  border-color: var(--brand-border);
+}
+.owner-queue-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+}
+.owner-queue-card-header > span:first-child {
+  font-variant-numeric: tabular-nums;
+}
+.owner-queue-identity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-block: var(--space-4);
+  min-width: 0;
+}
+.owner-queue-identity > div {
+  min-width: 0;
+  flex: 1;
+}
+.owner-queue-identity strong {
+  display: block;
+  font-size: var(--text-base);
+}
+.owner-queue-identity small {
+  display: block;
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  margin-top: 4px;
+  overflow-wrap: anywhere;
+}
+.owner-queue-vehicle-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 46px;
+  width: 46px;
+  height: 46px;
+  color: var(--text-secondary);
+  border-radius: var(--radius-md);
+  background: var(--surface-muted);
+}
+.owner-queue-due {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+}
+.owner-queue-due .ui-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.owner-queue-due.is-overdue {
+  color: var(--danger);
+}
+.owner-queue-amount {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  margin-top: 9px;
+}
+.owner-queue-amount strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+.owner-operation-grid .pagination {
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+.owner-operation-grid .pagination .button {
+  padding-inline: 9px;
+}
+.owner-dashboard-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  margin-top: var(--space-5);
+}
+.owner-dashboard-footer p {
+  margin: 0;
+}
+.owner-dashboard-footer .ui-icon {
+  flex-shrink: 0;
+}
+@media (max-width: 1280px) {
+  .owner-operation-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .owner-rental-queue {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .owner-rental-queue > .empty-state {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 1100px) {
+  .owner-dashboard-top {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .owner-kpis {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+@media (max-width: 767px) {
+  .owner-kpis,
+  .owner-rental-queue {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .owner-dashboard-context {
+    align-items: flex-start;
+    gap: var(--space-3);
+  }
+  .owner-dashboard-context > a {
+    margin-left: 0;
+  }
+  .owner-schedule-toolbar,
+  .owner-queue-tabs {
+    padding-inline: var(--space-4);
+  }
+}
+@media (max-width: 540px) {
+  .owner-rental-queue {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .owner-schedule-window-nav {
+    padding-inline: 6px;
+  }
+  .owner-schedule-window-nav .button {
+    padding-inline: 6px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .owner-queue-card {
+    transition: none;
+  }
+}

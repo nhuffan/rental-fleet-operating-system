@@ -11,6 +11,7 @@ import {
   RefreshStatus,
 } from "@/components/ui/primitives";
 import { Combobox, FilterBar } from "@/components/ui/controls";
+import { MetricCard } from "@/components/data-display/metric-card";
 import { DataTable, Pagination } from "@/components/data-display/table";
 import { formatDate, queryString } from "@/lib/query";
 import {
@@ -75,14 +76,15 @@ export function AlertsPanel({
   return (
     <>
       <div className="alerts-summary-grid">
-        {cards.map(([label, value, description, tone]) => (
-          <Panel key={label}>
-            <div className={`alerts-stat alerts-stat-${tone}`}>
-              <span>{label}</span>
-              <strong>{value}</strong>
-              <p>{description}</p>
-            </div>
-          </Panel>
+        {cards.map(([label, value, description, tone], index) => (
+          <MetricCard
+            key={label}
+            label={label}
+            value={value}
+            description={description}
+            tone={tone}
+            icon={index === 2 ? "signal" : index === 1 ? "calendar" : "clock"}
+          />
         ))}
       </div>
       <Panel>
@@ -94,10 +96,10 @@ export function AlertsPanel({
             và mức độ.
           </p>
           <p>
-            GPS dùng nguồn TEST: trễ sau 2 phút, quá 10 phút chưa có bản tin mới tính từ
-            bản tin gần nhất của thiết bị đang gắn. Không có bản tin hoặc không
-            gắn thiết bị sẽ không tạo cảnh báo GPS. Cảnh báo tự biến mất khi dữ
-            liệu vận hành không còn thỏa điều kiện.
+            GPS dùng nguồn TEST: trễ sau 2 phút, quá 10 phút chưa có bản tin mới
+            tính từ bản tin gần nhất của thiết bị đang gắn. Không có bản tin
+            hoặc không gắn thiết bị sẽ không tạo cảnh báo GPS. Cảnh báo tự biến
+            mất khi dữ liệu vận hành không còn thỏa điều kiện.
           </p>
         </div>
       </Panel>

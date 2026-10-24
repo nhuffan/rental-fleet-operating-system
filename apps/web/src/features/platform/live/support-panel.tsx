@@ -22,6 +22,8 @@ import {
 import { DataTable, Pagination } from "@/components/data-display/table";
 import { formatDate, queryString } from "@/lib/query";
 import { auditLabels } from "./query";
+import { PlatformIdentity } from "./presentation";
+import { Icon } from "@/components/ui/icon";
 import type {
   PlatformAuditPage,
   PlatformUserPage,
@@ -50,11 +52,16 @@ export function SupportPanel({
       }),
     );
   return (
-    <Panel>
+    <Panel className="platform-list-panel">
       <PanelHeader
         title={mode === "audit" ? "Nhật ký nền tảng" : "Tra cứu người dùng"}
         icon={mode === "audit" ? "audit" : "users"}
-        subtitle={`${data.total} ${mode === "audit" ? "sự kiện phù hợp" : "hồ sơ duy nhất phù hợp"} · LIVE · Chỉ đọc`}
+        subtitle={`${data.total} ${mode === "audit" ? "sự kiện phù hợp" : "hồ sơ duy nhất phù hợp"} · Trang ${data.page} · Chỉ đọc`}
+        action={
+          <span className="platform-result-count">
+            {data.data.length} hiển thị
+          </span>
+        }
       />
       <FilterBar
         key={`${mode}-${JSON.stringify(filters)}`}
@@ -227,8 +234,15 @@ export function SupportPanel({
                 label: "Hành động",
                 render: (a) => (
                   <>
-                    {auditLabels[a.action] ?? auditLabels.other}
-                    <small>{a.action}</small>
+                    <span className="platform-audit-action">
+                      <span className="platform-activity-icon">
+                        <Icon name="audit" size={16} />
+                      </span>
+                      <strong>
+                        {auditLabels[a.action] ?? auditLabels.other}
+                      </strong>
+                    </span>
+                    <small className="platform-raw-action">{a.action}</small>
                   </>
                 ),
               },
@@ -240,7 +254,7 @@ export function SupportPanel({
                     className="link-brand"
                     href={`/superadmin/users/${a.actorId}`}
                   >
-                    <code>{a.actorId}</code>
+                    <code className="platform-reference">{a.actorId}</code>
                   </Link>
                 ),
               },
@@ -249,7 +263,19 @@ export function SupportPanel({
                 label: "Đích",
                 render: (a) => (
                   <>
-                    {a.entityType}
+                    <Badge
+                      tone={a.entityType === "business" ? "brand" : "neutral"}
+                    >
+                      {
+                        {
+                          platform: "Nền tảng",
+                          business: "Doanh nghiệp",
+                          user: "Người dùng",
+                          platform_membership: "Quyền platform",
+                          other: "Khác",
+                        }[a.entityType]
+                      }
+                    </Badge>
                     {a.entityId && (
                       <small>
                         {a.entityType === "business" ||
@@ -258,10 +284,14 @@ export function SupportPanel({
                             className="link-brand"
                             href={`/superadmin/${a.entityType === "business" ? "businesses" : "users"}/${a.entityId}`}
                           >
-                            <code>{a.entityId}</code>
+                            <code className="platform-reference">
+                              {a.entityId}
+                            </code>
                           </Link>
                         ) : (
-                          <code>{a.entityId}</code>
+                          <code className="platform-reference">
+                            {a.entityId}
+                          </code>
                         )}
                       </small>
                     )}
@@ -272,7 +302,9 @@ export function SupportPanel({
                 key: "request",
                 label: "Request ID",
                 render: (a) => (
-                  <code>{a.requestId ?? "Không có mã hợp lệ"}</code>
+                  <code className="platform-reference">
+                    {a.requestId ?? "Không có mã hợp lệ"}
+                  </code>
                 ),
               },
             ]}
@@ -286,15 +318,12 @@ export function SupportPanel({
                 key: "name",
                 label: "Người dùng",
                 render: (u) => (
-                  <Link
-                    className="fleet-record-link"
+                  <PlatformIdentity
+                    kind="users"
+                    name={u.displayName}
+                    subtitle={u.id}
                     href={`/superadmin/users/${u.id}`}
-                  >
-                    <strong>{u.displayName}</strong>
-                    <small>
-                      <code>{u.id}</code>
-                    </small>
-                  </Link>
+                  />
                 ),
               },
               {
@@ -347,6 +376,19 @@ export function SupportPanel({
                 label: "Tạo lúc (VN)",
                 render: (u) => formatDate(u.createdAt),
               },
+              {
+                key: "detail",
+                label: "",
+                render: (u) => (
+                  <Link
+                    className="platform-detail-link"
+                    aria-label={`Xem người dùng ${u.displayName}`}
+                    href={`/superadmin/users/${u.id}`}
+                  >
+                    <Icon name="chevron" size={18} />
+                  </Link>
+                ),
+              },
             ]}
           />
         )}
@@ -373,103 +415,108 @@ export function UserDetailPanel({ data }: { data: PlatformUserDetail }) {
   return (
     <>
       <Panel>
-        <PanelHeader
-          title={u.displayName}
-          icon="users"
-          action={<StatusBadge status={u.status} />}
-        />
-        <dl className="detail-list">
-          <div>
-            <dt>Mã hồ sơ</dt>
-            <dd>
-              <code>{u.id}</code>
-            </dd>
-          </div>
-          <div>
-            <dt>Quyền Superadmin</dt>
-            <dd>
-              {u.platformStatus === "NONE"
-                ? "Chưa cấp"
-                : u.platformStatus === "ACTIVE" && u.status === "ACTIVE"
-                  ? "Superadmin"
-                  : "Superadmin · Đã vô hiệu hóa"}
-            </dd>
-          </div>
-          <div>
-            <dt>Doanh nghiệp hiệu lực / tổng</dt>
-            <dd>
-              {u.activeMembershipCount} / {u.membershipCount}
-            </dd>
-          </div>
-          <div>
-            <dt>Tạo lúc (VN)</dt>
-            <dd>{formatDate(u.createdAt)}</dd>
-          </div>
-          <div>
-            <dt>Cập nhật (VN)</dt>
-            <dd>{formatDate(u.updatedAt)}</dd>
-          </div>
-        </dl>
-        <div className="panel-body">
-          <Notice>
-            Chỉ tra cứu hỗ trợ. Mạo danh, đặt lại mật khẩu, vô hiệu hóa tài
-            khoản và đổi quyền chưa khả dụng.
-          </Notice>
+        <div className="tenant-detail-hero platform-user-hero">
+          <PlatformIdentity
+            kind="users"
+            name={u.displayName}
+            subtitle="Hồ sơ ứng dụng · Hỗ trợ chỉ đọc"
+          />
+          <StatusBadge status={u.status} />
+          <Badge tone="info">Chỉ đọc</Badge>
         </div>
       </Panel>
-      <Panel className="platform-live-detail">
-        <PanelHeader
-          title="Liên kết doanh nghiệp"
-          icon="business"
-          subtitle="Trạng thái truy cập Owner và doanh nghiệp được hiển thị riêng."
-        />
-        <div className="pending-region" aria-busy={pending}>
-          <RefreshStatus pending={pending} />
-          <DataTable
-            caption="Quyền Owner của hồ sơ, có phân trang từ API"
-            rows={data.memberships.data}
-            columns={[
-              {
-                key: "business",
-                label: "Doanh nghiệp",
-                render: (m) => (
-                  <Link
-                    className="link-brand"
-                    href={`/superadmin/businesses/${m.businessId}`}
-                  >
-                    {m.businessName}
-                    <small>
-                      <code>{m.businessId}</code>
-                    </small>
-                  </Link>
-                ),
-              },
-              {
-                key: "status",
-                label: "Quyền Owner",
-                render: (m) => <StatusBadge status={m.status} />,
-              },
-              {
-                key: "businessStatus",
-                label: "Doanh nghiệp",
-                render: (m) => <StatusBadge status={m.businessStatus} />,
-              },
-            ]}
+      <div className="platform-user-detail-grid">
+        <Panel>
+          <PanelHeader title="Thông tin hồ sơ" icon="users" />
+          <dl className="detail-list">
+            <div>
+              <dt>Mã hồ sơ</dt>
+              <dd>
+                <code className="platform-reference">{u.id}</code>
+              </dd>
+            </div>
+            <div>
+              <dt>Quyền Superadmin</dt>
+              <dd>
+                {u.platformStatus === "NONE"
+                  ? "Chưa cấp"
+                  : u.platformStatus === "ACTIVE" && u.status === "ACTIVE"
+                    ? "Superadmin"
+                    : "Superadmin · Đã vô hiệu hóa"}
+              </dd>
+            </div>
+            <div>
+              <dt>Doanh nghiệp hiệu lực / tổng</dt>
+              <dd>
+                {u.activeMembershipCount} / {u.membershipCount}
+              </dd>
+            </div>
+            <div>
+              <dt>Tạo lúc (VN)</dt>
+              <dd>{formatDate(u.createdAt)}</dd>
+            </div>
+            <div>
+              <dt>Cập nhật (VN)</dt>
+              <dd>{formatDate(u.updatedAt)}</dd>
+            </div>
+          </dl>
+          <div className="panel-body">
+            <Notice>
+              Chỉ tra cứu hỗ trợ. Mạo danh, đặt lại mật khẩu, vô hiệu hóa tài
+              khoản và đổi quyền chưa khả dụng.
+            </Notice>
+          </div>
+        </Panel>
+        <Panel className="platform-list-panel">
+          <PanelHeader
+            title="Liên kết doanh nghiệp"
+            icon="business"
+            subtitle="Trạng thái truy cập Owner và doanh nghiệp được hiển thị riêng."
           />
-          <Pagination
-            disabled={pending}
-            {...data.memberships}
-            onPage={(page) =>
-              startTransition(() =>
-                router.push(
-                  `/superadmin/users/${u.id}?${queryString({ page, limit: data.memberships.limit })}`,
-                  { scroll: false },
-                ),
-              )
-            }
-          />
-        </div>
-      </Panel>
+          <div className="pending-region" aria-busy={pending}>
+            <RefreshStatus pending={pending} />
+            <DataTable
+              caption="Quyền Owner của hồ sơ, có phân trang từ API"
+              rows={data.memberships.data}
+              columns={[
+                {
+                  key: "business",
+                  label: "Doanh nghiệp",
+                  render: (m) => (
+                    <PlatformIdentity
+                      name={m.businessName}
+                      subtitle={m.businessId}
+                      href={`/superadmin/businesses/${m.businessId}`}
+                    />
+                  ),
+                },
+                {
+                  key: "status",
+                  label: "Quyền Owner",
+                  render: (m) => <StatusBadge status={m.status} />,
+                },
+                {
+                  key: "businessStatus",
+                  label: "Doanh nghiệp",
+                  render: (m) => <StatusBadge status={m.businessStatus} />,
+                },
+              ]}
+            />
+            <Pagination
+              disabled={pending}
+              {...data.memberships}
+              onPage={(page) =>
+                startTransition(() =>
+                  router.push(
+                    `/superadmin/users/${u.id}?${queryString({ page, limit: data.memberships.limit })}`,
+                    { scroll: false },
+                  ),
+                )
+              }
+            />
+          </div>
+        </Panel>
+      </div>
     </>
   );
 }

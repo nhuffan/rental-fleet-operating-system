@@ -1,0 +1,129 @@
+/* Live records borrow preview hierarchy without carrying preview data. */
+.record-identity {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+  max-width: 100%;
+  color: var(--text-primary);
+}
+.record-identity-icon {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+a.record-identity:hover .record-identity-icon {
+  background: var(--brand-subtle);
+  color: var(--brand-strong);
+  border-color: var(--brand-border);
+}
+.record-identity-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 4px;
+}
+.record-identity-copy strong {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.record-identity-copy small {
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  overflow-wrap: anywhere;
+}
+.metric-card-basis {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 3px;
+}
+.commercial-summary-grid .metric-card-value {
+  font-size: clamp(20px, 1.8vw, 28px);
+  letter-spacing: -0.6px;
+}
+.gps-view-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.gps-health-chip {
+  display: inline-flex;
+  padding: 6px 9px;
+  gap: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+.gps-health-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--text-muted);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.gps-health-fresh .gps-health-dot {
+  background: var(--success);
+}
+.gps-health-stale .gps-health-dot {
+  background: var(--warning);
+}
+.gps-health-offline .gps-health-dot {
+  background: var(--danger);
+}
+.gps-stats {
+  gap: 8px;
+  padding: 14px 20px;
+}
+.gps-stats strong {
+  font-size: 15px;
+}
+.gps-panel-compact .gps-content {
+  grid-template-columns: minmax(0, 1fr);
+}
+.gps-panel-compact .gps-live-canvas {
+  height: 320px;
+}
+.gps-panel-compact .gps-location-list {
+  border-left: 0;
+  border-top: 1px solid var(--border);
+  max-height: 220px;
+}
+.gps-panel-compact .gps-sync {
+  padding-block: 8px;
+}
+.gps-panel-compact .gps-footer {
+  padding-block: 12px;
+}
+.fleet-profile-grid .detail-list > div,
+.detail-list.commercial-rental-totals > div {
+  align-items: baseline;
+  padding-block: 13px;
+}
+.detail-list dt {
+  font-size: var(--text-sm);
+}
+.detail-list dd {
+  font-weight: 500;
+}
+@media (max-width: 767px) {
+  .gps-stats {
+    padding-inline: 16px;
+  }
+  .gps-panel-compact .gps-live-canvas {
+    height: 300px;
+  }
+  .record-identity-icon {
+    width: 34px;
+    height: 34px;
+  }
+  .record-identity {
+    gap: 8px;
+  }
+}

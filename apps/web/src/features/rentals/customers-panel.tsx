@@ -11,6 +11,7 @@ import {
   RefreshStatus,
   StatusBadge,
 } from "@/components/ui/primitives";
+import { RecordIdentity } from "@/components/data-display/record-identity";
 import { DataTable, Pagination } from "@/components/data-display/table";
 import { MutationNotice } from "@/components/feedback/mutation-notice";
 import { queryString } from "@/lib/query";
@@ -120,12 +121,12 @@ export function CustomersPanel({
                 key: "name",
                 label: "Khách hàng",
                 render: (customer) => (
-                  <Link
-                    className="fleet-record-link"
+                  <RecordIdentity
+                    icon="users"
+                    label={customer.name}
+                    detail={`#${customer.id.slice(0, 8)}`}
                     href={`/app/customers/${customer.id}`}
-                  >
-                    <strong>{customer.name}</strong>
-                  </Link>
+                  />
                 ),
               },
               {

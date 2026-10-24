@@ -37,6 +37,7 @@ export function LiveFleetMap({
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
   const [filters, setFilters] = useState({ search: "", state: "", page: 1 });
+  const [showList, setShowList] = useState(!compact);
   const [selected, setSelected] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -122,16 +123,35 @@ export function LiveFleetMap({
   const active = payload.data.find((v) => v.vehicleId === selected);
   const pagePending = busy || snapshot.scope !== JSON.stringify(filters);
   return (
-    <Panel className="gps-panel">
+    <Panel className={`gps-panel ${compact ? "gps-panel-compact" : ""}`}>
       <PanelHeader
         icon="map"
         title={compact ? "Vị trí đội xe" : "Bản đồ & tín hiệu GPS"}
-        subtitle="Traccar TEST feed · GPS thử nghiệm qua pipeline thật"
-        action={<Badge tone="warning">TEST FEED</Badge>}
+        subtitle="Vị trí được ghi nhận gần nhất · Traccar TEST"
+        action={
+          <div className="gps-view-actions">
+            <Badge tone="warning">GPS TEST</Badge>
+            {compact && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="small"
+                aria-pressed={showList}
+                onClick={() => setShowList((value) => !value)}
+              >
+                {showList ? "Ẩn danh sách xe" : "Xem danh sách xe"}
+              </Button>
+            )}
+          </div>
+        }
       />
-      <div className="gps-stats">
+      <div className="gps-stats" aria-label="Độ mới GPS toàn đội xe">
         {Object.entries(payload.stats).map(([state, n]) => (
-          <span key={state}>
+          <span
+            className={`gps-health-chip gps-health-${state.toLowerCase()}`}
+            key={state}
+          >
+            <span className="gps-health-dot" aria-hidden="true" />
             <strong>{n}</strong>
             {gpsLabels[state]}
           </span>
@@ -200,42 +220,47 @@ export function LiveFleetMap({
           data={payload.data}
           onSelect={setSelected}
         />
-        <div className="gps-location-list" aria-label="Xe trong trang hiện tại">
-          {payload.data.map((v) => (
-            <button
-              className={`gps-location-row ${selected === v.vehicleId ? "selected" : ""}`}
-              key={v.vehicleId}
-              onClick={() => setSelected(v.vehicleId)}
-              aria-pressed={selected === v.vehicleId}
-            >
-              <strong>{v.licensePlate}</strong>
-              <span>
-                {v.make} {v.model}
-              </span>
-              <Badge
-                tone={
-                  v.state === "FRESH"
-                    ? "success"
-                    : v.state === "STALE"
-                      ? "warning"
-                      : "neutral"
-                }
+        {showList && (
+          <div
+            className="gps-location-list"
+            aria-label="Xe trong trang hiện tại"
+          >
+            {payload.data.map((v) => (
+              <button
+                className={`gps-location-row ${selected === v.vehicleId ? "selected" : ""}`}
+                key={v.vehicleId}
+                onClick={() => setSelected(v.vehicleId)}
+                aria-pressed={selected === v.vehicleId}
               >
-                {gpsLabels[v.state]}
-              </Badge>
-              <small>Vị trí cuối: {date(v.lastSeenAt)}</small>
-              {v.location && (
-                <small>TEST · {v.location.speedKph.toFixed(1)} km/h</small>
-              )}
-            </button>
-          ))}
-          {!payload.data.length && (
-            <EmptyState
-              title="Không có xe phù hợp"
-              description="Thử bỏ bộ lọc hoặc thêm xe vào doanh nghiệp."
-            />
-          )}
-        </div>
+                <strong>{v.licensePlate}</strong>
+                <span>
+                  {v.make} {v.model}
+                </span>
+                <Badge
+                  tone={
+                    v.state === "FRESH"
+                      ? "success"
+                      : v.state === "STALE"
+                        ? "warning"
+                        : "neutral"
+                  }
+                >
+                  {gpsLabels[v.state]}
+                </Badge>
+                <small>Vị trí cuối: {date(v.lastSeenAt)}</small>
+                {v.location && (
+                  <small>TEST · {v.location.speedKph.toFixed(1)} km/h</small>
+                )}
+              </button>
+            ))}
+            {!payload.data.length && (
+              <EmptyState
+                title="Không có xe phù hợp"
+                description="Thử bỏ bộ lọc hoặc thêm xe vào doanh nghiệp."
+              />
+            )}
+          </div>
+        )}
       </div>
       {active && (
         <div className="gps-selected" aria-live="polite">
@@ -280,8 +305,9 @@ export function LiveFleetMap({
       )}
       <div className="gps-footer">
         <span>
-          {payload.total} xe phù hợp · Marker chỉ thuộc trang hiện tại. Ngưỡng:
-          mới ≤2 phút; trễ ≤10 phút; sau đó mất kết nối.
+          {payload.total} xe phù hợp · Marker chỉ thuộc trang hiện tại; tổng hợp
+          GPS theo toàn đội xe. Ngưỡng: mới ≤2 phút; trễ ≤10 phút; sau đó là bản
+          tin cũ.
         </span>
         {compact ? (
           <Link className="link-brand" href="/app/fleet-map">

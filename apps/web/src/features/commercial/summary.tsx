@@ -1,4 +1,5 @@
-import { Panel } from "@/components/ui/primitives";
+import { MetricCard } from "@/components/data-display/metric-card";
+import type { IconName } from "@/components/ui/icon";
 import { commercialMoney } from "./query";
 import type { CommercialSummary } from "./types";
 export function SummaryCards({ summary }: { summary: CommercialSummary }) {
@@ -30,15 +31,20 @@ export function SummaryCards({ summary }: { summary: CommercialSummary }) {
   ];
   return (
     <div className="commercial-summary-grid">
-      {cards.map(([label, english, value, note]) => (
-        <Panel key={english}>
-          <div className="commercial-stat">
-            <span>{label}</span>
-            <small>{english}</small>
-            <strong>{commercialMoney(value)}</strong>
-            <p>{note}</p>
-          </div>
-        </Panel>
+      {cards.map(([label, english, value, note], index) => (
+        <MetricCard
+          key={english}
+          label={label}
+          value={commercialMoney(value)}
+          icon={(["wallet", "audit", "grid", "shield"] as IconName[])[index]}
+          tone={index === 1 ? "warning" : index === 3 ? "info" : "brand"}
+          description={
+            <>
+              <span className="metric-card-basis">{english}</span>
+              {note}
+            </>
+          }
+        />
       ))}
     </div>
   );

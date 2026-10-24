@@ -8,7 +8,6 @@ import {
   Panel,
   PanelHeader,
   RefreshStatus,
-  Badge,
   EmptyState,
   StatusBadge,
 } from "@/components/ui/primitives";
@@ -16,6 +15,8 @@ import { DataTable, Pagination } from "@/components/data-display/table";
 import { formatDate, queryString } from "@/lib/query";
 import type { BusinessFilters } from "./query";
 import type { PlatformBusinessPage } from "./types";
+import { PlatformIdentity, PlatformGpsHealth } from "./presentation";
+import { Icon } from "@/components/ui/icon";
 export function BusinessesPanel({
   initial,
   filters,
@@ -33,10 +34,15 @@ export function BusinessesPanel({
     );
   }
   return (
-    <Panel className="tenant-health">
+    <Panel className="platform-list-panel">
       <PanelHeader
         title="Danh sách doanh nghiệp"
-        subtitle={`${initial.total} doanh nghiệp phù hợp · Dữ liệu trực tiếp, chỉ đọc`}
+        subtitle={`${initial.total} doanh nghiệp phù hợp · Trang ${initial.page} · Chỉ đọc`}
+        action={
+          <span className="platform-result-count">
+            {initial.data.length} hiển thị
+          </span>
+        }
         icon="business"
       />
       <FilterBar
@@ -130,15 +136,11 @@ export function BusinessesPanel({
                 key: "name",
                 label: "Doanh nghiệp",
                 render: (b) => (
-                  <Link
+                  <PlatformIdentity
+                    name={b.name}
+                    subtitle={`${b.timezone} · ${b.currency}`}
                     href={`/superadmin/businesses/${b.id}`}
-                    className="tenant-name fleet-record-link"
-                  >
-                    <strong>{b.name}</strong>
-                    <small>
-                      {b.timezone} · {b.currency}
-                    </small>
-                  </Link>
+                  />
                 ),
               },
               {
@@ -179,24 +181,25 @@ export function BusinessesPanel({
               {
                 key: "gps",
                 label: "GPS TEST",
-                render: (b) => (
-                  <>
-                    <Badge tone={b.gps.FRESH ? "success" : "neutral"}>
-                      {b.gps.FRESH} mới
-                    </Badge>
-                    <small>
-                      {b.gps.STALE} trễ · {b.gps.OFFLINE} mất kết nối
-                    </small>
-                    <small>
-                      {b.gps.NO_DATA} chưa có data · {b.gps.UNASSIGNED} chưa gắn
-                    </small>
-                  </>
-                ),
+                render: (b) => <PlatformGpsHealth gps={b.gps} compact />,
               },
               {
                 key: "created",
                 label: "Ngày tạo (VN)",
                 render: (b) => formatDate(b.createdAt),
+              },
+              {
+                key: "detail",
+                label: "",
+                render: (b) => (
+                  <Link
+                    className="platform-detail-link"
+                    aria-label={`Xem doanh nghiệp ${b.name}`}
+                    href={`/superadmin/businesses/${b.id}`}
+                  >
+                    <Icon name="chevron" size={18} />
+                  </Link>
+                ),
               },
             ]}
           />

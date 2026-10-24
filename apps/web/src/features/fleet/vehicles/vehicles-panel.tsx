@@ -9,6 +9,7 @@ import {
   PanelHeader,
   RefreshStatus,
 } from "@/components/ui/primitives";
+import { RecordIdentity } from "@/components/data-display/record-identity";
 import { DataTable, Pagination } from "@/components/data-display/table";
 import { Icon } from "@/components/ui/icon";
 import { MutationNotice } from "@/components/feedback/mutation-notice";
@@ -73,23 +74,14 @@ export function VehiclesPanel({
             columns={[
               {
                 key: "plate",
-                label: "Biển số",
+                label: "Phương tiện",
                 render: (vehicle) => (
-                  <Link
-                    className="fleet-record-link"
+                  <RecordIdentity
+                    icon="car"
+                    label={vehicle.licensePlate}
+                    detail={`${vehicle.make} ${vehicle.model}`}
                     href={`/app/vehicles/${vehicle.id}`}
-                  >
-                    <strong>{vehicle.licensePlate}</strong>
-                  </Link>
-                ),
-              },
-              {
-                key: "model",
-                label: "Xe",
-                render: (vehicle) => (
-                  <span>
-                    {vehicle.make} {vehicle.model}
-                  </span>
+                  />
                 ),
               },
               {

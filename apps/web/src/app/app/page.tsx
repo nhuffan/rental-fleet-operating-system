@@ -1,18 +1,15 @@
+import Link from "next/link";
 import { LiveFleetMap } from "@/features/telematics/gps/live-fleet-map";
 import type { LocationPage } from "@/features/telematics/gps/types";
-import Link from "next/link";
 import { RentalDashboard } from "@/features/rentals/rental-dashboard";
 import type { RentalPage } from "@/features/rentals/types";
-import { pageNumber, type SearchParams } from "@/lib/query";
-import type { Branch, Membership, Page } from "@rental-fleet/contracts";
-import { api, currentContext } from "@/lib/api";
-import {
-  PageHeader,
-  Panel,
-  PanelHeader,
-  Badge,
-} from "@/components/ui/primitives";
+import { MetricCard } from "@/components/data-display/metric-card";
+import { PageHeader, Badge } from "@/components/ui/primitives";
 import { Icon } from "@/components/ui/icon";
+import { pageNumber, queryString, type SearchParams } from "@/lib/query";
+import { api, currentContext } from "@/lib/api";
+import "@/features/dashboard/owner-dashboard.css";
+
 export default async function Dashboard({
   searchParams,
 }: {
@@ -23,167 +20,139 @@ export default async function Dashboard({
   const queuePage = pageNumber(params.queuePage);
   const overdue = params.overdue === "true";
   const c = await currentContext();
-  const [branches, members, schedule, queue, overdueRentals] =
+  const asOf = new Date();
+  const availabilityWindow = {
+    startAt: asOf.toISOString(),
+    endAt: new Date(asOf.getTime() + 86400000).toISOString(),
+  };
+  const rentalAccess = c.permissions.includes("rental.read");
+  const [schedule, queue, activeCount, overdueCount, availability, locations] =
     await Promise.all([
-      api<Page<Branch>>("/branches?limit=1"),
-      c.permissions.includes("user.read")
-        ? api<Page<Membership>>("/memberships?limit=1")
-        : Promise.resolve(null),
-      c.permissions.includes("rental.read")
+      rentalAccess
         ? api<RentalPage>(
-            `/rentals?status=RESERVED&sort=startAt&order=asc&page=${schedulePage}&limit=10`,
+            `/rentals?status=RESERVED&sort=startAt&order=asc&page=${schedulePage}&limit=6`,
           )
         : Promise.resolve(null),
-      c.permissions.includes("rental.read")
+      rentalAccess
         ? api<RentalPage>(
-            `/rentals?status=ACTIVE&sort=endAt&order=asc&page=${queuePage}&limit=10${overdue ? "&overdue=true" : ""}`,
+            `/rentals?status=ACTIVE&sort=endAt&order=asc&page=${queuePage}&limit=6${overdue ? "&overdue=true" : ""}`,
           )
         : Promise.resolve(null),
-      c.permissions.includes("rental.read")
+      rentalAccess
+        ? api<RentalPage>("/rentals?status=ACTIVE&limit=1")
+        : Promise.resolve(null),
+      rentalAccess
         ? api<RentalPage>("/rentals?status=ACTIVE&overdue=true&limit=1")
         : Promise.resolve(null),
+      rentalAccess
+        ? api<{ total: number }>(
+            `/vehicles/availability?${queryString({ ...availabilityWindow, availableOnly: "true", limit: 1 })}`,
+          )
+        : Promise.resolve(null),
+      c.permissions.includes("gps.read")
+        ? api<LocationPage>("/fleet/locations?limit=20")
+        : Promise.resolve(null),
     ]);
-  const locations = c.permissions.includes("gps.read")
-    ? await api<LocationPage>("/fleet/locations?limit=20")
-    : null;
   return (
-    <>
+    <div className="owner-dashboard">
       <PageHeader
-        eyebrow="KHÔNG GIAN LÀM VIỆC"
-        title={`Xin chào, ${c.user.displayName || "bạn"}.`}
-        description="Mọi điểm vận hành, cùng một không gian quản lý."
+        eyebrow={c.business.name}
+        title="Tổng quan vận hành"
+        description="Vị trí đội xe, lịch đặt và những hợp đồng cần theo dõi."
         action={
-          <Badge tone="success">
-            {c.business.status === "ACTIVE"
-              ? "Đang hoạt động"
-              : c.business.status}
-          </Badge>
+          <Link className="button button-primary" href="/app/rentals">
+            <Icon name="rental" size={17} /> Quản lý hợp đồng
+          </Link>
         }
       />
-      <div className="core-stats">
-        <Panel className="core-stat">
-          <span>
-            <Icon name="pin" /> Chi nhánh
-          </span>
-          <strong>{branches.total}</strong>
-        </Panel>
-        {members && (
-          <Panel className="core-stat">
-            <span>
-              <Icon name="users" /> Owner
-            </span>
-            <strong>{members.total}</strong>
-          </Panel>
-        )}
-        <Panel className="core-stat">
-          <span>
-            <Icon name="shield" /> Không gian của bạn
-          </span>
-          <strong style={{ fontSize: 20 }}>Owner</strong>
-        </Panel>
+      <div className="owner-dashboard-context">
+        <Badge tone="success">Doanh nghiệp đang hoạt động</Badge>
+        <span>
+          <Icon name="calendar" size={15} />
+          {new Intl.DateTimeFormat("vi-VN", {
+            dateStyle: "full",
+            timeZone: "Asia/Ho_Chi_Minh",
+          }).format(asOf)}
+        </span>
+        <Link href="/app/alerts" className="link-brand">
+          Xem cảnh báo vận hành <Icon name="arrow" size={15} />
+        </Link>
       </div>
-      {locations && (
-        <LiveFleetMap
-          key={`dashboard-map:${c.business.id}`}
-          businessId={c.business.id}
-          initial={locations}
-          compact
-        />
-      )}
-      <div className="core-grid">
-        <Panel>
-          <PanelHeader
-            icon="business"
-            title="Doanh nghiệp của bạn"
-            subtitle="Thông tin không gian vận hành"
-            action={
-              <Link className="link-brand" href="/app/business">
-                Xem hồ sơ →
-              </Link>
-            }
-          />
-          <div className="business-hero">
-            <span className="context-avatar">
-              <Icon name="business" size={28} />
-            </span>
-            <div>
-              <h2>{c.business.name}</h2>
-              <p>Quản lý doanh nghiệp & hoạt động cho thuê xe</p>
-            </div>
+      <div className="owner-dashboard-top">
+        {locations && (
+          <div className="dashboard-map owner-dashboard-map">
+            <LiveFleetMap
+              key={`dashboard-map:${c.business.id}`}
+              businessId={c.business.id}
+              initial={locations}
+              compact
+            />
           </div>
-          <dl className="detail-list">
-            <div>
-              <dt>Múi giờ</dt>
-              <dd>{c.business.timezone}</dd>
-            </div>
-            <div>
-              <dt>Tiền tệ</dt>
-              <dd>{c.business.currency}</dd>
-            </div>
-          </dl>
-        </Panel>
-        <Panel>
-          <PanelHeader
-            icon="grid"
-            title="Truy cập nhanh"
-            subtitle="Các công cụ quản lý doanh nghiệp"
-          />
-          {[
-            [
-              "business",
-              "business",
-              "Hồ sơ doanh nghiệp",
-              "Thông tin chung, múi giờ, tiền tệ",
-            ],
-            [
-              "branches",
-              "pin",
-              "Quản lý chi nhánh",
-              "Điểm vận hành và trạng thái",
-            ],
-            ...(members
-              ? [
-                  [
-                    "users",
-                    "users",
-                    "Quyền truy cập Owner",
-                    "Quản lý Owner của doanh nghiệp",
-                  ],
-                ]
-              : []),
-            [
-              "settings",
-              "settings",
-              "Cài đặt chung",
-              "Ngôn ngữ và định dạng ngày",
-            ],
-          ].map(([path, icon, title, description]) => (
-            <Link className="quick-link" href={`/app/${path}`} key={path}>
-              <Icon name={icon as "business" | "pin" | "users" | "settings"} />
-              <div>
-                <strong>{title}</strong>
-                <small>{description}</small>
-              </div>
-              <Icon name="chevron" size={15} />
-            </Link>
-          ))}
-        </Panel>
+        )}
+        {availability && activeCount && schedule && overdueCount && (
+          <div className="owner-kpis">
+            <MetricCard
+              label="Trống 24 giờ tới"
+              value={availability.total}
+              description="Xe hoạt động, không vướng lịch thuê trong 24 giờ tới."
+              icon="car"
+              tone="success"
+              href="/app/rentals"
+            />
+            <MetricCard
+              label="Đang thuê"
+              value={activeCount.total}
+              description="Hợp đồng đã bàn giao và chưa nhận trả xe."
+              icon="rental"
+              tone="info"
+              href="/app/rentals?status=ACTIVE&sort=endAt&order=asc"
+            />
+            <MetricCard
+              label="Đã đặt xe"
+              value={schedule.total}
+              description="Hợp đồng đã xác nhận, đang chờ bàn giao."
+              icon="calendar"
+              tone="brand"
+              href="/app/rentals?status=RESERVED&sort=startAt&order=asc"
+            />
+            <MetricCard
+              label="Quá hạn trả"
+              value={overdueCount.total}
+              description="Đã qua giờ hẹn và chưa nhận trả xe."
+              icon="clock"
+              tone={overdueCount.total ? "danger" : "neutral"}
+              href="/app/rentals?status=ACTIVE&overdue=true&sort=endAt&order=asc"
+            />
+          </div>
+        )}
       </div>
-      {schedule && queue && overdueRentals && (
+      {schedule && queue && overdueCount && activeCount && (
         <RentalDashboard
           key={`rental-dashboard:${c.business.id}`}
           schedule={schedule}
           queue={queue}
-          overdueTotal={overdueRentals.total}
+          activeTotal={activeCount.total}
+          overdueTotal={overdueCount.total}
           currency={c.business.currency}
           overdue={overdue}
+          asOf={asOf.toISOString()}
         />
       )}
-      {process.env.NODE_ENV === "development" && (
-        <Link className="button button-secondary" href="/dev-preview/business">
-          Xem bản thiết kế dashboard đội xe <Icon name="arrow" size={15} />
-        </Link>
-      )}
-    </>
+      <div className="owner-dashboard-footer">
+        <p>
+          <Icon name="clock" size={15} /> Lịch và chỉ số chụp tại{" "}
+          {new Intl.DateTimeFormat("vi-VN", {
+            timeStyle: "short",
+            timeZone: "Asia/Ho_Chi_Minh",
+          }).format(asOf)}{" "}
+          · giờ Việt Nam. Tình trạng trống cần kiểm tra lại khi đặt xe.
+        </p>
+        {process.env.NODE_ENV === "development" && (
+          <Link className="link-brand" href="/dev-preview/business">
+            Bản thiết kế tham chiếu <Icon name="arrow" size={14} />
+          </Link>
+        )}
+      </div>
+    </div>
   );
 }

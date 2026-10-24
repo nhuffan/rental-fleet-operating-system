@@ -1,30 +1,429 @@
-.platform-live-stats {
-  margin-bottom: 24px;
-}
 .platform-live-detail {
-  margin-top: 24px;
+  margin-top: var(--space-6);
 }
 .platform-live-detail .rental-id {
   overflow-wrap: anywhere;
 }
-@media (max-width: 767px) {
-  .platform-live-stats {
+.platform-snapshot-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin-bottom: var(--space-5);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+}
+.platform-snapshot-strip > span:first-child {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.platform-live-dashboard {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(285px, 1fr);
+  align-items: start;
+  gap: var(--space-6);
+}
+.platform-live-dashboard > *,
+.platform-user-detail-grid > * {
+  min-width: 0;
+}
+.platform-live-dashboard .platform-overview-metrics {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+  align-self: stretch;
+}
+.platform-live-dashboard .platform-overview-metrics .metric-card {
+  min-height: 180px;
+}
+.platform-business-health .data-table {
+  min-width: 650px;
+}
+.platform-business-health .data-table td {
+  padding: 16px 18px;
+}
+.platform-business-health .data-table th {
+  padding: 13px 18px;
+}
+.platform-business-health .panel-heading .link-brand,
+.platform-recent-activity .panel-heading .link-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.platform-record-identity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 190px;
+  color: var(--text-primary);
+}
+a.platform-record-identity:hover strong {
+  color: var(--brand-strong);
+}
+a.platform-record-identity:focus-visible,
+.platform-activity-link:focus-visible,
+.platform-detail-link:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+}
+.platform-record-avatar {
+  display: grid;
+  place-items: center;
+  flex: 0 0 38px;
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  border: 1px solid var(--brand-border);
+  background: var(--brand-subtle);
+  color: var(--brand-strong);
+}
+.platform-record-copy {
+  min-width: 0;
+}
+.platform-record-copy strong {
+  display: block;
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+.platform-record-copy small {
+  display: block;
+  margin-top: 4px;
+  max-width: 260px;
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}
+.platform-detail-link {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+.platform-detail-link:hover {
+  color: var(--brand-strong);
+  border-color: var(--brand-border);
+  background: var(--brand-subtle);
+}
+.platform-gps-health {
+  min-width: 180px;
+}
+.platform-gps-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.platform-gps-heading strong {
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-sm);
+}
+.platform-gps-heading strong > span {
+  font-weight: 400;
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+}
+.platform-health-track {
+  display: flex;
+  overflow: hidden;
+  width: 100%;
+  height: 7px;
+  border-radius: 6px;
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  margin: 10px 0 7px;
+}
+.platform-health-track > span {
+  flex-shrink: 0;
+}
+.platform-gps-caption {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  margin: 0 0 10px;
+}
+.platform-gps-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px 14px;
+}
+.platform-gps-legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+.platform-gps-legend i {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.platform-gps-health.is-compact {
+  max-width: 260px;
+}
+.platform-gps-health.is-compact .platform-gps-caption {
+  display: none;
+}
+.platform-gps-health.is-compact .platform-gps-legend {
+  gap: 3px 9px;
+}
+.health-fresh {
+  background: var(--success);
+}
+.health-stale {
+  background: var(--warning);
+}
+.health-offline {
+  background: var(--danger);
+}
+.health-no-data {
+  background: var(--info);
+}
+.health-unassigned {
+  background: var(--text-muted);
+}
+.platform-panel-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  border-top: 1px solid var(--border);
+  padding: 14px 20px;
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+}
+.platform-activity-feed {
+  list-style: none;
+  margin: 0;
+  padding: 0 20px;
+}
+.platform-activity-feed > li + li {
+  border-top: 1px solid var(--border);
+}
+.platform-activity-link {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: 17px 0;
+  color: var(--text-primary);
+}
+.platform-activity-link:hover strong {
+  color: var(--brand-strong);
+}
+.platform-activity-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-muted);
+  color: var(--text-secondary);
+}
+.platform-activity-copy {
+  display: block;
+  min-width: 0;
+  flex: 1;
+}
+.platform-activity-copy strong {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  display: block;
+}
+.platform-activity-copy small,
+.platform-activity-copy time {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+.platform-activity-link > .ui-icon:last-child {
+  margin-top: 8px;
+  color: var(--text-muted);
+}
+.platform-overview-side {
+  display: grid;
+  gap: var(--space-6);
+}
+.platform-attention-list {
+  margin: 0;
+}
+.platform-attention-list > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 15px 20px;
+}
+.platform-attention-list > div + div {
+  border-top: 1px solid var(--border);
+}
+.platform-attention-list dt {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+.platform-attention-list dd {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.platform-attention-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  background: var(--neutral-muted);
+  color: var(--neutral);
+}
+.platform-attention-icon.is-warning {
+  background: var(--warning-muted);
+  color: var(--warning);
+}
+.platform-attention-icon.is-danger {
+  background: var(--danger-muted);
+  color: var(--danger);
+}
+.platform-scope-note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: var(--space-5) 0 0;
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  line-height: 1.6;
+}
+.platform-scope-note > .ui-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.platform-support-filters {
+  border-bottom: 1px solid var(--border);
+}
+.platform-result-count {
+  display: inline-flex;
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface-muted);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+.platform-audit-action {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 200px;
+}
+.platform-audit-action strong {
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+.platform-raw-action {
+  margin-left: 46px;
+}
+.platform-reference {
+  display: inline-block;
+  max-width: 220px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  font-size: var(--text-xs);
+}
+.platform-user-detail-grid {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.85fr) minmax(0, 1.6fr);
+  gap: var(--space-6);
+  align-items: start;
+  margin-top: var(--space-6);
+}
+.platform-user-detail-grid .detail-list dd {
+  max-width: 65%;
+  overflow-wrap: anywhere;
+}
+.platform-detail-metrics {
+  margin-top: var(--space-5);
+}
+.tenant-detail-hero .platform-record-identity {
+  flex: 1;
+  min-width: 0;
+}
+.tenant-detail-hero .platform-record-avatar {
+  width: 52px;
+  height: 52px;
+  flex-basis: 52px;
+  border-radius: 14px;
+}
+.tenant-detail-hero .platform-record-copy strong {
+  font-size: var(--text-section);
+}
+@media (max-width: 1279px) {
+  .platform-live-dashboard {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .platform-live-dashboard .platform-overview-metrics {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-row: 1;
+  }
+  .platform-live-dashboard .platform-overview-metrics .metric-card {
+    min-height: 165px;
+  }
+  .platform-overview-side {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .platform-user-detail-grid {
     grid-template-columns: minmax(0, 1fr);
   }
 }
-
-.platform-support-filters {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: end;
-  gap: 14px;
-  border-bottom: 1px solid var(--border);
+@media (max-width: 767px) {
+  .platform-live-dashboard,
+  .platform-overview-side {
+    gap: var(--space-4);
+  }
+  .platform-live-dashboard .platform-overview-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
+  }
+  .platform-overview-side {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .platform-business-health .panel-heading,
+  .platform-recent-activity .panel-heading {
+    align-items: flex-start;
+  }
+  .platform-activity-feed {
+    padding: 0 16px;
+  }
+  .platform-panel-foot {
+    padding: 14px 16px;
+  }
 }
-.platform-support-filters .form-field {
-  margin-bottom: 0;
-  flex: 1 1 175px;
-  min-width: 0;
-}
-.platform-support-filters .notice {
-  flex-basis: 100%;
+@media (max-width: 479px) {
+  .platform-live-dashboard .platform-overview-metrics {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .platform-live-dashboard .platform-overview-metrics .metric-card {
+    min-height: 145px;
+  }
+  .platform-business-health .panel-heading,
+  .platform-recent-activity .panel-heading {
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
 }

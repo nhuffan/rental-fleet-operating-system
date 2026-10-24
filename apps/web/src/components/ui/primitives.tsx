@@ -32,12 +32,14 @@ export function Button({
 export function Badge({
   children,
   tone = "neutral",
+  className = "",
 }: {
   children: ReactNode;
   tone?: "neutral" | "success" | "warning" | "danger" | "info" | "brand";
+  className?: string;
 }) {
   return (
-    <span className={`status-badge tone-${tone}`}>
+    <span className={`status-badge tone-${tone} ${className}`}>
       <span className="status-dot" />
       {children}
     </span>
@@ -82,7 +84,7 @@ export function PanelHeader({
           {subtitle && <p>{subtitle}</p>}
         </div>
       </div>
-      {action}
+      {action && <div className="panel-heading-action">{action}</div>}
     </div>
   );
 }
@@ -104,7 +106,7 @@ export function PageHeader({
         <h1>{title}</h1>
         <p>{description}</p>
       </div>
-      {action}
+      {action && <div className="page-heading-action">{action}</div>}
     </div>
   );
 }
@@ -112,10 +114,12 @@ export function EmptyState({
   title = "Chưa có dữ liệu",
   description = "Dữ liệu sẽ xuất hiện tại đây khi được bổ sung.",
   icon = "search",
+  action,
 }: {
   title?: string;
   description?: string;
   icon?: IconName;
+  action?: ReactNode;
 }) {
   return (
     <div className="empty-state">
@@ -124,6 +128,7 @@ export function EmptyState({
       </span>
       <h3>{title}</h3>
       <p>{description}</p>
+      {action && <div className="empty-state-action">{action}</div>}
     </div>
   );
 }

@@ -2,6 +2,8 @@ import Link from "next/link";
 import { Badge, Panel, PanelHeader } from "@/components/ui/primitives";
 import { formatDate } from "@/lib/query";
 import type { PlatformBusiness } from "./types";
+import { MetricCard } from "@/components/data-display/metric-card";
+import { PlatformGpsHealth, PlatformIdentity } from "./presentation";
 export function PlatformBusinessDetail({
   business: b,
 }: {
@@ -11,15 +13,10 @@ export function PlatformBusinessDetail({
     <>
       <Panel>
         <div className="tenant-detail-hero">
-          <span className="tenant-avatar">
-            {b.name.slice(0, 2).toUpperCase()}
-          </span>
-          <div>
-            <h2>{b.name}</h2>
-            <p>
-              {b.timezone} · {b.currency}
-            </p>
-          </div>
+          <PlatformIdentity
+            name={b.name}
+            subtitle={`${b.timezone} · ${b.currency}`}
+          />
           <Badge tone={b.status === "ACTIVE" ? "success" : "neutral"}>
             {b.status === "ACTIVE" ? "Hoạt động" : "Đã vô hiệu hóa"}
           </Badge>
@@ -39,6 +36,34 @@ export function PlatformBusinessDetail({
         >
           Nhật ký platform liên quan
         </Link>
+      </div>
+      <div className="metric-grid platform-detail-metrics">
+        <MetricCard
+          label="Xe đang hoạt động"
+          value={b.counts.activeVehicles}
+          description={`${b.counts.vehicles} xe đã đăng ký`}
+          icon="car"
+          tone="brand"
+        />
+        <MetricCard
+          label="Hợp đồng đang thuê"
+          value={b.counts.activeRentals}
+          description={`${b.counts.reservedRentals} đã đặt · ${b.counts.rentals} tổng`}
+          icon="rental"
+        />
+        <MetricCard
+          label="Liên kết Owner hoạt động"
+          value={b.counts.activeMemberships}
+          description={`${b.counts.memberships} tổng liên kết`}
+          icon="users"
+        />
+        <MetricCard
+          label="GPS bản tin mới · TEST"
+          value={b.gps.FRESH}
+          description="Trong vòng 120 giây"
+          icon="signal"
+          tone="success"
+        />
       </div>
       <div className="fleet-profile-grid platform-live-detail">
         <Panel>
@@ -114,28 +139,9 @@ export function PlatformBusinessDetail({
             icon="signal"
             action={<Badge tone="warning">TEST feed</Badge>}
           />
-          <dl className="detail-list">
-            <div>
-              <dt>Tín hiệu mới</dt>
-              <dd>{b.gps.FRESH}</dd>
-            </div>
-            <div>
-              <dt>Tín hiệu trễ</dt>
-              <dd>{b.gps.STALE}</dd>
-            </div>
-            <div>
-              <dt>Mất kết nối</dt>
-              <dd>{b.gps.OFFLINE}</dd>
-            </div>
-            <div>
-              <dt>Chưa có bản tin</dt>
-              <dd>{b.gps.NO_DATA}</dd>
-            </div>
-            <div>
-              <dt>Chưa gắn thiết bị</dt>
-              <dd>{b.gps.UNASSIGNED}</dd>
-            </div>
-          </dl>
+          <div className="panel-body">
+            <PlatformGpsHealth gps={b.gps} />
+          </div>
           <p className="panel-body quiet">
             Tổng hợp vị trí gần nhất theo thiết bị đang gắn; không tải tọa độ
             hoặc lịch sử. Chưa xác minh thiết bị GPS vật lý.
@@ -149,8 +155,10 @@ export function PlatformBusinessDetail({
               thái, cấu hình và quyền của doanh nghiệp chưa được triển khai.
             </p>
             <p className="quiet">
-              Global Users, Audit, Features, Integrations và System Settings
-              chưa có API live trong giai đoạn này.
+              Có thể tra cứu người dùng và nhật ký platform qua các liên kết
+              phía trên. Quản lý tính năng, tích hợp và cài đặt hệ thống chưa
+              khả dụng; console không cấp quyền vận hành Owner hoặc truy cập tài
+              chính doanh nghiệp.
             </p>
           </div>
         </Panel>
