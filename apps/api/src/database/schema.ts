@@ -316,6 +316,12 @@ export const rentals = pgTable(
       .default('0'),
     depositReceived: boolean('deposit_received').notNull().default(false),
     notes: text().notNull().default(''),
+    pricingDraft: jsonb('pricing_draft').$type<{
+      billingMode?: 'HOURLY' | 'DAILY';
+      expectedQuoteHash?: string;
+      overrideAmount?: string;
+      overrideReason?: string;
+    }>(),
     reservedAt: timestamp('reserved_at', { withTimezone: true }),
     handedOverAt: timestamp('handed_over_at', { withTimezone: true }),
     returnedAt: timestamp('returned_at', { withTimezone: true }),
@@ -408,6 +414,78 @@ export const rentals = pgTable(
       table.startAt.desc(),
       table.id,
     ),
+  ],
+);
+
+export const rentalRateCards = pgTable(
+  'rental_rate_cards',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    businessId: uuid('business_id')
+      .notNull()
+      .references(() => businesses.id, { onDelete: 'restrict' }),
+    vehicleId: uuid('vehicle_id'),
+    name: text().notNull(),
+    hourlyRate: numeric('hourly_rate'),
+    dailyRate: numeric('daily_rate'),
+    minimumCharge: numeric('minimum_charge').notNull().default('0'),
+    extraHourRate: numeric('extra_hour_rate'),
+    effectiveFrom: timestamp('effective_from', {
+      withTimezone: true,
+    }).notNull(),
+    effectiveUntil: timestamp('effective_until', { withTimezone: true }),
+    status: text().notNull().default('ACTIVE').$type<'ACTIVE' | 'INACTIVE'>(),
+    version: integer().notNull().default(1),
+    createdBy: uuid('created_by').notNull(),
+    ...times(),
+  },
+  (t) => [
+    unique('rental_rate_cards_tenant_identity').on(t.businessId, t.id),
+    foreignKey({
+      name: 'rental_rate_cards_vehicle_tenant_fk',
+      columns: [t.businessId, t.vehicleId],
+      foreignColumns: [vehicles.businessId, vehicles.id],
+    }).onDelete('restrict'),
+    index('rental_rate_cards_business_scope_effective').on(
+      t.businessId,
+      t.vehicleId,
+      t.effectiveFrom,
+      t.id,
+    ),
+  ],
+);
+export const rentalQuoteSnapshots = pgTable(
+  'rental_quote_snapshots',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    businessId: uuid('business_id')
+      .notNull()
+      .references(() => businesses.id, { onDelete: 'restrict' }),
+    rentalId: uuid('rental_id').notNull(),
+    vehicleId: uuid('vehicle_id').notNull(),
+    rateCardId: uuid('rate_card_id'),
+    mode: text().notNull().$type<'CALCULATED' | 'OVERRIDE' | 'MANUAL'>(),
+    breakdown: jsonb().$type<import('../pricing/engine.js').QuoteBreakdown>(),
+    agreedAmount: numeric('agreed_amount').notNull(),
+    overrideReason: text('override_reason'),
+    createdBy: uuid('created_by').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    unique('rental_quote_snapshots_rental_unique').on(t.businessId, t.rentalId),
+    foreignKey({
+      name: 'rental_quote_snapshots_rental_tenant_fk',
+      columns: [t.businessId, t.rentalId, t.vehicleId],
+      foreignColumns: [rentals.businessId, rentals.id, rentals.vehicleId],
+    }).onDelete('restrict'),
+    foreignKey({
+      name: 'rental_quote_snapshots_rate_tenant_fk',
+      columns: [t.businessId, t.rateCardId],
+      foreignColumns: [rentalRateCards.businessId, rentalRateCards.id],
+    }).onDelete('restrict'),
+    index('rental_quote_snapshots_rate').on(t.businessId, t.rateCardId),
   ],
 );
 

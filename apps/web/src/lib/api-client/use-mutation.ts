@@ -107,6 +107,22 @@ export function useMutation(businessId: string) {
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
         const messages: Record<string, string> = {
+          PRICING_PREVIEW_CHANGED:
+            "Bảng giá đã thay đổi. Mở bản nháp và tải lại báo giá trước khi xác nhận đặt xe.",
+          QUOTE_REFRESH_REQUIRED:
+            "Hãy tải lại báo giá sau khi đổi xe, lịch thuê hoặc giá thỏa thuận.",
+          PRICE_INPUT_CONFLICT:
+            "Tiền thuê phải khớp với báo giá hoặc mức thỏa thuận đã xác nhận.",
+          CONFIRMED_PRICE_IMMUTABLE:
+            "Giá đã xác nhận được giữ nguyên. Gia hạn thời gian không tự tính lại giá thuê.",
+          PRICING_REASON_REQUIRED:
+            "Nhập lý do cho mức giá thỏa thuận hoặc điều chỉnh giá.",
+          PRICING_MANUAL_AMOUNT_REQUIRED:
+            "Chưa có báo giá phù hợp. Nhập số tiền thỏa thuận và lý do.",
+          BUSINESS_HAS_PRICING_HISTORY:
+            "Không thể đổi tiền tệ khi doanh nghiệp đã có bảng giá hoặc hợp đồng báo giá VND.",
+          PRICING_CURRENCY_UNSUPPORTED:
+            "Báo giá chỉ hỗ trợ doanh nghiệp dùng VND.",
           EVIDENCE_INVALID_UPLOAD:
             "Có file chứng cứ chưa sẵn sàng hoặc đã hết hạn. Bỏ file đó và chọn lại trước khi xác nhận biên bản.",
           EVIDENCE_UPLOAD_EXPIRED:

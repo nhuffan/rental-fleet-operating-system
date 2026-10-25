@@ -36,9 +36,14 @@ import {
   profiles,
   rentals,
   rentalInspections,
+  rentalQuoteSnapshots,
   vehicles,
 } from '../database/schema.js';
 import { denied, type TenantContext } from '../auth/guards.js';
+import {
+  resolveRentalPricing,
+  presentPricingSnapshot,
+} from '../pricing/pricing.service.js';
 import { permissionsFor, type Permission } from '../auth/permissions.js';
 import {
   CustomerCreate,
@@ -312,7 +317,12 @@ export class RentalService {
   }
   private rentalQuery(db: Reader, c: TenantContext) {
     return db
-      .select({ rental: rentals, customer: customers, vehicle: vehicles })
+      .select({
+        rental: rentals,
+        customer: customers,
+        vehicle: vehicles,
+        quotation: rentalQuoteSnapshots,
+      })
       .from(rentals)
       .innerJoin(
         customers,
@@ -327,6 +337,13 @@ export class RentalService {
           eq(vehicles.id, rentals.vehicleId),
           eq(vehicles.businessId, c.businessId),
         ),
+      )
+      .leftJoin(
+        rentalQuoteSnapshots,
+        and(
+          eq(rentalQuoteSnapshots.businessId, c.businessId),
+          eq(rentalQuoteSnapshots.rentalId, rentals.id),
+        ),
       );
   }
   private present(
@@ -334,11 +351,13 @@ export class RentalService {
       rental: typeof rentals.$inferSelect;
       customer: typeof customers.$inferSelect;
       vehicle: typeof vehicles.$inferSelect;
+      quotation?: typeof rentalQuoteSnapshots.$inferSelect | null;
     },
     now: Date,
   ) {
     return {
       ...row.rental,
+      quotation: row.quotation ? presentPricingSnapshot(row.quotation) : null,
       rentalAmount: Number(row.rental.rentalAmount),
       depositRequiredAmount: Number(row.rental.depositRequiredAmount),
       customer: row.customer,
@@ -503,6 +522,23 @@ export class RentalService {
       async (tx, now) => {
         const window = rentalWindow(body.startAt, body.endAt);
         await this.activeResources(tx, c, body.customerId, body.vehicleId);
+        const pricing = body.pricing
+          ? await resolveRentalPricing(
+              tx,
+              c,
+              { vehicleId: body.vehicleId, ...window },
+              body.pricing,
+            )
+          : null;
+        if (
+          pricing &&
+          body.rentalAmount !== undefined &&
+          body.rentalAmount !== Number(pricing.agreedAmount)
+        )
+          throw rentalConflict(
+            'PRICE_INPUT_CONFLICT',
+            'The contract amount must agree with the selected quotation',
+          );
         const [row] = await tx
           .insert(rentals)
           .values({
@@ -510,7 +546,8 @@ export class RentalService {
             customerId: body.customerId,
             vehicleId: body.vehicleId,
             ...window,
-            rentalAmount: money(body.rentalAmount),
+            rentalAmount: pricing?.agreedAmount ?? money(body.rentalAmount),
+            pricingDraft: body.pricing ?? null,
             depositRequiredAmount: money(body.depositRequiredAmount),
             depositReceived: body.depositReceived,
             notes: body.notes,
@@ -539,7 +576,13 @@ export class RentalService {
       async (tx, now) => {
         const before = await this.getRental(tx, c, id, now);
         requireRentalStatus(before.status, ['DRAFT', 'RESERVED', 'ACTIVE']);
-        const bookingFields = ['customerId', 'vehicleId', 'startAt', 'endAt'];
+        const bookingFields = [
+          'customerId',
+          'vehicleId',
+          'startAt',
+          'endAt',
+          'pricing',
+        ];
         if (
           before.status !== 'DRAFT' &&
           changedFields(body).some((field) => bookingFields.includes(field))
@@ -576,6 +619,60 @@ export class RentalService {
             body.customerId ?? before.customerId,
             body.vehicleId ?? before.vehicleId,
           );
+        const scheduleChanged =
+          (body.vehicleId !== undefined &&
+            body.vehicleId !== before.vehicleId) ||
+          (body.startAt !== undefined &&
+            window.startAt.getTime() !== before.startAt.getTime()) ||
+          (body.endAt !== undefined &&
+            window.endAt.getTime() !== before.endAt.getTime());
+        if (
+          before.status === 'DRAFT' &&
+          before.pricingDraft &&
+          scheduleChanged &&
+          !body.pricing
+        )
+          throw rentalConflict(
+            'QUOTE_REFRESH_REQUIRED',
+            'Preview a fresh quotation after changing the vehicle or schedule',
+          );
+        if (
+          before.status === 'DRAFT' &&
+          before.pricingDraft &&
+          !body.pricing &&
+          body.rentalAmount !== undefined &&
+          body.rentalAmount !== before.rentalAmount
+        )
+          throw rentalConflict(
+            'QUOTE_REFRESH_REQUIRED',
+            'Use an explicit quotation override and reason to change the draft price',
+          );
+        if (
+          before.quotation &&
+          body.rentalAmount !== undefined &&
+          body.rentalAmount !== before.rentalAmount
+        )
+          throw rentalConflict(
+            'CONFIRMED_PRICE_IMMUTABLE',
+            'The confirmed quoted price is immutable',
+          );
+        const pricing = body.pricing
+          ? await resolveRentalPricing(
+              tx,
+              c,
+              { vehicleId: body.vehicleId ?? before.vehicleId, ...window },
+              body.pricing,
+            )
+          : null;
+        if (
+          pricing &&
+          body.rentalAmount !== undefined &&
+          body.rentalAmount !== Number(pricing.agreedAmount)
+        )
+          throw rentalConflict(
+            'PRICE_INPUT_CONFLICT',
+            'The contract amount must agree with the selected quotation',
+          );
         await tx
           .update(rentals)
           .set({
@@ -583,7 +680,8 @@ export class RentalService {
             vehicleId: body.vehicleId,
             startAt: body.startAt === undefined ? undefined : window.startAt,
             endAt: body.endAt === undefined ? undefined : window.endAt,
-            rentalAmount: money(body.rentalAmount),
+            rentalAmount: pricing?.agreedAmount ?? money(body.rentalAmount),
+            pricingDraft: body.pricing,
             depositRequiredAmount: money(body.depositRequiredAmount),
             depositReceived: body.depositReceived,
             notes: body.notes,
@@ -661,14 +759,37 @@ export class RentalService {
           );
         await this.activeResources(tx, c, before.customerId, before.vehicleId);
         await this.checkConflict(tx, c, before, now);
+        const pricing = before.pricingDraft
+          ? await resolveRentalPricing(tx, c, before, before.pricingDraft)
+          : null;
+        if (pricing && Number(pricing.agreedAmount) !== before.rentalAmount)
+          throw rentalConflict(
+            'QUOTE_REFRESH_REQUIRED',
+            'Refresh the draft quotation before confirmation',
+          );
         await tx
           .update(rentals)
           .set({ status: 'RESERVED', reservedAt: now, updatedAt: now })
           .where(and(eq(rentals.businessId, c.businessId), eq(rentals.id, id)));
+        if (pricing)
+          await tx.insert(rentalQuoteSnapshots).values({
+            businessId: c.businessId,
+            rentalId: id,
+            vehicleId: before.vehicleId,
+            rateCardId: pricing.quote.breakdown?.rateCardId ?? null,
+            mode: pricing.mode,
+            breakdown: pricing.quote.breakdown,
+            agreedAmount: pricing.agreedAmount,
+            overrideReason: pricing.overrideReason,
+            createdBy: c.userId,
+            createdAt: now,
+          });
         return {
           value: await this.getRental(tx, c, id, now),
           id,
-          fields: ['status', 'reservedAt'],
+          fields: pricing
+            ? ['status', 'reservedAt', 'quotation']
+            : ['status', 'reservedAt'],
         };
       },
     );
@@ -782,6 +903,15 @@ export class RentalService {
             message:
               'The new end must be later than the existing end and current time',
           });
+        if (
+          before.quotation &&
+          body.rentalAmount !== undefined &&
+          body.rentalAmount !== before.rentalAmount
+        )
+          throw rentalConflict(
+            'CONFIRMED_PRICE_IMMUTABLE',
+            'Extending a quoted rental preserves its agreed price; no automatic repricing',
+          );
         await this.checkConflict(tx, c, { ...before, endAt }, now);
         await tx
           .update(rentals)

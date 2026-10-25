@@ -399,7 +399,7 @@ export interface paths {
         };
         get: operations["RentalController_rentals"];
         put?: never;
-        /** @description Creates a DRAFT. A draft does not block a vehicle until reserve succeeds. */
+        /** @description Creates a DRAFT. Optional pricing requires a fresh server quotation hash and an explicit reason for manual override. No vehicle is held and no financial movement is created. */
         post: operations["RentalController_createRental"];
         delete?: never;
         options?: never;
@@ -450,7 +450,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** @description DRAFT to RESERVED, with overlap and active resource checks. Repeating a completed action returns 409 INVALID_RENTAL_STATE. */
+        /** @description DRAFT to RESERVED, with overlap and active resource checks. A selected pricing draft is revalidated and saved as an immutable quotation snapshot atomically; stale prices require a fresh preview. Legacy manual drafts remain unchanged. Repeated confirmation returns 409 INVALID_RENTAL_STATE. */
         post: operations["RentalController_reserve"];
         delete?: never;
         options?: never;
@@ -484,7 +484,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** @description RESERVED/ACTIVE only; end must increase, be in the future and pass overlap checks. Amount is the new total, not an increment. */
+        /** @description RESERVED/ACTIVE only; end must increase, be in the future and pass overlap checks. Confirmed quoted rentals retain their agreed price and original quotation window. Legacy manual rentals may set a new total amount. */
         post: operations["RentalController_extend"];
         delete?: never;
         options?: never;
@@ -1056,6 +1056,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/pricing/rates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PricingController_list"];
+        put?: never;
+        post: operations["PricingController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pricing/rates/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PricingController_detail"];
+        put?: never;
+        post?: never;
+        /** @description Deletes an unused card only; deactivate a card referenced by an immutable rental quotation. */
+        delete: operations["PricingController_delete"];
+        options?: never;
+        head?: never;
+        /** @description Replaces the editable rate-card configuration, with optimistic version protection; confirmed rental snapshots remain unchanged. */
+        patch: operations["PricingController_update"];
+        trace?: never;
+    };
+    "/api/v1/pricing/quote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Read-only estimate for the pickup instant, vehicle card before business default. Explicit UTC-offset timestamps; VND integer arithmetic; no financial movement. */
+        post: operations["PricingController_preview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1541,6 +1592,74 @@ export interface components {
             /** @enum {string} */
             status?: "ACTIVE" | "INACTIVE";
         };
+        PricingLineResponse: {
+            /** @enum {string} */
+            kind: "HOUR" | "DAY" | "EXTRA_HOUR" | "DAY_CAP" | "MINIMUM";
+            units: string;
+            unitPrice: string;
+            amount: string;
+        };
+        PricingBreakdownResponse: {
+            /** @enum {string} */
+            currency: "VND";
+            /** @enum {string} */
+            timeZone: "Asia/Ho_Chi_Minh";
+            /** Format: uuid */
+            vehicleId: string;
+            /** Format: date-time */
+            startAt: string;
+            /** Format: date-time */
+            endAt: string;
+            durationSeconds: string;
+            /** @enum {string} */
+            billingMode: "HOURLY" | "DAILY";
+            /** Format: uuid */
+            rateCardId: string;
+            rateVersion: number;
+            rateName: string;
+            /** @enum {string} */
+            rateSource: "VEHICLE" | "BUSINESS";
+            hourlyRate: string | null;
+            dailyRate: string | null;
+            minimumCharge: string;
+            extraHourRate: string | null;
+            /** Format: date-time */
+            effectiveFrom: string;
+            /** Format: date-time */
+            effectiveUntil: string | null;
+            lines: components["schemas"]["PricingLineResponse"][];
+            calculatedAmount: string;
+            quoteHash: string;
+        };
+        PricingSnapshotResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            rentalId: string;
+            /** Format: uuid */
+            vehicleId: string;
+            /** Format: uuid */
+            rateCardId: string | null;
+            /** @enum {string} */
+            mode: "CALCULATED" | "OVERRIDE" | "MANUAL";
+            breakdown: components["schemas"]["PricingBreakdownResponse"] | null;
+            agreedAmount: string;
+            overrideReason: string | null;
+            /** Format: uuid */
+            createdBy: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        RentalPricingSelection: {
+            /** @enum {string} */
+            billingMode?: "HOURLY" | "DAILY";
+            /** @description Required for a calculated or overridden available quotation; current rate/schedule must match. */
+            expectedQuoteHash?: string;
+            /** @description Explicit agreed whole-VND amount; requires a reason. */
+            overrideAmount?: string;
+            /** @description Required for a manual agreement or override. */
+            overrideReason?: string;
+        };
         RentalVehicleResponse: {
             /** Format: uuid */
             id: string;
@@ -1559,6 +1678,8 @@ export interface components {
             updatedAt: string;
         };
         RentalResponse: {
+            quotation: components["schemas"]["PricingSnapshotResponse"] | null;
+            pricingDraft: components["schemas"]["RentalPricingSelection"] | null;
             /** Format: uuid */
             id: string;
             /** Format: uuid */
@@ -1643,6 +1764,7 @@ export interface components {
             data: components["schemas"]["RentalInspectionResponse"][];
         };
         RentalCreate: {
+            pricing?: components["schemas"]["RentalPricingSelection"];
             /** Format: uuid */
             customerId: string;
             /** Format: uuid */
@@ -1664,6 +1786,7 @@ export interface components {
             notes: string;
         };
         RentalUpdate: {
+            pricing?: components["schemas"]["RentalPricingSelection"];
             /** Format: uuid */
             customerId?: string;
             /** Format: uuid */
@@ -2443,6 +2566,136 @@ export interface components {
             reason: string;
             version: number;
             acknowledgePossibleDuplicate: boolean;
+        };
+        RateCardResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** Format: uuid */
+            vehicleId: string | null;
+            vehiclePlate: string | null;
+            /** @enum {string} */
+            scope: "VEHICLE" | "BUSINESS";
+            hourlyRate: string | null;
+            dailyRate: string | null;
+            minimumCharge: string;
+            extraHourRate: string | null;
+            /** Format: date-time */
+            effectiveFrom: string;
+            /** Format: date-time */
+            effectiveUntil: string | null;
+            /** @enum {string} */
+            status: "ACTIVE" | "INACTIVE";
+            version: number;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        RateCardPage: {
+            page: number;
+            limit: number;
+            total: number;
+            data: components["schemas"]["RateCardResponse"][];
+        };
+        RateCardCreate: {
+            name: string;
+            /**
+             * Format: uuid
+             * @description Null uses the business default scope.
+             */
+            vehicleId?: string | null;
+            hourlyRate?: string | null;
+            dailyRate?: string | null;
+            /** @default 0 */
+            minimumCharge: string;
+            /** @description Daily remainder is charged in commenced hours, capped at one daily rate. */
+            extraHourRate?: string | null;
+            /**
+             * Format: date-time
+             * @description Inclusive pickup-time eligibility, with explicit offset.
+             */
+            effectiveFrom: string;
+            /**
+             * Format: date-time
+             * @description Exclusive upper bound; null has no scheduled end.
+             */
+            effectiveUntil?: string | null;
+            /**
+             * @default ACTIVE
+             * @enum {string}
+             */
+            status: "ACTIVE" | "INACTIVE";
+        };
+        RateCardUpdate: {
+            name: string;
+            /**
+             * Format: uuid
+             * @description Null uses the business default scope.
+             */
+            vehicleId?: string | null;
+            hourlyRate?: string | null;
+            dailyRate?: string | null;
+            /** @default 0 */
+            minimumCharge: string;
+            /** @description Daily remainder is charged in commenced hours, capped at one daily rate. */
+            extraHourRate?: string | null;
+            /**
+             * Format: date-time
+             * @description Inclusive pickup-time eligibility, with explicit offset.
+             */
+            effectiveFrom: string;
+            /**
+             * Format: date-time
+             * @description Exclusive upper bound; null has no scheduled end.
+             */
+            effectiveUntil?: string | null;
+            /**
+             * @default ACTIVE
+             * @enum {string}
+             */
+            status: "ACTIVE" | "INACTIVE";
+            version: number;
+        };
+        RateCardDeletedResponse: {
+            deleted: boolean;
+        };
+        QuotePreviewInput: {
+            /** Format: uuid */
+            vehicleId: string;
+            /** Format: date-time */
+            startAt: string;
+            /** Format: date-time */
+            endAt: string;
+            /**
+             * @description Defaults to daily when available, otherwise hourly.
+             * @enum {string}
+             */
+            billingMode?: "HOURLY" | "DAILY";
+            /** @enum {string} */
+            timeZone: "Asia/Ho_Chi_Minh";
+        };
+        PricingQuoteResponse: {
+            available: boolean;
+            /** @enum {string|null} */
+            reason: "NO_RATE" | "BILLING_MODE_UNAVAILABLE" | null;
+            /** @description Fingerprint of the selected schedule/rate state, including a missing-rate preview. */
+            quoteHash: string;
+            /** @enum {string} */
+            currency: "VND";
+            /** @enum {string} */
+            timeZone: "Asia/Ho_Chi_Minh";
+            /** Format: uuid */
+            vehicleId: string;
+            /** Format: date-time */
+            startAt: string;
+            /** Format: date-time */
+            endAt: string;
+            /** @enum {string|null} */
+            billingMode: "HOURLY" | "DAILY" | null;
+            totalAmount: string | null;
+            rate: components["schemas"]["RateCardResponse"] | null;
+            breakdown: components["schemas"]["PricingBreakdownResponse"] | null;
         };
     };
     responses: never;
@@ -11802,6 +12055,608 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TollResponse"];
+                };
+            };
+            /** @description Standard API error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    PricingController_list: {
+        parameters: {
+            query?: {
+                page?: components["schemas"]["Object"];
+                limit?: components["schemas"]["Object"];
+                vehicleId?: string;
+                scope?: "VEHICLE" | "BUSINESS";
+                status?: "ACTIVE" | "INACTIVE";
+            };
+            header?: {
+                "X-Business-Id"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RateCardPage"];
+                };
+            };
+            /** @description Standard API error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    PricingController_create: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Business-Id"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RateCardCreate"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RateCardResponse"];
+                };
+            };
+            /** @description Standard API error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    PricingController_detail: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Business-Id"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RateCardResponse"];
+                };
+            };
+            /** @description Standard API error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    PricingController_delete: {
+        parameters: {
+            query: {
+                version: number;
+            };
+            header?: {
+                "X-Business-Id"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RateCardDeletedResponse"];
+                };
+            };
+        };
+    };
+    PricingController_update: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Business-Id"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RateCardUpdate"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RateCardResponse"];
+                };
+            };
+            /** @description Standard API error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    PricingController_preview: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Business-Id"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuotePreviewInput"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PricingQuoteResponse"];
                 };
             };
             /** @description Standard API error */

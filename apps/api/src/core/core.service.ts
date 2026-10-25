@@ -13,6 +13,9 @@ import {
   branches,
   businesses,
   commercialMovements,
+  rentalRateCards,
+  rentalQuoteSnapshots,
+  rentals,
   memberships,
   profiles,
   settings,
@@ -145,6 +148,19 @@ export class CoreService {
             .from(businesses)
             .where(eq(businesses.id, c.businessId));
           if (business && body.currency !== business.currency) {
+            const pricing = await tx.execute<{ present: boolean }>(sql`
+              select exists (
+                select 1 from ${rentalRateCards} where ${rentalRateCards.businessId} = ${c.businessId}
+                union all select 1 from ${rentalQuoteSnapshots} where ${rentalQuoteSnapshots.businessId} = ${c.businessId}
+                union all select 1 from ${rentals} where ${rentals.businessId} = ${c.businessId} and ${rentals.pricingDraft} is not null
+              ) as present
+            `);
+            if (pricing.rows[0].present)
+              throw new ConflictException({
+                code: 'BUSINESS_HAS_PRICING_HISTORY',
+                message:
+                  'Business currency cannot change while VND rates or quoted rentals exist',
+              });
             const [movement] = await tx
               .select({ id: commercialMovements.id })
               .from(commercialMovements)

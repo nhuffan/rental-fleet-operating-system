@@ -1,5 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { PageMeta } from '../core/responses.js';
+import { RentalPricingSelection } from '../pricing/dto.js';
+import { PricingSnapshotResponse } from '../pricing/responses.js';
 import {
   INSPECTION_CHECK_STATES,
   INSPECTION_CONDITIONS,
@@ -31,6 +33,10 @@ export class RentalVehicleResponse {
   @ApiProperty({ format: 'date-time' }) updatedAt!: string;
 }
 export class RentalResponse {
+  @ApiProperty({ type: PricingSnapshotResponse, nullable: true })
+  quotation!: PricingSnapshotResponse | null;
+  @ApiProperty({ type: RentalPricingSelection, nullable: true })
+  pricingDraft!: RentalPricingSelection | null;
   @ApiProperty({ format: 'uuid' }) id!: string;
   @ApiProperty({ format: 'uuid' }) businessId!: string;
   @ApiProperty({ format: 'uuid' }) customerId!: string;

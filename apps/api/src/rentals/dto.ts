@@ -25,6 +25,7 @@ import {
   type ValidatorConstraintInterface,
 } from 'class-validator';
 import { PageQuery } from '../core/dto.js';
+import { RentalPricingSelection } from '../pricing/dto.js';
 const optional = (_o: unknown, value: unknown) => value !== undefined;
 const trim = ({ value }: { value: unknown }) =>
   typeof value === 'string' ? value.trim() : value;
@@ -122,6 +123,12 @@ export class CustomerQuery extends PageQuery {
   order: 'asc' | 'desc' = 'desc';
 }
 export class RentalCreate {
+  @ApiPropertyOptional({ type: RentalPricingSelection })
+  @ValidateIf(optional)
+  @IsObject()
+  @ValidateNested()
+  @Type(() => RentalPricingSelection)
+  pricing?: RentalPricingSelection;
   @ApiProperty({ format: 'uuid' }) @IsUUID() customerId!: string;
   @ApiProperty({ format: 'uuid' }) @IsUUID() vehicleId!: string;
   @ApiProperty({
@@ -159,6 +166,12 @@ export class RentalCreate {
   notes?: string;
 }
 export class RentalUpdate {
+  @ApiPropertyOptional({ type: RentalPricingSelection })
+  @ValidateIf(optional)
+  @IsObject()
+  @ValidateNested()
+  @Type(() => RentalPricingSelection)
+  pricing?: RentalPricingSelection;
   @ApiPropertyOptional({ format: 'uuid' })
   @ValidateIf(optional)
   @IsUUID()

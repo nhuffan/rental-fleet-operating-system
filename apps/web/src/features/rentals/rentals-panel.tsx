@@ -1,4 +1,5 @@
 "use client";
+import "./pricing/pricing.css";
 import { Icon } from "@/components/ui/icon";
 import Link from "next/link";
 import { Combobox, FilterBar, SearchField } from "@/components/ui/controls";
@@ -47,10 +48,19 @@ export function RentalsPanel({
         icon="rental"
         action={
           context.permissions.includes("rental.manage") && (
-            <Link className="button button-primary" href="/app/rentals/new">
-              <Icon name="plus" />
-              Tạo hợp đồng
-            </Link>
+            <div className="pricing-rate-actions">
+              <Link
+                className="button button-secondary"
+                href="/app/rentals/pricing"
+              >
+                <Icon name="wallet" />
+                Bảng giá thuê
+              </Link>
+              <Link className="button button-primary" href="/app/rentals/new">
+                <Icon name="plus" />
+                Tạo hợp đồng
+              </Link>
+            </div>
           )
         }
       />

@@ -8,6 +8,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { Database } from '../database/database.js';
 import * as schema from '../database/schema.js';
 import type { TenantContext } from '../auth/guards.js';
+import { CoreService } from '../core/core.service.js';
 import { FleetService } from '../fleet/vehicles/fleet.service.js';
 import {
   CustomerQuery,
@@ -16,6 +17,7 @@ import {
   type RentalInspectionInput,
 } from './dto.js';
 import { RentalService, translateRentalConflict } from './rental.service.js';
+import { previewPricing, type PricingTx } from '../pricing/pricing.service.js';
 let client: PGlite;
 let db: ReturnType<typeof drizzle<typeof schema>>;
 let service: RentalService;
@@ -634,4 +636,155 @@ it('translates known wrapped PostgreSQL race constraints without leaking databas
   }
   const unknown = new Error('unknown');
   expect(() => translateRentalConflict(unknown)).toThrow(unknown);
+});
+
+async function pricedFixture() {
+  const fixture = await fixtures();
+  const [rate] = await db
+    .insert(schema.rentalRateCards)
+    .values({
+      businessId: a.businessId,
+      vehicleId: fixture.vehicle.id,
+      name: 'Hourly fixture',
+    createdBy: a.userId,
+      hourlyRate: '100000',
+      effectiveFrom: new Date(Date.now() - 86400000),
+    })
+    .returning();
+  const preview = await previewPricing(db as unknown as PricingTx, a, {
+    vehicleId: fixture.vehicle.id,
+    startAt: fixture.body.startAt,
+    endAt: fixture.body.endAt,
+    timeZone: 'Asia/Ho_Chi_Minh',
+    billingMode: 'HOURLY',
+  });
+  const { rentalAmount: _legacyAmount, ...body } = fixture.body;
+  return {
+    ...fixture,
+    rate,
+    preview,
+    body: {
+      ...body,
+      pricing: {
+        billingMode: 'HOURLY' as const,
+        expectedQuoteHash: preview.quoteHash,
+      },
+    },
+  };
+}
+it('saves the agreed quotation only at confirmation, preserves its historical rate, and never books a Commercial movement', async () => {
+  const { body, rate, preview } = await pricedFixture();
+  const core = new CoreService({ db } as unknown as Database);
+  await expect(
+    core.updateBusiness(a, { currency: 'USD' }, 'pricing-currency'),
+  ).rejects.toMatchObject({
+    response: { code: 'BUSINESS_HAS_PRICING_HISTORY' },
+  });
+  const draft = await service.createRental(a, body, 'priced-draft');
+  expect(draft.quotation).toBeNull();
+  expect(String(draft.rentalAmount)).toBe(preview.totalAmount);
+  const reserved = await service.reserve(a, draft.id, 'priced-reserve');
+  expect(reserved.quotation).toMatchObject({
+    mode: 'CALCULATED',
+    agreedAmount: preview.totalAmount,
+    breakdown: { rateCardId: rate.id, rateVersion: 1 },
+  });
+  await db
+    .update(schema.rentalRateCards)
+    .set({ hourlyRate: '200000', version: 2 })
+    .where(eq(schema.rentalRateCards.id, rate.id));
+  const historical = await service.rental(a, draft.id);
+  expect(historical.quotation).toEqual(reserved.quotation);
+  expect(historical.rentalAmount).toBe(reserved.rentalAmount);
+  expect(await service.rental(b, draft.id).catch(() => null)).toBeNull();
+  expect(
+    (
+      await db
+        .select({ total: count() })
+        .from(schema.commercialMovements)
+        .where(eq(schema.commercialMovements.rentalId, draft.id))
+    )[0].total,
+  ).toBe(0);
+  await expect(
+    service.updateRental(
+      a,
+      draft.id,
+      { rentalAmount: reserved.rentalAmount + 1 },
+      'locked-price',
+    ),
+  ).rejects.toMatchObject({ response: { code: 'CONFIRMED_PRICE_IMMUTABLE' } });
+  const extended = await service.extend(
+    a,
+    draft.id,
+    { endAt: new Date(new Date(body.endAt).getTime() + 3600000).toISOString() },
+    'extend-price',
+  );
+  expect(extended.quotation).toEqual(reserved.quotation);
+  expect(extended.rentalAmount).toBe(reserved.rentalAmount);
+});
+it('rejects stale quotation confirmation atomically and requires a fresh selection when a priced draft schedule changes', async () => {
+  const { body, rate } = await pricedFixture();
+  const draft = await service.createRental(a, body, 'priced-draft');
+  await expect(
+    service.updateRental(
+      a,
+      draft.id,
+      {
+        endAt: new Date(new Date(body.endAt).getTime() + 3600000).toISOString(),
+      },
+      'stale-schedule',
+    ),
+  ).rejects.toMatchObject({ response: { code: 'QUOTE_REFRESH_REQUIRED' } });
+  await db
+    .update(schema.rentalRateCards)
+    .set({ hourlyRate: '200000', version: 2 })
+    .where(eq(schema.rentalRateCards.id, rate.id));
+  await expect(
+    service.reserve(a, draft.id, 'stale-quote'),
+  ).rejects.toMatchObject({ response: { code: 'PRICING_PREVIEW_CHANGED' } });
+  const unchanged = await service.rental(a, draft.id);
+  expect(unchanged.status).toBe('DRAFT');
+  expect(unchanged.quotation).toBeNull();
+});
+it('persists explicit override reason and rolls back its snapshot when the rental audit fails', async () => {
+  const { body } = await pricedFixture();
+  const draft = await service.createRental(
+    a,
+    {
+      ...body,
+      pricing: {
+        ...body.pricing,
+        overrideAmount: '75000',
+        overrideReason: 'Agreed fixed price',
+      },
+    },
+    'override-draft',
+  );
+  await client.exec(
+    "alter table audit_logs add constraint pricing_audit_failure check(action <> 'rental.reserve') not valid",
+  );
+  try {
+    await expect(
+      service.reserve(a, draft.id, 'audit-fail'),
+    ).rejects.toBeDefined();
+    expect((await service.rental(a, draft.id)).status).toBe('DRAFT');
+    expect(
+      (
+        await db
+          .select({ total: count() })
+          .from(schema.rentalQuoteSnapshots)
+          .where(eq(schema.rentalQuoteSnapshots.rentalId, draft.id))
+      )[0].total,
+    ).toBe(0);
+  } finally {
+    await client.exec(
+      'alter table audit_logs drop constraint pricing_audit_failure',
+    );
+  }
+  const reserved = await service.reserve(a, draft.id, 'override-reserve');
+  expect(reserved.quotation).toMatchObject({
+    mode: 'OVERRIDE',
+    agreedAmount: '75000',
+    overrideReason: 'Agreed fixed price',
+  });
 });

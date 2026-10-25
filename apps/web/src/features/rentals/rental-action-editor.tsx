@@ -12,6 +12,8 @@ import { useMutation } from "@/lib/api-client/use-mutation";
 import { localDateTime, utcDateTime } from "@/lib/date-time";
 import { RecordPicker } from "@/components/data-display/record-picker";
 import { queryString } from "@/lib/query";
+import { useRentalPricing } from "./pricing/use-rental-pricing";
+import { PricingFields } from "./pricing/pricing-fields";
 import type {
   Customer,
   VehicleAvailability,
@@ -65,6 +67,16 @@ function RentalMetadataEditor({
   const startAt = utcDateTime(range.startAt);
   const endAt = utcDateTime(range.endAt);
   const validRange = !!startAt && !!endAt && endAt > startAt;
+  const usePricing = draft && currency === "VND";
+  const pricing = useRentalPricing({
+    businessId,
+    currency,
+    vehicleId,
+    startAt,
+    endAt,
+    enabled: action === "edit" && usePricing,
+    initial: rental.pricingDraft,
+  });
   const ActionDialog = action === "reserve" ? ConfirmDialog : FormDialog;
   return (
     <ActionDialog
@@ -247,6 +259,16 @@ function RentalMetadataEditor({
                   );
                   return;
                 }
+                if (usePricing) {
+                  if (!pricing.selection) {
+                    setError(
+                      "Chờ báo giá hiện tại hoặc nhập giá thỏa thuận và lý do trước khi lưu.",
+                    );
+                    return;
+                  }
+                  body.pricing = pricing.selection;
+                  body.rentalAmount = Number(pricing.agreedAmount);
+                }
                 body.startAt = startAt;
                 body.endAt = endAt;
                 body.customerId = customerId;
@@ -302,7 +324,14 @@ function RentalMetadataEditor({
                 </label>
               </>
             )}
-            {(action === "edit" || action === "extend") && (
+            {action === "edit" && usePricing && (
+              <PricingFields
+                pricing={pricing}
+                disabled={mutation.busy}
+                currency={currency}
+              />
+            )}
+            {(action === "extend" || (action === "edit" && !usePricing)) && (
               <label className="form-field">
                 Tiền thuê ({currency})
                 <Input
@@ -313,7 +342,14 @@ function RentalMetadataEditor({
                   step="0.01"
                   required
                   defaultValue={rental.rentalAmount}
+                  readOnly={!!rental.quotation}
                 />
+                {rental.quotation && (
+                  <small>
+                    Giá đã chốt được giữ nguyên. Gia hạn thời gian không tự tính
+                    lại tiền thuê hoặc phát sinh khoản thu.
+                  </small>
+                )}
               </label>
             )}
             {action === "edit" && (

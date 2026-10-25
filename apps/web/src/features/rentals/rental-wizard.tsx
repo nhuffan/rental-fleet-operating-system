@@ -15,7 +15,9 @@ import { MutationNotice } from "@/components/feedback/mutation-notice";
 import { useMutation } from "@/lib/api-client/use-mutation";
 import { queryString, formatDate } from "@/lib/query";
 import { RecordPicker } from "@/components/data-display/record-picker";
-import { formatMoney } from "./query";
+import { useRentalPricing } from "./pricing/use-rental-pricing";
+import { PricingFields } from "./pricing/pricing-fields";
+import { formatVnd } from "./pricing/policy";
 import { localDateTime, utcDateTime } from "@/lib/date-time";
 import type {
   Customer,
@@ -39,10 +41,15 @@ export function RentalWizard({
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [vehicle, setVehicle] = useState<VehicleAvailability | null>(null);
   const [terms, setTerms] = useState({
-    rentalAmount: 0,
     depositRequiredAmount: 0,
     depositReceived: false,
     notes: "",
+  });
+  const pricing = useRentalPricing({
+    businessId,
+    currency,
+    vehicleId: vehicle?.id ?? "",
+    ...range,
   });
   const [error, setError] = useState("");
   const [created, setCreated] = useState<Rental | null>(null);
@@ -57,7 +64,6 @@ export function RentalWizard({
       !!range.startAt ||
       !!vehicle ||
       !!customer ||
-      terms.rentalAmount !== 0 ||
       terms.depositRequiredAmount !== 0 ||
       terms.depositReceived ||
       !!terms.notes);
@@ -120,9 +126,17 @@ export function RentalWizard({
   };
   async function save(reserve: boolean) {
     if (!customer || !vehicle) return;
+    if (!created && !pricing.selection) {
+      setError(
+        "Chờ báo giá hiện tại hoặc nhập đầy đủ giá thỏa thuận và lý do trước khi lưu.",
+      );
+      return;
+    }
     const body: RentalCreate = {
       ...range,
       ...terms,
+      rentalAmount: Number(pricing.agreedAmount),
+      ...(pricing.selection ? { pricing: pricing.selection } : {}),
       customerId: customer.id,
       vehicleId: vehicle.id,
     };
@@ -182,7 +196,8 @@ export function RentalWizard({
           {created && (
             <div className="notice notice-info">
               Bản nháp đã được tạo. Việc đặt xe chưa hoàn tất nếu server báo
-              xung đột.{" "}
+              xung đột. Nếu bảng giá đã thay đổi, mở bản nháp và chọn Chỉnh sửa
+              để tải lại báo giá trước khi xác nhận.{" "}
               <Link className="link-brand" href={`/app/rentals/${created.id}`}>
                 Mở bản nháp
               </Link>
@@ -268,6 +283,13 @@ export function RentalWizard({
                   </>
                 )}
               />
+              {vehicle && (
+                <PricingFields
+                  pricing={pricing}
+                  disabled={mutation.busy}
+                  currency={currency}
+                />
+              )}
               <div className="inline">
                 <Button variant="secondary" onClick={() => setStep(0)}>
                   Quay lại
@@ -347,42 +369,29 @@ export function RentalWizard({
                 className="form-fieldset"
                 disabled={mutation.busy || !!created}
               >
-                <div className="form-grid">
-                  <label className="form-field">
-                    Tiền thuê ({currency})
-                    <Input
-                      type="number"
-                      min={0}
-                      max={999999999.99}
-                      step="0.01"
-                      required
-                      value={terms.rentalAmount}
-                      onChange={(e) =>
-                        setTerms({
-                          ...terms,
-                          rentalAmount: Number(e.target.value),
-                        })
-                      }
-                    />
-                  </label>
-                  <label className="form-field">
-                    Tiền cọc yêu cầu ({currency})
-                    <Input
-                      type="number"
-                      min={0}
-                      max={999999999.99}
-                      step="0.01"
-                      required
-                      value={terms.depositRequiredAmount}
-                      onChange={(e) =>
-                        setTerms({
-                          ...terms,
-                          depositRequiredAmount: Number(e.target.value),
-                        })
-                      }
-                    />
-                  </label>
-                </div>
+                <PricingFields
+                  pricing={pricing}
+                  disabled={mutation.busy || !!created}
+                  currency={currency}
+                />
+                <label className="form-field">
+                  Tiền cọc yêu cầu ({currency})
+                  <Input
+                    type="number"
+                    min={0}
+                    max={999999999.99}
+                    step="0.01"
+                    required
+                    value={terms.depositRequiredAmount}
+                    onChange={(e) =>
+                      setTerms({
+                        ...terms,
+                        depositRequiredAmount: Number(e.target.value),
+                      })
+                    }
+                  />
+                </label>
+
                 <label className="rental-checkbox">
                   <Input
                     type="checkbox"
@@ -411,8 +420,12 @@ export function RentalWizard({
               </fieldset>
               <p className="quiet">
                 Tiền thuê:{" "}
-                <strong>{formatMoney(terms.rentalAmount, currency)}</strong>.
-                Bản nháp chưa giữ lịch xe; xác nhận đặt sẽ kiểm tra lịch trùng
+                <strong>
+                  {pricing.selection
+                    ? formatVnd(pricing.agreedAmount)
+                    : "Chưa xác định"}
+                </strong>
+                . Bản nháp chưa giữ lịch xe; xác nhận đặt sẽ kiểm tra lịch trùng
                 tại server.
               </p>
               <div className="rental-form-actions">
@@ -427,12 +440,15 @@ export function RentalWizard({
                 <Button
                   type="button"
                   variant="secondary"
-                  disabled={mutation.busy}
+                  disabled={mutation.busy || (!created && !pricing.selection)}
                   onClick={() => void save(false)}
                 >
                   Lưu bản nháp
                 </Button>
-                <Button type="submit" disabled={mutation.busy}>
+                <Button
+                  type="submit"
+                  disabled={mutation.busy || (!created && !pricing.selection)}
+                >
                   <Icon name="check" />
                   {mutation.busy
                     ? "Đang xử lý…"

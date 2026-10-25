@@ -141,7 +141,7 @@ export class RentalController {
   @ApiCreatedResponse({ type: RentalResponse })
   @ApiOperation({
     description:
-      'Creates a DRAFT. A draft does not block a vehicle until reserve succeeds.',
+      'Creates a DRAFT. Optional pricing requires a fresh server quotation hash and an explicit reason for manual override. No vehicle is held and no financial movement is created.',
   })
   createRental(@Req() r: AuthRequest, @Body() b: RentalCreate) {
     return this.rentalService.createRental(r.tenant, b, r.requestId);
@@ -169,7 +169,7 @@ export class RentalController {
   })
   @ApiOperation({
     description:
-      'DRAFT to RESERVED, with overlap and active resource checks. Repeating a completed action returns 409 INVALID_RENTAL_STATE.',
+      'DRAFT to RESERVED, with overlap and active resource checks. A selected pricing draft is revalidated and saved as an immutable quotation snapshot atomically; stale prices require a fresh preview. Legacy manual drafts remain unchanged. Repeated confirmation returns 409 INVALID_RENTAL_STATE.',
   })
   reserve(
     @Req() r: AuthRequest,
@@ -197,7 +197,7 @@ export class RentalController {
   @ApiCreatedResponse({ type: RentalResponse })
   @ApiOperation({
     description:
-      'RESERVED/ACTIVE only; end must increase, be in the future and pass overlap checks. Amount is the new total, not an increment.',
+      'RESERVED/ACTIVE only; end must increase, be in the future and pass overlap checks. Confirmed quoted rentals retain their agreed price and original quotation window. Legacy manual rentals may set a new total amount.',
   })
   extend(
     @Req() r: AuthRequest,

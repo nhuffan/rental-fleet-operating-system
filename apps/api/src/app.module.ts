@@ -1,3 +1,5 @@
+import { PricingController } from './pricing/pricing.controller.js';
+import { PricingService } from './pricing/pricing.service.js';
 import { TollController } from './tolls/toll.controller.js';
 import { TollService } from './tolls/toll.service.js';
 import { EvidenceRetentionController } from './evidence/retention.controller.js';
@@ -46,12 +48,14 @@ import { AuthGuard, TenantGuard, PermissionGuard } from './auth/guards.js';
     TripController,
     TraccarController,
     TollController,
+    PricingController,
   ],
   providers: [
     Database,
     AlertsService,
     CommercialService,
     TollService,
+    PricingService,
     PlatformService,
     PlatformGuard,
     CoreService,

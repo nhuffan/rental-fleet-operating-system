@@ -11,6 +11,7 @@ import { formatMoney } from "./query";
 import { RentalStatus } from "./rental-status";
 import { RentalActionEditor, type RentalAction } from "./rental-action-editor";
 import type { Rental, RentalInspection } from "./types";
+import { RentalQuotation } from "./pricing/rental-quotation";
 import { RentalInspections } from "./rental-inspections";
 import { RentalCommercialPanel } from "@/features/commercial/rental-commercial-panel";
 import type { RentalCommercial } from "@/features/commercial/types";
@@ -211,6 +212,7 @@ export function RentalDetail({
           </div>
         </Panel>
       </div>
+      <RentalQuotation rental={rental} />
       <div id="rental-inspections">
         <RentalInspections
           inspections={inspections}
