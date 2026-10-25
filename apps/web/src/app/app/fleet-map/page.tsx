@@ -10,7 +10,6 @@ export default async function FleetMapPage() {
   return (
     <>
       <PageHeader
-        eyebrow="VẬN HÀNH ĐỘI XE"
         title="Bản đồ đội xe"
         description="Vị trí gần nhất theo thiết bị đang gắn. TEST feed phục vụ kiểm chứng tích hợp, chưa xác minh thiết bị thực tế."
       />

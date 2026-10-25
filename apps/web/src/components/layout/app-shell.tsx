@@ -7,6 +7,7 @@ import type { PlatformMe } from "@/features/platform/live/types";
 import type { Me } from "@rental-fleet/contracts";
 import { BusinessSwitcher } from "@/app/app/shell-controls";
 import { UserAccountMenu } from "./user-account-menu";
+import { NavigationLink, NavigationLoadingTarget } from "./navigation-link";
 import { WorkspaceContext } from "./workspace-context";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { Button } from "@/components/ui/primitives";
@@ -50,6 +51,8 @@ export function AppShell({
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [navigationTarget, setNavigationTarget] =
+    useState<HTMLDivElement | null>(null);
   const sidebarRef = useRef<HTMLElement>(null);
   const contentScrollRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -230,11 +233,10 @@ export function AppShell({
       ];
   function nav(items: NavItem[]) {
     return items.map((item) => (
-      <Link
+      <NavigationLink
         key={item.href}
-        href={item.href}
-        className={`nav-link ${pathname === item.href || (["/app/vehicles", "/app/rentals", "/app/customers", "/app/trips", "/app/commercial", "/superadmin/businesses", "/superadmin/users"].includes(item.href) && pathname.startsWith(`${item.href}/`)) ? "is-active" : ""}`}
-        aria-current={
+        {...item}
+        active={
           pathname === item.href ||
           ([
             "/app/vehicles",
@@ -246,16 +248,12 @@ export function AppShell({
             "/superadmin/users",
           ].includes(item.href) &&
             pathname.startsWith(`${item.href}/`))
-            ? "page"
-            : undefined
         }
-        onClick={() => setOpen(false)}
-      >
-        <Icon name={item.icon} />
-        <span>{item.label}</span>
-        {item.preview && <small>Preview</small>}
-        {item.unavailable && <small>Chưa có</small>}
-      </Link>
+        onNavigate={() => {
+          setOpen(false);
+          contentScrollRef.current?.scrollTo({ top: 0 });
+        }}
+      />
     ));
   }
   function navigationGroup(
@@ -277,7 +275,7 @@ export function AppShell({
       </section>
     );
   }
-  return (
+  const workspace = (
     <div className={`workspace ${open ? "nav-open" : ""}`}>
       <a className="skip-link" href="#main-content">
         Đến nội dung chính
@@ -388,7 +386,7 @@ export function AppShell({
                 selected={context.business.id}
               />
             ) : (
-              <WorkspaceContext icon="business" label="Minh An Mobility" preview />
+              <WorkspaceContext label="Minh An Mobility" preview />
             )}
           </div>
           <UserAccountMenu
@@ -417,7 +415,11 @@ export function AppShell({
             className="workspace-content"
             key={context?.business.id ?? prefix}
           >
-            {children}
+            <div
+              className="workspace-navigation-loading"
+              ref={setNavigationTarget}
+            />
+            <div className="workspace-route-content">{children}</div>
           </main>
           <footer className="workspace-footer">
             <span>Rental Fleet OS</span>
@@ -436,5 +438,10 @@ export function AppShell({
         </div>
       </div>
     </div>
+  );
+  return (
+    <NavigationLoadingTarget.Provider value={navigationTarget}>
+      {workspace}
+    </NavigationLoadingTarget.Provider>
   );
 }

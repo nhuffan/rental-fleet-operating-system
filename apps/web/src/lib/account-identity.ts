@@ -1,11 +1,6 @@
 import "server-only";
-import { cache } from "react";
-import { serverClient } from "./supabase/server";
+import { verifiedServerAuth } from "./server-auth";
 
-export const verifiedAccountEmail = cache(async () => {
-  const client = await serverClient();
-  const {
-    data: { user },
-  } = await client.auth.getUser();
-  return user?.email;
-});
+export async function verifiedAccountEmail() {
+  return (await verifiedServerAuth())?.email;
+}

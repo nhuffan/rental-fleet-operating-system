@@ -211,3 +211,13 @@
     animation: none;
   }
 }
+
+/* Fill the server-response gap in the same content region as loading.tsx.
+   Keep the old page mounted for interrupted navigation, with only one visible fallback. */
+.workspace-navigation-loading:empty {
+  display: none;
+}
+.workspace-content:has(> .workspace-navigation-loading:not(:empty))
+  > .workspace-route-content {
+  display: none;
+}

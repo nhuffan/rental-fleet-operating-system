@@ -47,7 +47,6 @@ export default async function TripsPage({
   return (
     <>
       <PageHeader
-        eyebrow="LỊCH SỬ GPS"
         title="Hành trình"
         description="Tra cứu và xem lại các điểm GPS đã nhận. Hành trình được suy ra từ Traccar TEST feed, khoảng cách là ước tính."
       />

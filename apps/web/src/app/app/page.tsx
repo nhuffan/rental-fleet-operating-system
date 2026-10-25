@@ -4,7 +4,7 @@ import type { LocationPage } from "@/features/telematics/gps/types";
 import { RentalDashboard } from "@/features/rentals/rental-dashboard";
 import type { RentalPage } from "@/features/rentals/types";
 import { MetricCard } from "@/components/data-display/metric-card";
-import { PageHeader, Badge } from "@/components/ui/primitives";
+import { PageHeader } from "@/components/ui/primitives";
 import { Icon } from "@/components/ui/icon";
 import { pageNumber, queryString, type SearchParams } from "@/lib/query";
 import { api, currentContext } from "@/lib/api";
@@ -56,28 +56,9 @@ export default async function Dashboard({
   return (
     <div className="owner-dashboard">
       <PageHeader
-        eyebrow={c.business.name}
         title="Tổng quan vận hành"
         description="Vị trí đội xe, lịch đặt và những hợp đồng cần theo dõi."
-        action={
-          <Link className="button button-primary" href="/app/rentals">
-            <Icon name="rental" size={17} /> Quản lý hợp đồng
-          </Link>
-        }
       />
-      <div className="owner-dashboard-context">
-        <Badge tone="success">Doanh nghiệp đang hoạt động</Badge>
-        <span>
-          <Icon name="calendar" size={15} />
-          {new Intl.DateTimeFormat("vi-VN", {
-            dateStyle: "full",
-            timeZone: "Asia/Ho_Chi_Minh",
-          }).format(asOf)}
-        </span>
-        <Link href="/app/alerts" className="link-brand">
-          Xem cảnh báo vận hành <Icon name="arrow" size={15} />
-        </Link>
-      </div>
       <div className="owner-dashboard-top">
         {locations && (
           <div className="dashboard-map owner-dashboard-map">

@@ -4,6 +4,7 @@ import {
   useCallback,
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
   type FormHTMLAttributes,
@@ -74,6 +75,7 @@ export function Combobox({
   loading = false,
   placeholder = "Chọn một mục…",
   className = "",
+  popoverWidth = "default",
 }: {
   id?: string;
   name?: string;
@@ -88,6 +90,7 @@ export function Combobox({
   loading?: boolean;
   placeholder?: string;
   className?: string;
+  popoverWidth?: "default" | "content";
 }) {
   const generatedId = useId();
   const controlId = id || generatedId;
@@ -101,14 +104,16 @@ export function Combobox({
     left: 0,
     top: 0,
     width: 220,
+    triggerWidth: 0,
     maxHeight: 260,
   });
   const updatePosition = useCallback(() => {
     const rect = trigger.current?.getBoundingClientRect();
     if (!rect) return;
     const width = Math.min(
-      Math.max(rect.width, 220),
-      360,
+      popoverWidth === "content"
+        ? (popover.current?.getBoundingClientRect().width ?? rect.width)
+        : Math.min(Math.max(rect.width, 220), 360),
       window.innerWidth - 32,
     );
     const below = window.innerHeight - rect.bottom - 16;
@@ -119,9 +124,10 @@ export function Combobox({
       left: Math.max(16, Math.min(rect.left, window.innerWidth - width - 16)),
       top: placeAbove ? Math.max(16, rect.top - height - 6) : rect.bottom + 6,
       width,
+      triggerWidth: Math.min(rect.width, window.innerWidth - 32),
       maxHeight: placeAbove ? height : Math.max(120, below),
     });
-  }, []);
+  }, [popoverWidth]);
   const search = useRef<HTMLInputElement>(null);
   const [internalValue, setValue] = useState(String(defaultValue));
   const value = controlledValue ?? internalValue;
@@ -136,6 +142,11 @@ export function Combobox({
   const enabled = matching.filter((option) => !option.disabled);
   const activeOption = enabled[Math.min(active, enabled.length - 1)];
   const selected = options.find((option) => option.value === value);
+
+  // Content-sized menus need their rendered width for viewport collision checks.
+  useLayoutEffect(() => {
+    if (open && popoverWidth === "content") updatePosition();
+  }, [open, popoverWidth, updatePosition]);
 
   useEffect(() => {
     if (!open) return;
@@ -279,10 +290,14 @@ export function Combobox({
           <div
             ref={popover}
             className="combobox-popover"
+            data-width={popoverWidth}
             style={{
               left: position.left,
               top: position.top,
-              width: position.width,
+              width:
+                popoverWidth === "content" ? "max-content" : position.width,
+              minWidth:
+                popoverWidth === "content" ? position.triggerWidth : undefined,
               maxHeight: position.maxHeight,
             }}
             onBlur={(event) => {

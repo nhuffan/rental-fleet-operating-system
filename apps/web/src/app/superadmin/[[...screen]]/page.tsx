@@ -1,11 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import {
-  Badge,
-  EmptyState,
-  PageHeader,
-  Panel,
-} from "@/components/ui/primitives";
+import { EmptyState, PageHeader, Panel } from "@/components/ui/primitives";
 import { queryString, validId, type SearchParams } from "@/lib/query";
 import {
   platformApi,
@@ -64,10 +59,8 @@ export default async function Superadmin({
     return (
       <>
         <PageHeader
-          eyebrow="PLATFORM CONSOLE"
           title="Tổng quan nền tảng"
           description="Doanh nghiệp, đội xe và hoạt động gần đây trên toàn nền tảng."
-          action={<Badge tone="info">LIVE · Chỉ đọc</Badge>}
         />
         <PlatformOverviewPanel
           data={data}
@@ -88,10 +81,8 @@ export default async function Superadmin({
     return (
       <>
         <PageHeader
-          eyebrow="PLATFORM CONSOLE"
           title="Nhật ký nền tảng"
           description="Theo dõi nhật ký theo thời gian, hành động và doanh nghiệp liên quan."
-          action={<Badge tone="info">LIVE · Chỉ đọc</Badge>}
         />
         <SupportPanel mode="audit" key="audit" data={data} filters={resolved} />
       </>
@@ -129,10 +120,8 @@ export default async function Superadmin({
     return (
       <>
         <PageHeader
-          eyebrow="PLATFORM CONSOLE"
           title="Người dùng & hỗ trợ"
           description="Tra cứu hồ sơ người dùng và các liên kết doanh nghiệp."
-          action={<Badge tone="info">LIVE · Chỉ đọc</Badge>}
         />
         <SupportPanel mode="users" key="users" data={data} filters={filters} />
       </>
@@ -153,7 +142,6 @@ export default async function Superadmin({
             ← Danh sách doanh nghiệp
           </Link>
           <PageHeader
-            eyebrow="PLATFORM CONSOLE"
             title="Chi tiết doanh nghiệp"
             description="Metadata và số liệu tổng hợp được phép xem; không thay đổi dữ liệu doanh nghiệp."
           />
@@ -169,7 +157,6 @@ export default async function Superadmin({
     return (
       <>
         <PageHeader
-          eyebrow="PLATFORM CONSOLE"
           title="Doanh nghiệp"
           description="Tìm kiếm và tra cứu doanh nghiệp bằng dữ liệu thật, có phân trang và quyền platform riêng."
         />
@@ -181,10 +168,8 @@ export default async function Superadmin({
     return (
       <>
         <PageHeader
-          eyebrow="PLATFORM CONSOLE"
           title={unavailable[screen[0]]}
           description="Chức năng này chưa được triển khai cho console live."
-          action={<Badge tone="neutral">Chưa khả dụng</Badge>}
         />
         <Panel>
           <EmptyState

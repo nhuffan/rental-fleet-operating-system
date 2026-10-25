@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { Icon } from "@/components/ui/icon";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { Me } from "@rental-fleet/contracts";
@@ -94,6 +95,15 @@ export function CommercialPanel({
       <Panel>
         <PanelHeader
           title="Sổ giao dịch"
+          action={
+            <Link
+              className="button button-secondary"
+              href="/app/commercial/tolls"
+            >
+              <Icon name="wallet" />
+              Đối soát phí đường bộ
+            </Link>
+          }
           subtitle={`${initial.total} bản ghi phù hợp · Bản ghi gốc và bút toán đảo được giữ lại`}
           icon="wallet"
         />

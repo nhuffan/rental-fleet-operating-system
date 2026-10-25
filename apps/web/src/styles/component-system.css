@@ -153,6 +153,12 @@
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-popover);
 }
+.combobox-popover[data-width="content"] .combobox-option > span {
+  min-width: 0;
+}
+.combobox-popover[data-width="content"] .combobox-search {
+  max-width: 100%;
+}
 .combobox-search {
   display: flex;
   align-items: center;

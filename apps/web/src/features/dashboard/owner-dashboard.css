@@ -4,25 +4,11 @@
   gap: var(--space-5);
   align-items: stretch;
 }
-.owner-dashboard-context {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-  flex-wrap: wrap;
-  margin: -4px 0 var(--space-5);
-  color: var(--text-secondary);
-  font-size: var(--text-xs);
-}
-.owner-dashboard-context > span:not(.status-badge),
-.owner-dashboard-context > a,
 .owner-dashboard-footer p,
 .owner-dashboard-footer a {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-}
-.owner-dashboard-context > a {
-  margin-left: auto;
 }
 .owner-dashboard-map {
   min-width: 0;
@@ -342,13 +328,6 @@
   .owner-kpis,
   .owner-rental-queue {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .owner-dashboard-context {
-    align-items: flex-start;
-    gap: var(--space-3);
-  }
-  .owner-dashboard-context > a {
-    margin-left: 0;
   }
   .owner-schedule-toolbar,
   .owner-queue-tabs {

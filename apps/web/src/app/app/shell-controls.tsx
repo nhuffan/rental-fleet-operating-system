@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import type { Me } from "@rental-fleet/contracts";
 import { Combobox } from "@/components/ui/controls";
 import { Icon } from "@/components/ui/icon";
+import { Badge } from "@/components/ui/primitives";
 import { WorkspaceContext } from "@/components/layout/workspace-context";
 import { browserClient } from "@/lib/supabase/client";
 export function Logout({
@@ -66,36 +67,45 @@ export function BusinessSwitcher({
   businesses: Me["businesses"];
   selected: string;
 }) {
+  const companyName =
+    businesses.find((business) => business.id === selected)?.name ||
+    "Doanh nghiệp hiện tại";
   return (
     <WorkspaceContext
-      icon="business"
-      label={
-        businesses.find((business) => business.id === selected)?.name ||
-        "Doanh nghiệp hiện tại"
+      status={
+        <Badge className="workspace-business-status" tone="success">
+          Đang hoạt động
+        </Badge>
       }
+      label={companyName}
     >
-      <Combobox
-        className="business-switcher"
-        id="current-business"
-        label="Doanh nghiệp hiện tại"
-        hideLabel
-        options={businesses.map((business) => ({
-          value: business.id,
-          label: business.name,
-        }))}
-        value={selected}
-        searchable={businesses.length > 6}
-        onValueChange={(id) => {
-          if (
-            id === selected ||
-            !businesses.some((business) => business.id === id)
-          )
-            return;
-          document.cookie = `current-business=${encodeURIComponent(id)}; Path=/; SameSite=Lax${location.protocol === "https:" ? "; Secure" : ""}`;
-          // A full reload drops every previous tenant's client state. NestJS validates the membership again.
-          window.location.reload();
-        }}
-      />
+      {businesses.length > 1 ? (
+        <Combobox
+          className="business-switcher"
+          id="current-business"
+          label="Doanh nghiệp hiện tại"
+          hideLabel
+          options={businesses.map((business) => ({
+            value: business.id,
+            label: business.name,
+          }))}
+          value={selected}
+          searchable={businesses.length > 6}
+          popoverWidth="content"
+          onValueChange={(id) => {
+            if (
+              id === selected ||
+              !businesses.some((business) => business.id === id)
+            )
+              return;
+            document.cookie = `current-business=${encodeURIComponent(id)}; Path=/; SameSite=Lax${location.protocol === "https:" ? "; Secure" : ""}`;
+            // A full reload drops every previous tenant's client state. NestJS validates the membership again.
+            window.location.reload();
+          }}
+        />
+      ) : (
+        <span className="workspace-context-label">{companyName}</span>
+      )}
     </WorkspaceContext>
   );
 }
