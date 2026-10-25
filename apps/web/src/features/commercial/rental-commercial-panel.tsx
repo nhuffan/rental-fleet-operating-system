@@ -59,6 +59,12 @@ export function RentalCommercialPanel({
         ))}
       </dl>
       <div className="panel-body">
+        <Link
+          className="button button-secondary"
+          href={`/app/commercial/tolls?rentalId=${rental.id}`}
+        >
+          Đối soát phí đường bộ của hợp đồng
+        </Link>
         <p className="quiet">
           Tiền theo hợp đồng được làm tròn đến đồng gần nhất (0,5 đồng làm tròn
           lên). Khoản thực thu và cọc chỉ tính từ sổ giao dịch. Xác nhận cọc

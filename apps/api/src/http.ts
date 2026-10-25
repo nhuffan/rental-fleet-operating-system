@@ -1,8 +1,12 @@
+import { json } from 'express';
 import {
   ArgumentsHost,
   Catch,
   ExceptionFilter,
   HttpException,
+  PayloadTooLargeException,
+  BadRequestException,
+  UnsupportedMediaTypeException,
   type INestApplication,
   ValidationPipe,
 } from '@nestjs/common';
@@ -108,6 +112,33 @@ export function configureApp(app: INestApplication) {
   app.use(
     '/api/v1/integrations/traccar/positions',
     app.get(GpsIngress).middleware(),
+  );
+  // A bounded JSON envelope can carry a 64 KiB CSV after JSON escaping. Other
+  // routes retain their existing parser limits; CSV content is never logged.
+  const tollJson = json({ limit: '256kb', strict: true, inflate: false });
+  app.use(
+    '/api/v1/tolls/imports',
+    (req: Request, res: Response, next: NextFunction) => {
+      tollJson(req, res, (error?: unknown) => {
+        if (!error) return next();
+        const type = (error as { type?: string }).type;
+        next(
+          type === 'entity.too.large'
+            ? new PayloadTooLargeException({
+                code: 'TOLL_CSV_TOO_LARGE',
+                message: 'CSV request exceeds 256 KiB',
+              })
+            : type === 'encoding.unsupported'
+              ? new UnsupportedMediaTypeException(
+                  'Compressed CSV requests are not supported',
+                )
+              : new BadRequestException({
+                  code: 'TOLL_CSV_INVALID',
+                  message: 'Invalid CSV JSON request',
+                }),
+        );
+      });
+    },
   );
   app.useGlobalPipes(
     new ValidationPipe({

@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { Icon } from "@/components/ui/icon";
 import { api } from "@/lib/api";
 import { PageHeader } from "@/components/ui/primitives";
 import { CommercialPanel } from "@/features/commercial/commercial-panel";
@@ -25,6 +27,15 @@ export default async function CommercialPage({
   return (
     <>
       <PageHeader
+        action={
+          <Link
+            className="button button-secondary"
+            href="/app/commercial/tolls"
+          >
+            <Icon name="wallet" />
+            Đối soát phí đường bộ
+          </Link>
+        }
         title="Thương mại"
         description="Theo dõi khoản thu, chi phí vận hành và tiền cọc từ giao dịch thực tế của doanh nghiệp."
       />

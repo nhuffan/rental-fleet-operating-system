@@ -78,6 +78,14 @@ export function VehicleDetail({
               </Link>
             }
           />
+          <div className="panel-body">
+            <Link
+              className="button button-secondary"
+              href={`/app/commercial/tolls?vehicleId=${vehicle.id}`}
+            >
+              Đối soát phí đường bộ của xe
+            </Link>
+          </div>
           <p className="panel-body quiet">
             Sổ giao dịch áp dụng bộ lọc xe này. Cọc đang giữ được tách khỏi
             doanh thu; phí đường bộ được nhập thủ công, chưa kết nối VETC.

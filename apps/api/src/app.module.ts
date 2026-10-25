@@ -1,3 +1,5 @@
+import { TollController } from './tolls/toll.controller.js';
+import { TollService } from './tolls/toll.service.js';
 import { EvidenceRetentionController } from './evidence/retention.controller.js';
 import { EvidenceRetentionControls } from './evidence/retention-controls.service.js';
 import { EvidenceRetentionWorker } from './evidence/retention-worker.js';
@@ -43,11 +45,13 @@ import { AuthGuard, TenantGuard, PermissionGuard } from './auth/guards.js';
     GpsController,
     TripController,
     TraccarController,
+    TollController,
   ],
   providers: [
     Database,
     AlertsService,
     CommercialService,
+    TollService,
     PlatformService,
     PlatformGuard,
     CoreService,

@@ -370,6 +370,116 @@ export class CommercialService {
         'Movement would make the rental deposit balance negative at a recorded date',
       );
   }
+  private async insertMovement(
+    tx: Tx,
+    c: TenantContext,
+    body: CommercialMovementCreate,
+    now: Date,
+  ) {
+    const occurredAt = new Date(body.occurredAt);
+    if (!Number.isFinite(occurredAt.getTime()) || occurredAt > now)
+      throw new BadRequestException({
+        code: 'INVALID_COMMERCIAL_DATE',
+        message: 'Movement date cannot be in the future',
+      });
+    const scope = await this.scope(tx, c, body);
+    const [row] = await tx
+      .insert(m)
+      .values({
+        ...scope,
+        businessId: c.businessId,
+        kind: body.kind,
+        category: body.category,
+        amount: body.amount,
+        occurredAt,
+        reference: body.reference ?? '',
+        notes: body.notes ?? '',
+        createdBy: c.userId,
+        createdAt: now,
+      })
+      .returning({ id: m.id });
+    return row;
+  }
+  /** Internal toll ingestion only: caller holds tenant lock and reauthorizes;
+   * the caller links its source row in this same transaction, never a new ledger. */
+  async recordTollExpense(
+    tx: Tx,
+    c: TenantContext,
+    body: {
+      vehicleId: string;
+      rentalId?: string;
+      amount: string;
+      occurredAt: string;
+      reference: string;
+      notes: string;
+    },
+    requestId: string,
+  ) {
+    // Recheck even for an internal caller; lock must be held until the source link commits.
+    const [business] = await tx
+      .select()
+      .from(businesses)
+      .where(eq(businesses.id, c.businessId))
+      .for('update');
+    const [member] = await tx
+      .select({ role: memberships.roleKey })
+      .from(memberships)
+      .innerJoin(profiles, eq(profiles.userId, memberships.userId))
+      .where(
+        and(
+          eq(memberships.id, c.membershipId),
+          eq(memberships.businessId, c.businessId),
+          eq(memberships.userId, c.userId),
+          eq(memberships.status, 'ACTIVE'),
+          eq(profiles.status, 'ACTIVE'),
+        ),
+      );
+    if (
+      !member ||
+      business?.status !== 'ACTIVE' ||
+      !permissionsFor(member.role).includes('commercial.manage')
+    )
+      throw denied();
+    await this.requireVnd(tx, c);
+    if (
+      !/^[1-9][0-9]{0,14}$/.test(body.amount) ||
+      body.reference.length > 160 ||
+      body.notes.length > 2000
+    )
+      throw new BadRequestException({
+        code: 'INVALID_TOLL_EXPENSE',
+        message: 'Provide exact positive whole VND and bounded references',
+      });
+    const now = await this.now(tx);
+    const movement: CommercialMovementCreate = {
+      ...body,
+      kind: 'EXPENSE',
+      category: 'TOLL',
+    };
+    requireCategory(movement.kind, movement.category, movement.rentalId);
+    const row = await this.insertMovement(tx, c, movement, now);
+    await tx.insert(auditLogs).values({
+      businessId: c.businessId,
+      actorUserId: c.userId,
+      action: 'commercial.create',
+      entityType: 'commercial_movement',
+      entityId: row.id,
+      metadata: {
+        requestId,
+        fields: [
+          'kind',
+          'category',
+          'amount',
+          'occurredAt',
+          'vehicleId',
+          'rentalId',
+          'reference',
+          'notes',
+        ],
+      },
+    });
+    return this.get(tx, c, row.id);
+  }
   async create(
     c: TenantContext,
     body: CommercialMovementCreate,
@@ -377,28 +487,7 @@ export class CommercialService {
   ) {
     requireCategory(body.kind, body.category, body.rentalId);
     return this.mutate(c, requestId, 'commercial.create', async (tx, now) => {
-      const occurredAt = new Date(body.occurredAt);
-      if (!Number.isFinite(occurredAt.getTime()) || occurredAt > now)
-        throw new BadRequestException({
-          code: 'INVALID_COMMERCIAL_DATE',
-          message: 'Movement date cannot be in the future',
-        });
-      const scope = await this.scope(tx, c, body);
-      const [row] = await tx
-        .insert(m)
-        .values({
-          ...scope,
-          businessId: c.businessId,
-          kind: body.kind,
-          category: body.category,
-          amount: body.amount,
-          occurredAt,
-          reference: body.reference ?? '',
-          notes: body.notes ?? '',
-          createdBy: c.userId,
-          createdAt: now,
-        })
-        .returning({ id: m.id });
+      const row = await this.insertMovement(tx, c, body, now);
       if (body.kind.startsWith('DEPOSIT_'))
         await this.verifyDepositHistory(tx, c, body.rentalId!);
       return {
@@ -460,4 +549,23 @@ export class CommercialService {
       };
     });
   }
+}
+
+/** Transaction-bound entry point for Toll reconciliation. */
+export function recordTollExpense(
+  tx: Tx,
+  c: TenantContext,
+  body: {
+    vehicleId: string;
+    rentalId?: string;
+    amount: string;
+    occurredAt: string;
+    reference: string;
+    notes: string;
+  },
+  requestId: string,
+) {
+  return new CommercialService({
+    db: tx,
+  } as unknown as Database).recordTollExpense(tx, c, body, requestId);
 }

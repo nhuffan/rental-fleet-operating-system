@@ -944,6 +944,118 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/tolls/imports/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["TollController_preview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tolls/imports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["TollController_import"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tolls": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["TollController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tolls/record": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["TollController_bulk"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tolls/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["TollController_detail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tolls/{id}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["TollController_review"];
+        trace?: never;
+    };
+    "/api/v1/tolls/{id}/record": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["TollController_record"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2124,6 +2236,213 @@ export interface components {
             duplicate: boolean;
             /** Format: uuid */
             positionId: string;
+        };
+        TollColumnMapping: {
+            plate: number;
+            occurredAt: number;
+            amount: number;
+            station?: number;
+            description?: number;
+            externalReference?: number;
+        };
+        TollImportPreview: {
+            source: string;
+            csv: string;
+            /** @enum {string} */
+            delimiter: "," | ";" | "\t";
+            mapping: components["schemas"]["TollColumnMapping"];
+            /** @enum {string} */
+            dateFormat: "ISO_OFFSET" | "ISO_LOCAL" | "DMY_LOCAL";
+            /** @default +07:00 */
+            timezoneOffset: string;
+            /** @enum {string} */
+            amountFormat: "INTEGER" | "DOT_GROUPED" | "COMMA_GROUPED";
+        };
+        TollNormalizedResponse: {
+            source: string;
+            plate: string;
+            /** Format: date-time */
+            occurredAt: string;
+            amount: string;
+            station: string;
+            description: string;
+            externalReference: string;
+            fingerprint: string;
+        };
+        TollSuggestion: {
+            /** Format: uuid */
+            vehicleId: string | null;
+            vehiclePlate: string | null;
+            /** Format: uuid */
+            rentalId: string | null;
+            rentalCandidates: string[];
+            ambiguous: boolean;
+        };
+        TollPreviewRow: {
+            rowNumber: number;
+            /** @enum {string} */
+            status: "VALID" | "INVALID" | "DUPLICATE" | "CONFLICT";
+            errors: string[];
+            normalized: components["schemas"]["TollNormalizedResponse"] | null;
+            duplicateOf: string | null;
+            suggestion: components["schemas"]["TollSuggestion"];
+            possibleDuplicateMovementIds: string[];
+        };
+        TollPreviewSummary: {
+            total: number;
+            valid: number;
+            invalid: number;
+            duplicate: number;
+            conflict: number;
+        };
+        TollPreviewResponse: {
+            source: string;
+            previewHash: string;
+            rows: components["schemas"]["TollPreviewRow"][];
+            summary: components["schemas"]["TollPreviewSummary"];
+        };
+        TollImportConfirm: {
+            source: string;
+            csv: string;
+            /** @enum {string} */
+            delimiter: "," | ";" | "\t";
+            mapping: components["schemas"]["TollColumnMapping"];
+            /** @enum {string} */
+            dateFormat: "ISO_OFFSET" | "ISO_LOCAL" | "DMY_LOCAL";
+            /** @default +07:00 */
+            timezoneOffset: string;
+            /** @enum {string} */
+            amountFormat: "INTEGER" | "DOT_GROUPED" | "COMMA_GROUPED";
+            /** Format: uuid */
+            idempotencyKey: string;
+            previewHash: string;
+            rowNumbers: number[];
+        };
+        TollImportResponse: {
+            /** Format: uuid */
+            batchId: string;
+            importedCount: number;
+            duplicateCount: number;
+            idempotent: boolean;
+        };
+        TollResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            batchId: string;
+            source: string;
+            externalReference: string;
+            plate: string;
+            /** Format: date-time */
+            occurredAt: string;
+            amount: string;
+            station: string;
+            description: string;
+            /** @enum {string} */
+            status: "UNMATCHED" | "NEEDS_REVIEW" | "MATCHED" | "RECORDED" | "IGNORED";
+            /** Format: uuid */
+            vehicleId: string | null;
+            /** Format: uuid */
+            rentalId: string | null;
+            /** Format: uuid */
+            movementId: string | null;
+            reviewReason: string;
+            version: number;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            suggestion: components["schemas"]["TollSuggestion"];
+            possibleDuplicateMovementIds: string[];
+            /** @enum {string|null} */
+            movementStatus: "POSTED" | "REVERSED" | "REVERSAL" | null;
+            /** Format: uuid */
+            reversedBy: string | null;
+        };
+        TollPage: {
+            page: number;
+            limit: number;
+            total: number;
+            data: components["schemas"]["TollResponse"][];
+        };
+        TollBulkItem: {
+            /** Format: uuid */
+            id: string;
+            version: number;
+        };
+        TollBulkRecord: {
+            items: components["schemas"]["TollBulkItem"][];
+            reason: string;
+        };
+        TollBulkResponse: {
+            data: components["schemas"]["TollResponse"][];
+        };
+        TollReviewEvent: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            action: "IMPORTED" | "MATCH_CONFIRMED" | "IGNORED" | "RECORDED";
+            /** Format: uuid */
+            actorId: string;
+            reason: string;
+            /** Format: uuid */
+            vehicleId: string | null;
+            /** Format: uuid */
+            rentalId: string | null;
+            /** @enum {string} */
+            status: "UNMATCHED" | "NEEDS_REVIEW" | "MATCHED" | "RECORDED" | "IGNORED";
+            version: number;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        TollDetailResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            batchId: string;
+            source: string;
+            externalReference: string;
+            plate: string;
+            /** Format: date-time */
+            occurredAt: string;
+            amount: string;
+            station: string;
+            description: string;
+            /** @enum {string} */
+            status: "UNMATCHED" | "NEEDS_REVIEW" | "MATCHED" | "RECORDED" | "IGNORED";
+            /** Format: uuid */
+            vehicleId: string | null;
+            /** Format: uuid */
+            rentalId: string | null;
+            /** Format: uuid */
+            movementId: string | null;
+            reviewReason: string;
+            version: number;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            suggestion: components["schemas"]["TollSuggestion"];
+            possibleDuplicateMovementIds: string[];
+            /** @enum {string|null} */
+            movementStatus: "POSTED" | "REVERSED" | "REVERSAL" | null;
+            /** Format: uuid */
+            reversedBy: string | null;
+            history: components["schemas"]["TollReviewEvent"][];
+        };
+        TollReview: {
+            /** Format: uuid */
+            vehicleId: string | null;
+            /** Format: uuid */
+            rentalId: string | null;
+            ignore: boolean;
+            reason: string;
+            version: number;
+        };
+        TollRecord: {
+            reason: string;
+            version: number;
+            acknowledgePossibleDuplicate: boolean;
         };
     };
     responses: never;
@@ -10736,6 +11055,817 @@ export interface operations {
             };
             /** @description Standard API error */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    TollController_preview: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Business-Id"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TollImportPreview"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TollPreviewResponse"];
+                };
+            };
+            /** @description Standard API error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    TollController_import: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Business-Id"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TollImportConfirm"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TollImportResponse"];
+                };
+            };
+            /** @description Standard API error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    TollController_list: {
+        parameters: {
+            query?: {
+                page?: components["schemas"]["Object"];
+                limit?: components["schemas"]["Object"];
+                status?: "UNMATCHED" | "NEEDS_REVIEW" | "MATCHED" | "RECORDED" | "IGNORED";
+                vehicleId?: string;
+                rentalId?: string;
+                from?: string;
+                until?: string;
+            };
+            header?: {
+                "X-Business-Id"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TollPage"];
+                };
+            };
+            /** @description Standard API error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    TollController_bulk: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Business-Id"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TollBulkRecord"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TollBulkResponse"];
+                };
+            };
+            /** @description Standard API error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    TollController_detail: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Business-Id"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TollDetailResponse"];
+                };
+            };
+            /** @description Standard API error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    TollController_review: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Business-Id"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TollReview"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TollResponse"];
+                };
+            };
+            /** @description Standard API error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    TollController_record: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Business-Id"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TollRecord"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TollResponse"];
+                };
+            };
+            /** @description Standard API error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

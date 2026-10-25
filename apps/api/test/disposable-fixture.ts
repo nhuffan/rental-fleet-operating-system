@@ -84,13 +84,17 @@ export function disposableFixture(options: { includeCustomer?: boolean } = {}) {
         // Staged uploads and reasoned retention history also retain their rental.
         // Retention policy/hold records remain under the disabled tenant tombstone.
         // Never delete snapshots or alter their historical actor references.
-        for (const table of ['commercial_movements', 'gps_positions'])
+        for (const table of ['gps_positions'])
           await db.query(
             `delete from public.${table} where business_id=any($1::uuid[])`,
             ids,
           );
         await db.query(
-          'delete from public.rentals r where r.business_id=any($1::uuid[]) and not exists(select 1 from public.rental_inspections i where i.business_id=r.business_id and i.rental_id=r.id) and not exists(select 1 from public.inspection_uploads u where u.business_id=r.business_id and u.rental_id=r.id) and not exists(select 1 from public.evidence_rental_holds h where h.business_id=r.business_id and h.rental_id=r.id) and not exists(select 1 from public.evidence_retention_events e where e.business_id=r.business_id and e.rental_id=r.id)',
+          'delete from public.commercial_movements m where m.business_id=any($1::uuid[]) and not exists(select 1 from public.toll_import_batches t where t.business_id=m.business_id)',
+          ids,
+        );
+        await db.query(
+          'delete from public.rentals r where r.business_id=any($1::uuid[]) and not exists(select 1 from public.rental_inspections i where i.business_id=r.business_id and i.rental_id=r.id) and not exists(select 1 from public.inspection_uploads u where u.business_id=r.business_id and u.rental_id=r.id) and not exists(select 1 from public.evidence_rental_holds h where h.business_id=r.business_id and h.rental_id=r.id) and not exists(select 1 from public.evidence_retention_events e where e.business_id=r.business_id and e.rental_id=r.id) and not exists(select 1 from public.toll_transactions t where t.business_id=r.business_id and t.rental_id=r.id) and not exists(select 1 from public.toll_review_events e where e.business_id=r.business_id and e.rental_id=r.id) and not exists(select 1 from public.commercial_movements m where m.business_id=r.business_id and m.rental_id=r.id)',
           ids,
         );
         await db.query(
@@ -98,7 +102,7 @@ export function disposableFixture(options: { includeCustomer?: boolean } = {}) {
           ids,
         );
         await db.query(
-          'delete from public.vehicles v where v.business_id=any($1::uuid[]) and not exists(select 1 from public.rentals r where r.business_id=v.business_id and r.vehicle_id=v.id)',
+          'delete from public.vehicles v where v.business_id=any($1::uuid[]) and not exists(select 1 from public.rentals r where r.business_id=v.business_id and r.vehicle_id=v.id) and not exists(select 1 from public.toll_transactions t where t.business_id=v.business_id and t.vehicle_id=v.id) and not exists(select 1 from public.toll_review_events e where e.business_id=v.business_id and e.vehicle_id=v.id) and not exists(select 1 from public.commercial_movements m where m.business_id=v.business_id and m.vehicle_id=v.id)',
           ids,
         );
         await db.query(
@@ -134,7 +138,7 @@ export function disposableFixture(options: { includeCustomer?: boolean } = {}) {
           [ownedBusinesses, 'E2E retired ' + runId],
         );
         await db.query(
-          'delete from public.businesses b where b.id=any($1::uuid[]) and not exists(select 1 from public.audit_logs a where a.business_id=b.id) and not exists(select 1 from public.rental_inspections i where i.business_id=b.id) and not exists(select 1 from public.inspection_uploads u where u.business_id=b.id) and not exists(select 1 from public.evidence_rental_holds h where h.business_id=b.id) and not exists(select 1 from public.evidence_retention_events e where e.business_id=b.id) and not exists(select 1 from public.evidence_retention_settings s where s.business_id=b.id)',
+          'delete from public.businesses b where b.id=any($1::uuid[]) and not exists(select 1 from public.audit_logs a where a.business_id=b.id) and not exists(select 1 from public.rental_inspections i where i.business_id=b.id) and not exists(select 1 from public.inspection_uploads u where u.business_id=b.id) and not exists(select 1 from public.evidence_rental_holds h where h.business_id=b.id) and not exists(select 1 from public.evidence_retention_events e where e.business_id=b.id) and not exists(select 1 from public.evidence_retention_settings s where s.business_id=b.id) and not exists(select 1 from public.toll_import_batches t where t.business_id=b.id)',
           ids,
         );
         await db.query('commit');

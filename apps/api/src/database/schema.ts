@@ -1073,3 +1073,187 @@ export const platformAuditLogs = pgTable(
     ),
   ],
 );
+
+export const tollImportBatches = pgTable(
+  'toll_import_batches',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    businessId: uuid('business_id')
+      .notNull()
+      .references(() => businesses.id, { onDelete: 'restrict' }),
+    source: text().notNull(),
+    idempotencyKey: uuid('idempotency_key').notNull(),
+    contentHash: text('content_hash').notNull(),
+    rowCount: integer('row_count').notNull(),
+    importedCount: integer('imported_count').notNull(),
+    duplicateCount: integer('duplicate_count').notNull(),
+    createdBy: uuid('created_by').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    unique('toll_import_batches_tenant_identity').on(t.businessId, t.id),
+    unique('toll_import_batches_source_identity').on(
+      t.businessId,
+      t.id,
+      t.source,
+    ),
+    unique('toll_import_batches_idempotency').on(
+      t.businessId,
+      t.idempotencyKey,
+    ),
+    index('toll_import_batches_business_created').on(
+      t.businessId,
+      t.createdAt.desc(),
+      t.id,
+    ),
+  ],
+);
+export type TollStatus =
+  'UNMATCHED' | 'NEEDS_REVIEW' | 'MATCHED' | 'RECORDED' | 'IGNORED';
+export const tollTransactions = pgTable(
+  'toll_transactions',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    businessId: uuid('business_id')
+      .notNull()
+      .references(() => businesses.id, { onDelete: 'restrict' }),
+    batchId: uuid('batch_id').notNull(),
+    source: text().notNull(),
+    externalReference: text('external_reference').notNull().default(''),
+    fingerprint: text().notNull(),
+    plate: text().notNull(),
+    occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull(),
+    amount: numeric({ precision: 18, scale: 0 }).notNull(),
+    station: text().notNull().default(''),
+    description: text().notNull().default(''),
+    importRow: integer('import_row').notNull(),
+    status: text().notNull().default('UNMATCHED').$type<TollStatus>(),
+    vehicleId: uuid('vehicle_id'),
+    rentalId: uuid('rental_id'),
+    movementId: uuid('movement_id'),
+    reviewReason: text('review_reason').notNull().default(''),
+    reviewedBy: uuid('reviewed_by'),
+    reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
+    version: integer().notNull().default(1),
+    ...times(),
+  },
+  (t) => [
+    unique('toll_transactions_tenant_identity').on(t.businessId, t.id),
+    foreignKey({
+      name: 'toll_transactions_batch_tenant_fk',
+      columns: [t.businessId, t.batchId, t.source],
+      foreignColumns: [
+        tollImportBatches.businessId,
+        tollImportBatches.id,
+        tollImportBatches.source,
+      ],
+    }).onDelete('restrict'),
+    foreignKey({
+      name: 'toll_transactions_vehicle_tenant_fk',
+      columns: [t.businessId, t.vehicleId],
+      foreignColumns: [vehicles.businessId, vehicles.id],
+    }).onDelete('restrict'),
+    foreignKey({
+      name: 'toll_transactions_rental_tenant_fk',
+      columns: [t.businessId, t.rentalId, t.vehicleId],
+      foreignColumns: [rentals.businessId, rentals.id, rentals.vehicleId],
+    }).onDelete('restrict'),
+    foreignKey({
+      name: 'toll_transactions_movement_tenant_fk',
+      columns: [t.businessId, t.movementId],
+      foreignColumns: [commercialMovements.businessId, commercialMovements.id],
+    }).onDelete('restrict'),
+    uniqueIndex('toll_transactions_external_unique')
+      .on(t.businessId, t.source, t.externalReference)
+      .where(sql`${t.externalReference} <> ''`),
+    uniqueIndex('toll_transactions_fingerprint_unique')
+      .on(t.businessId, t.source, t.fingerprint)
+      .where(sql`${t.externalReference} = ''`),
+    uniqueIndex('toll_transactions_movement_unique')
+      .on(t.businessId, t.movementId)
+      .where(sql`${t.movementId} is not null`),
+    index('toll_transactions_business_occurred').on(
+      t.businessId,
+      t.occurredAt.desc(),
+      t.id,
+    ),
+    index('toll_transactions_business_status').on(
+      t.businessId,
+      t.status,
+      t.occurredAt.desc(),
+      t.id,
+    ),
+    index('toll_transactions_vehicle_occurred').on(
+      t.businessId,
+      t.vehicleId,
+      t.occurredAt.desc(),
+      t.id,
+    ),
+    index('toll_transactions_rental').on(
+      t.businessId,
+      t.rentalId,
+      t.vehicleId,
+      t.occurredAt.desc(),
+      t.id,
+    ),
+    index('toll_transactions_batch').on(t.businessId, t.batchId, t.id),
+    index('toll_transactions_fingerprint').on(
+      t.businessId,
+      t.source,
+      t.fingerprint,
+    ),
+  ],
+);
+export const tollReviewEvents = pgTable(
+  'toll_review_events',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    businessId: uuid('business_id')
+      .notNull()
+      .references(() => businesses.id, { onDelete: 'restrict' }),
+    tollTransactionId: uuid('toll_transaction_id').notNull(),
+    action: text()
+      .notNull()
+      .$type<'IMPORTED' | 'MATCH_CONFIRMED' | 'IGNORED' | 'RECORDED'>(),
+    vehicleId: uuid('vehicle_id'),
+    rentalId: uuid('rental_id'),
+    status: text().notNull().$type<TollStatus>(),
+    version: integer().notNull(),
+    actorId: uuid('actor_id').notNull(),
+    reason: text().notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    foreignKey({
+      name: 'toll_review_events_transaction_tenant_fk',
+      columns: [t.businessId, t.tollTransactionId],
+      foreignColumns: [tollTransactions.businessId, tollTransactions.id],
+    }).onDelete('restrict'),
+    foreignKey({
+      name: 'toll_review_events_vehicle_tenant_fk',
+      columns: [t.businessId, t.vehicleId],
+      foreignColumns: [vehicles.businessId, vehicles.id],
+    }).onDelete('restrict'),
+    foreignKey({
+      name: 'toll_review_events_rental_tenant_fk',
+      columns: [t.businessId, t.rentalId, t.vehicleId],
+      foreignColumns: [rentals.businessId, rentals.id, rentals.vehicleId],
+    }).onDelete('restrict'),
+    index('toll_review_events_rental').on(
+      t.businessId,
+      t.rentalId,
+      t.vehicleId,
+    ),
+    index('toll_review_events_vehicle').on(t.businessId, t.vehicleId),
+    index('toll_review_events_transaction').on(
+      t.businessId,
+      t.tollTransactionId,
+      t.createdAt,
+      t.id,
+    ),
+  ],
+);
