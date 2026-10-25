@@ -94,3 +94,36 @@ it('never uses a caller-selected bucket outside the private evidence allowlist',
     storage(stream(Uint8Array.of(1))).download('public', 'path', 'IMAGE'),
   ).rejects.toMatchObject({ response: { code: 'EVIDENCE_UNAVAILABLE' } });
 });
+
+it('treats absent objects as idempotently removed but never hides provider deletion failures', async () => {
+  for (const error of [
+    null,
+    { status: 404 },
+    { status: 400, statusCode: '404' },
+  ]) {
+    const value = new EvidenceStorage();
+    Object.assign(value, {
+      client: {
+        storage: {
+          from: () => ({ remove: async () => ({ data: [], error }) }),
+        },
+      },
+    });
+    await expect(
+      value.remove('inspection-images', ['server/owned/path']),
+    ).resolves.toBeUndefined();
+  }
+  const value = new EvidenceStorage();
+  Object.assign(value, {
+    client: {
+      storage: {
+        from: () => ({
+          remove: async () => ({ data: null, error: { status: 503 } }),
+        }),
+      },
+    },
+  });
+  await expect(
+    value.remove('inspection-images', ['server/owned/path']),
+  ).rejects.toMatchObject({ response: { code: 'EVIDENCE_UNAVAILABLE' } });
+});

@@ -14,6 +14,7 @@ import {
   index,
   uniqueIndex,
   foreignKey,
+  primaryKey,
 } from 'drizzle-orm/pg-core';
 const times = () => ({
   createdAt: timestamp('created_at', { withTimezone: true })
@@ -373,6 +374,7 @@ export const rentals = pgTable(
       (${table.status} = 'CANCELLED' and ${table.handedOverAt} is null and ${table.returnedAt} is null and ${table.cancelledAt} is not null and ${table.odometerStart} is null and ${table.odometerEnd} is null)
     `,
     ),
+    unique('rentals_retention_identity_unique').on(table.businessId, table.id),
     unique('rentals_business_id_id_vehicle_unique').on(
       table.businessId,
       table.id,
@@ -675,6 +677,11 @@ export const evidenceAttachments = pgTable(
         evidenceUploads.type,
       ],
     }).onDelete('restrict'),
+    unique('inspection_evidence_retention_identity_unique').on(
+      table.businessId,
+      table.id,
+      table.rentalId,
+    ),
     unique('inspection_evidence_object_unique').on(
       table.bucket,
       table.objectKey,
@@ -698,6 +705,158 @@ export const evidenceAttachments = pgTable(
       table.rentalId,
       table.vehicleId,
       table.type,
+    ),
+  ],
+);
+
+// Retention state and history remain separate from immutable inspection metadata.
+export const evidenceRetentionSettings = pgTable(
+  'evidence_retention_settings',
+  {
+    businessId: uuid('business_id')
+      .primaryKey()
+      .references(() => businesses.id, { onDelete: 'restrict' }),
+    retentionDays: integer('retention_days')
+      .notNull()
+      .default(30)
+      .$type<30 | 90>(),
+    updatedBy: uuid('updated_by'),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    check(
+      'evidence_retention_settings_days_check',
+      sql`${table.retentionDays} in (30, 90)`,
+    ),
+  ],
+);
+
+export const evidenceRentalHolds = pgTable(
+  'evidence_rental_holds',
+  {
+    businessId: uuid('business_id')
+      .notNull()
+      .references(() => businesses.id, { onDelete: 'restrict' }),
+    rentalId: uuid('rental_id').notNull(),
+    active: boolean().notNull().default(false),
+    unresolvedDispute: boolean('unresolved_dispute').notNull().default(false),
+    reason: text().notNull(),
+    actorId: uuid('actor_id').notNull(),
+    changedAt: timestamp('changed_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.businessId, table.rentalId] }),
+    foreignKey({
+      name: 'evidence_rental_holds_rental_tenant_fk',
+      columns: [table.businessId, table.rentalId],
+      foreignColumns: [rentals.businessId, rentals.id],
+    }).onDelete('restrict'),
+    check(
+      'evidence_rental_holds_dispute_check',
+      sql`not ${table.unresolvedDispute} or ${table.active}`,
+    ),
+    index('evidence_rental_holds_active')
+      .on(table.businessId, table.rentalId)
+      .where(sql`${table.active}`),
+  ],
+);
+
+export type EvidenceLifecycleStatus =
+  'ACTIVE' | 'PURGE_ELIGIBLE' | 'PURGING' | 'PURGED' | 'RETRY_REQUIRED';
+export const evidenceLifecycles = pgTable(
+  'evidence_lifecycles',
+  {
+    evidenceId: uuid('evidence_id').primaryKey(),
+    businessId: uuid('business_id')
+      .notNull()
+      .references(() => businesses.id, { onDelete: 'restrict' }),
+    rentalId: uuid('rental_id').notNull(),
+    status: text().notNull().default('ACTIVE').$type<EvidenceLifecycleStatus>(),
+    important: boolean().notNull().default(false),
+    importantReason: text('important_reason'),
+    importantBy: uuid('important_by'),
+    importantAt: timestamp('important_at', { withTimezone: true }),
+    leaseId: uuid('lease_id'),
+    leaseUntil: timestamp('lease_until', { withTimezone: true }),
+    retryCount: integer('retry_count').notNull().default(0),
+    nextRetryAt: timestamp('next_retry_at', { withTimezone: true }),
+    lastErrorCode: text('last_error_code'),
+    purgedAt: timestamp('purged_at', { withTimezone: true }),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    foreignKey({
+      name: 'evidence_lifecycles_evidence_tenant_fk',
+      columns: [table.businessId, table.evidenceId, table.rentalId],
+      foreignColumns: [
+        evidenceAttachments.businessId,
+        evidenceAttachments.id,
+        evidenceAttachments.rentalId,
+      ],
+    }).onDelete('restrict'),
+    index('evidence_lifecycles_tenant_rental').on(
+      table.businessId,
+      table.rentalId,
+      table.evidenceId,
+    ),
+    index('evidence_lifecycles_cleanup')
+      .on(table.status, table.nextRetryAt, table.leaseUntil, table.evidenceId)
+      .where(sql`${table.status} <> 'PURGED'`),
+  ],
+);
+
+export const evidenceRetentionEvents = pgTable(
+  'evidence_retention_events',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    businessId: uuid('business_id')
+      .notNull()
+      .references(() => businesses.id, { onDelete: 'restrict' }),
+    rentalId: uuid('rental_id'),
+    evidenceId: uuid('evidence_id'),
+    action: text().notNull(),
+    actorId: uuid('actor_id'),
+    reason: text(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    foreignKey({
+      name: 'evidence_retention_events_rental_tenant_fk',
+      columns: [table.businessId, table.rentalId],
+      foreignColumns: [rentals.businessId, rentals.id],
+    }).onDelete('restrict'),
+    foreignKey({
+      name: 'evidence_retention_events_evidence_tenant_fk',
+      columns: [table.businessId, table.evidenceId, table.rentalId],
+      foreignColumns: [
+        evidenceAttachments.businessId,
+        evidenceAttachments.id,
+        evidenceAttachments.rentalId,
+      ],
+    }).onDelete('restrict'),
+    index('evidence_retention_events_business_created').on(
+      table.businessId,
+      table.createdAt.desc(),
+      table.id,
+    ),
+    index('evidence_retention_events_rental').on(
+      table.businessId,
+      table.rentalId,
+      table.createdAt,
+      table.id,
+    ),
+    index('evidence_retention_events_evidence').on(
+      table.businessId,
+      table.evidenceId,
+      table.rentalId,
     ),
   ],
 );

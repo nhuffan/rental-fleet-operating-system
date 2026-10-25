@@ -23,6 +23,13 @@ const messages: Record<string, string> = {
     "Phiên retry không khớp file ban đầu. Bỏ file này và chọn lại.",
   EVIDENCE_DISABLED:
     "Chứng cứ ảnh/video chưa được cấu hình. Bạn vẫn có thể lập biên bản không có media.",
+  EVIDENCE_RETENTION_LOCKED:
+    "Chứng cứ đang được xử lý xóa hoặc đã bị xóa. Tải lại trạng thái trước khi thay đổi giữ file.",
+  EVIDENCE_RETENTION_VALIDATION:
+    "Nhập lý do rõ ràng và xác nhận tranh chấp đã giải quyết trước khi gỡ giữ chứng cứ.",
+  EVIDENCE_MEDIA_UNAVAILABLE:
+    "File hiện không thể xem hoặc tải. Kiểm tra lại trạng thái lưu trữ của chứng cứ.",
+  EVIDENCE_NOT_FOUND: "Không tìm thấy chứng cứ trong doanh nghiệp hiện tại.",
   INVALID_RENTAL_STATE:
     "Hợp đồng đã đổi trạng thái. Tải lại dữ liệu trước khi tiếp tục.",
 };
@@ -38,7 +45,7 @@ export class EvidenceError extends Error {
 export async function evidenceRequest<T>(
   businessId: string,
   path: string,
-  method: "GET" | "POST" = "GET",
+  method: "GET" | "POST" | "PATCH" = "GET",
   body?: object,
   signal?: AbortSignal,
 ): Promise<T> {
@@ -59,9 +66,9 @@ export async function evidenceRequest<T>(
     headers: {
       Authorization: `Bearer ${session.access_token}`,
       "X-Business-Id": businessId,
-      ...(method === "POST" ? { "Content-Type": "application/json" } : {}),
+      ...(method !== "GET" ? { "Content-Type": "application/json" } : {}),
     },
-    ...(method === "POST" ? { body: JSON.stringify(body ?? {}) } : {}),
+    ...(method !== "GET" ? { body: JSON.stringify(body ?? {}) } : {}),
   });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {

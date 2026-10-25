@@ -1,4 +1,5 @@
 "use client";
+import { EvidenceRetentionSettingsPanel } from "./evidence-retention-settings";
 import { Icon } from "@/components/ui/icon";
 import type { Me, Settings } from "@rental-fleet/contracts";
 import {
@@ -78,6 +79,10 @@ export function SettingsForm({
           </fieldset>
         </form>
       </Panel>
+      <EvidenceRetentionSettingsPanel
+        businessId={context.business.id}
+        editable={editable}
+      />
       {!editable && (
         <p className="quiet" style={{ marginTop: 16 }}>
           Chế độ chỉ xem. Bạn cần quyền cập nhật cài đặt để lưu thay đổi.

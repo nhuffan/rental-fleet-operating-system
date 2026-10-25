@@ -1,3 +1,6 @@
+import { EvidenceRetentionController } from './evidence/retention.controller.js';
+import { EvidenceRetentionControls } from './evidence/retention-controls.service.js';
+import { EvidenceRetentionWorker } from './evidence/retention-worker.js';
 import { EvidenceCleanup } from './evidence/evidence-cleanup.js';
 import { EvidenceController } from './evidence/evidence.controller.js';
 import { EvidenceService } from './evidence/evidence.service.js';
@@ -35,6 +38,7 @@ import { AuthGuard, TenantGuard, PermissionGuard } from './auth/guards.js';
     CoreController,
     RentalController,
     EvidenceController,
+    EvidenceRetentionController,
     FleetController,
     GpsController,
     TripController,
@@ -53,6 +57,8 @@ import { AuthGuard, TenantGuard, PermissionGuard } from './auth/guards.js';
     TripService,
     RentalService,
     EvidenceService,
+    EvidenceRetentionControls,
+    EvidenceRetentionWorker,
     EvidenceCleanup,
     AuthGuard,
     TenantGuard,

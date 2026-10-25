@@ -30,7 +30,8 @@
     "gps:retention:verify": "tsx scripts/telematics/retention-verify.ts",
     "platform:seed": "tsx scripts/platform-seed.ts",
     "evidence:storage": "tsx scripts/evidence-storage.ts provision",
-    "evidence:cleanup": "tsx scripts/evidence-storage.ts cleanup"
+    "evidence:cleanup": "tsx scripts/evidence-storage.ts cleanup",
+    "evidence:retention": "tsx scripts/evidence-retention.ts"
   },
   "dependencies": {
     "@ffprobe-installer/ffprobe": "2.1.2",

@@ -108,14 +108,28 @@ export class EvidenceStorage {
     )
       throw evidenceUnavailable();
   }
-  async signRead(bucket: string, key: string, seconds: number) {
-    const result = await this.bucket(bucket).createSignedUrl(key, seconds);
+  async signRead(
+    bucket: string,
+    key: string,
+    seconds: number,
+    downloadName?: string,
+  ) {
+    const result = await this.bucket(bucket).createSignedUrl(
+      key,
+      seconds,
+      downloadName ? { download: downloadName } : undefined,
+    );
     if (result.error || !result.data) throw evidenceUnavailable();
     return result.data.signedUrl;
   }
   async remove(bucket: string, keys: string[]) {
     if (!keys.length) return;
     const result = await this.bucket(bucket).remove(keys);
-    if (result.error) throw evidenceUnavailable();
+    if (
+      result.error &&
+      result.error.status !== 404 &&
+      String(result.error.statusCode) !== '404'
+    )
+      throw evidenceUnavailable();
   }
 }

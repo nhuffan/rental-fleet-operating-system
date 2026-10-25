@@ -115,4 +115,14 @@ export class EvidenceController {
   ) {
     return this.service.signedRead(req.tenant, id, evidenceId);
   }
+  @Get(':evidenceId/download')
+  @RequirePermission('rental.read')
+  @ApiOkResponse({ type: EvidenceReadAuthorization })
+  download(
+    @Req() req: AuthRequest,
+    @Param('rentalId', ParseUUIDPipe) id: string,
+    @Param('evidenceId', ParseUUIDPipe) evidenceId: string,
+  ) {
+    return this.service.signedRead(req.tenant, id, evidenceId, true);
+  }
 }

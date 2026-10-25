@@ -49,6 +49,19 @@ export class EvidenceUploadAuthorization extends EvidenceUploadResponse {
   limits!: EvidenceLimitsResponse;
 }
 export class EvidenceResponse {
+  @ApiProperty({
+    enum: ['ACTIVE', 'PURGE_ELIGIBLE', 'PURGING', 'PURGED', 'RETRY_REQUIRED'],
+  })
+  retentionStatus!: string;
+  @ApiProperty({ type: String, format: 'date-time', nullable: true })
+  retentionDeadline!: string | null;
+  @ApiProperty() important!: boolean;
+  @ApiProperty() legalHold!: boolean;
+  @ApiProperty() unresolvedDispute!: boolean;
+  @ApiProperty({ type: String, format: 'date-time', nullable: true })
+  purgedAt!: string | null;
+  @ApiProperty() canRead!: boolean;
+  @ApiProperty() canProtect!: boolean;
   @ApiProperty({ format: 'uuid' }) id!: string;
   @ApiProperty({ format: 'uuid' }) inspectionId!: string;
   @ApiProperty({ format: 'uuid' }) rentalId!: string;

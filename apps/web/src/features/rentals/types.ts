@@ -23,3 +23,9 @@ export type EvidenceUpload = Schemas["EvidenceUploadResponse"];
 export type EvidenceUploadAuthorization =
   Schemas["EvidenceUploadAuthorization"];
 export type EvidenceReadAuthorization = Schemas["EvidenceReadAuthorization"];
+
+export type EvidenceRetentionSettings =
+  Schemas["EvidenceRetentionSettingsResponse"];
+export type EvidenceStorageUsage = Schemas["EvidenceStorageUsageResponse"];
+export type EvidenceRentalHold = Schemas["EvidenceRentalHoldResponse"];
+export type EvidenceImportant = Schemas["EvidenceImportantResponse"];

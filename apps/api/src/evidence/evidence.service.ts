@@ -1,7 +1,9 @@
+import { retentionView } from './retention-policy.js';
 import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
+  GoneException,
   Inject,
   Injectable,
   NotFoundException,
@@ -29,6 +31,9 @@ import {
   rentalInspections,
   evidenceUploads,
   evidenceAttachments,
+  evidenceLifecycles,
+  evidenceRentalHolds,
+  evidenceRetentionSettings,
 } from '../database/schema.js';
 import { denied, type TenantContext } from '../auth/guards.js';
 import { permissionsFor, type Permission } from '../auth/permissions.js';
@@ -591,12 +596,43 @@ export class EvidenceService {
       return visibleUpload(cancelled);
     });
   }
+  private async retentionContext(tx: Tx, c: TenantContext, rentalId: string) {
+    const rental = await this.rental(tx, c, rentalId);
+    const [setting] = await tx
+      .select()
+      .from(evidenceRetentionSettings)
+      .where(eq(evidenceRetentionSettings.businessId, c.businessId));
+    const [hold] = await tx
+      .select()
+      .from(evidenceRentalHolds)
+      .where(
+        and(
+          eq(evidenceRentalHolds.businessId, c.businessId),
+          eq(evidenceRentalHolds.rentalId, rentalId),
+        ),
+      );
+    return { rental, days: setting?.retentionDays ?? 30, hold };
+  }
   async list(c: TenantContext, rentalId: string) {
-    return this.locked(c, 'rental.read', async (tx) => {
-      await this.rental(tx, c, rentalId);
+    return this.locked(c, 'rental.read', async (tx, now) => {
+      const { rental, days, hold } = await this.retentionContext(
+        tx,
+        c,
+        rentalId,
+      );
       const rows = await tx
-        .select()
+        .select({
+          attachment: evidenceAttachments,
+          lifecycle: evidenceLifecycles,
+        })
         .from(evidenceAttachments)
+        .leftJoin(
+          evidenceLifecycles,
+          and(
+            eq(evidenceLifecycles.evidenceId, evidenceAttachments.id),
+            eq(evidenceLifecycles.businessId, c.businessId),
+          ),
+        )
         .where(
           and(
             eq(evidenceAttachments.businessId, c.businessId),
@@ -608,15 +644,40 @@ export class EvidenceService {
           asc(evidenceAttachments.id),
         )
         .limit(18);
-      return { rentalId, data: rows.map(visibleAttachment) };
+      return {
+        rentalId,
+        data: rows.map(({ attachment, lifecycle }) => ({
+          ...visibleAttachment(attachment),
+          ...retentionView(rental, days, lifecycle, hold, now),
+        })),
+      };
     });
   }
-  async signedRead(c: TenantContext, rentalId: string, id: string) {
+  async signedRead(
+    c: TenantContext,
+    rentalId: string,
+    id: string,
+    download = false,
+  ) {
     return this.locked(c, 'rental.read', async (tx, now) => {
-      await this.rental(tx, c, rentalId);
+      const { rental, days, hold } = await this.retentionContext(
+        tx,
+        c,
+        rentalId,
+      );
       const [row] = await tx
-        .select()
+        .select({
+          attachment: evidenceAttachments,
+          lifecycle: evidenceLifecycles,
+        })
         .from(evidenceAttachments)
+        .leftJoin(
+          evidenceLifecycles,
+          and(
+            eq(evidenceLifecycles.evidenceId, evidenceAttachments.id),
+            eq(evidenceLifecycles.businessId, c.businessId),
+          ),
+        )
         .where(
           and(
             eq(evidenceAttachments.businessId, c.businessId),
@@ -625,13 +686,28 @@ export class EvidenceService {
           ),
         );
       if (!row) throw missing();
+      const view = retentionView(rental, days, row.lifecycle, hold, now);
+      const seconds = view.retentionDeadline
+        ? Math.min(
+            READ_TTL_SECONDS,
+            Math.floor((+view.retentionDeadline - +now) / 1000),
+          )
+        : READ_TTL_SECONDS;
+      if (!view.canRead || seconds < 1)
+        throw new GoneException({
+          code: 'EVIDENCE_MEDIA_UNAVAILABLE',
+          message: 'This media is expired, being removed or permanently purged',
+        });
       return {
         url: await this.storage.signRead(
-          row.bucket,
-          row.objectKey,
-          READ_TTL_SECONDS,
+          row.attachment.bucket,
+          row.attachment.objectKey,
+          seconds,
+          download
+            ? `inspection-${row.attachment.type.toLowerCase()}-${row.attachment.id}.${ext(row.attachment.mimeType)}`
+            : undefined,
         ),
-        expiresAt: new Date(now.getTime() + READ_TTL_SECONDS * 1000),
+        expiresAt: new Date(+now + seconds * 1000),
       };
     });
   }
@@ -678,6 +754,18 @@ export class EvidenceService {
         )
           return;
         const attached = row.status === 'ATTACHED';
+        const [lifecycle] = attached
+          ? await tx
+              .select()
+              .from(evidenceLifecycles)
+              .where(
+                and(
+                  eq(evidenceLifecycles.businessId, row.businessId),
+                  eq(evidenceLifecycles.evidenceId, row.id),
+                ),
+              )
+          : [];
+        const finalPurged = lifecycle?.status === 'PURGED';
         await this.storage.remove(
           row.bucket,
           attached ? [row.pendingKey] : [row.pendingKey, row.objectKey],
@@ -686,7 +774,7 @@ export class EvidenceService {
           .update(evidenceUploads)
           .set({
             status: attached ? 'ATTACHED' : 'PURGED',
-            reservedBytes: attached ? row.bytes! : 0,
+            reservedBytes: attached && !finalPurged ? row.bytes! : 0,
             holdUntil: null,
             leaseUntil: null,
           })

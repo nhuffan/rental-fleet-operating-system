@@ -165,3 +165,61 @@
   max-height: calc(100dvh - 180px);
   min-height: 0;
 }
+
+.evidence-retention-body {
+  padding: var(--space-5);
+  min-width: 0;
+}
+.evidence-retention-card {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+.evidence-retention-card .evidence-gallery-item {
+  width: 100%;
+  border: 0;
+  border-radius: 0;
+}
+.evidence-retention-card .evidence-gallery-item:disabled {
+  cursor: default;
+}
+.evidence-retention-meta {
+  padding: 0 12px 12px;
+}
+.evidence-retention-meta .evidence-actions {
+  margin-block: 10px;
+}
+.evidence-retention-meta .quiet,
+.evidence-hold-reason {
+  font-size: var(--text-xs);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.evidence-storage-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.evidence-budget-summary {
+  margin-bottom: var(--space-5);
+}
+.evidence-budget-summary progress {
+  width: 100%;
+  height: 8px;
+  accent-color: var(--brand-solid);
+  margin-top: 10px;
+}
+@media (max-width: 800px) {
+  .evidence-storage-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 520px) {
+  .evidence-storage-grid,
+  .evidence-gallery-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .evidence-retention-body {
+    padding: var(--space-4);
+  }
+}

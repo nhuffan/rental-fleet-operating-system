@@ -2,7 +2,7 @@
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button, EmptyState } from "@/components/ui/primitives";
+import { Badge, Button, EmptyState } from "@/components/ui/primitives";
 import { FormDialog } from "@/components/ui/form-dialog";
 import { Icon } from "@/components/ui/icon";
 import { formatDate } from "@/lib/query";
@@ -14,6 +14,17 @@ import type {
 import { EvidenceError, evidenceRequest } from "./client";
 import { evidenceCategories } from "./use-evidence-draft";
 import { formatBytes } from "./media-policy";
+import {
+  readableMedia,
+  retentionLabels,
+  type MediaRetentionStatus,
+} from "./retention-presentation";
+import {
+  EvidenceDownload,
+  EvidenceImportantControl,
+  matchesRetentionChange,
+  retentionChangedEvent,
+} from "./retention-controls";
 function imageLabel(item: Evidence) {
   return `${item.kind === "IMAGE" ? "Ảnh" : "Video"} · ${evidenceCategories[item.category]}`;
 }
@@ -30,8 +41,9 @@ function EvidenceThumbnail({
 }) {
   const ref = useRef<HTMLButtonElement>(null);
   const [image, setImage] = useState("");
+  const readable = readableMedia(item);
   useEffect(() => {
-    if (item.kind !== "IMAGE") return;
+    if (item.kind !== "IMAGE" || !readable) return;
     const controller = new AbortController();
     let observer: IntersectionObserver | undefined;
     const load = () => {
@@ -58,15 +70,16 @@ function EvidenceThumbnail({
       controller.abort();
       observer?.disconnect();
     };
-  }, [item.id, item.kind, rentalId, businessId]);
+  }, [item.id, item.kind, readable, rentalId, businessId]);
   return (
     <button
       ref={ref}
       type="button"
       className="evidence-gallery-item"
+      disabled={!readableMedia(item)}
       onClick={onOpen}
     >
-      {image ? (
+      {image && readableMedia(item) ? (
         <Image
           src={image}
           unoptimized
@@ -79,10 +92,28 @@ function EvidenceThumbnail({
       ) : (
         <span className="evidence-gallery-placeholder">
           <Icon name={item.kind === "IMAGE" ? "image" : "video"} size={28} />
-          {item.kind === "VIDEO" ? "Mở để phát video" : "Mở để xem ảnh"}
+          {!readableMedia(item)
+            ? item.retentionStatus === "PURGED"
+              ? "File đã bị xóa vĩnh viễn"
+              : "File hiện không thể mở"
+            : item.kind === "VIDEO"
+              ? "Mở để phát video"
+              : "Mở để xem ảnh"}
         </span>
       )}
       <strong>{imageLabel(item)}</strong>
+      <Badge
+        tone={
+          item.retentionStatus === "PURGED"
+            ? "neutral"
+            : item.retentionStatus === "ACTIVE"
+              ? "success"
+              : "warning"
+        }
+      >
+        {retentionLabels[item.retentionStatus as MediaRetentionStatus] ??
+          "Chưa rõ trạng thái"}
+      </Badge>
       <small>
         {formatBytes(item.bytes)}
         {item.durationSeconds
@@ -250,11 +281,13 @@ export function EvidenceGallery({
   const [pending, setPending] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [error, setError] = useState("");
-  const [selected, setSelected] = useState<Evidence | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selected = data?.find((item) => item.id === selectedId);
+  const expandedRef = useRef(false);
   const active = useRef<AbortController | null>(null);
   useEffect(() => () => active.current?.abort(), []);
   async function load() {
-    if (pending) return;
+    expandedRef.current = true;
     setExpanded(true);
     setPending(true);
     setError("");
@@ -284,6 +317,17 @@ export function EvidenceGallery({
       if (!controller.signal.aborted) setPending(false);
     }
   }
+  useEffect(() => {
+    const refresh = (event: Event) => {
+      if (
+        matchesRetentionChange(event, businessId, rentalId) &&
+        expandedRef.current
+      )
+        void load();
+    };
+    window.addEventListener(retentionChangedEvent, refresh);
+    return () => window.removeEventListener(retentionChangedEvent, refresh);
+  });
   return (
     <div
       className="evidence-gallery"
@@ -297,7 +341,12 @@ export function EvidenceGallery({
           size="small"
           loading={pending}
           aria-expanded={expanded}
-          onClick={() => (expanded ? setExpanded(false) : void load())}
+          onClick={() => {
+            if (expanded) {
+              expandedRef.current = false;
+              setExpanded(false);
+            } else void load();
+          }}
         >
           <Icon name="rental" />
           {expanded ? "Thu gọn chứng cứ" : "Xem chứng cứ"}
@@ -331,25 +380,75 @@ export function EvidenceGallery({
           {!!data?.length && (
             <div className="evidence-gallery-grid">
               {data.map((item) => (
-                <EvidenceThumbnail
-                  key={item.id}
-                  item={item}
-                  rentalId={rentalId}
-                  businessId={businessId}
-                  onOpen={() => setSelected(item)}
-                />
+                <article key={item.id} className="evidence-retention-card">
+                  <EvidenceThumbnail
+                    item={item}
+                    rentalId={rentalId}
+                    businessId={businessId}
+                    onOpen={() => setSelectedId(item.id)}
+                  />
+                  <div className="evidence-retention-meta">
+                    {(item.important || item.legalHold) && (
+                      <div className="evidence-actions">
+                        {item.important && (
+                          <Badge tone="brand">Quan trọng</Badge>
+                        )}
+                        {item.legalHold && (
+                          <Badge tone="warning">
+                            {item.unresolvedDispute
+                              ? "Giữ vì tranh chấp"
+                              : "Đang giữ hồ sơ"}
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+                    <p className="quiet">
+                      {item.retentionStatus === "PURGED"
+                        ? `Đã xóa ${item.purgedAt ? formatDate(item.purgedAt) : ""}. Nội dung không thể khôi phục; thông tin biên bản vẫn được lưu.`
+                        : item.important || item.legalHold
+                          ? "Được giữ lại cho đến khi Owner gỡ bảo vệ."
+                          : item.retentionDeadline
+                            ? `Thời hạn lưu: ${formatDate(item.retentionDeadline)}`
+                            : "Chưa tính hạn lưu: hợp đồng chưa hoàn tất hoặc thiếu thời điểm hoàn tất hợp lệ."}
+                    </p>
+                    {item.retentionStatus === "PURGE_ELIGIBLE" && (
+                      <p className="quiet">
+                        File đã hết hạn xem/tải. Có thể giữ lại nếu quá trình
+                        xóa chưa bắt đầu.
+                      </p>
+                    )}
+                    {item.retentionStatus === "RETRY_REQUIRED" && (
+                      <p className="quiet">
+                        Trạng thái xóa chưa chắc chắn. File được khóa xem và
+                        thay đổi bảo vệ cho đến khi xử lý xong.
+                      </p>
+                    )}
+                    <div className="evidence-actions">
+                      <EvidenceImportantControl
+                        item={item}
+                        rentalId={rentalId}
+                        businessId={businessId}
+                      />
+                      <EvidenceDownload
+                        item={item}
+                        rentalId={rentalId}
+                        businessId={businessId}
+                      />
+                    </div>
+                  </div>
+                </article>
               ))}
             </div>
           )}
         </>
       )}
-      {selected && (
+      {selected && readableMedia(selected) && (
         <EvidenceViewer
           key={selected.id}
           item={selected}
           rentalId={rentalId}
           businessId={businessId}
-          onClose={() => setSelected(null)}
+          onClose={() => setSelectedId(null)}
         />
       )}
     </div>

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { EvidenceGallery } from "./evidence/evidence-gallery";
+import { RentalEvidenceHoldControl } from "./evidence/retention-controls";
 import {
   Badge,
   EmptyState,
@@ -147,6 +148,7 @@ export function RentalInspections({
       : [];
   return (
     <section className="rental-inspections" aria-label="Biên bản kiểm tra xe">
+      <RentalEvidenceHoldControl rentalId={rentalId} businessId={businessId} />
       <div className="rental-detail-grid">
         {[
           { title: "Biên bản bàn giao", inspection: handover },
