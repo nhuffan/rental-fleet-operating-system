@@ -427,3 +427,13 @@ a.platform-record-identity:focus-visible,
     gap: var(--space-3);
   }
 }
+
+.platform-access-credential {
+  padding: var(--space-4);
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+  user-select: all;
+}

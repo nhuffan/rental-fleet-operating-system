@@ -8,6 +8,9 @@ import {
   Matches,
   Length,
   ValidateIf,
+  Validate,
+  ValidatorConstraint,
+  type ValidatorConstraintInterface,
 } from 'class-validator';
 import { PageQuery } from '../core/dto.js';
 import { PageMeta } from '../core/responses.js';
@@ -40,7 +43,7 @@ export class PlatformPrincipal {
 export class PlatformMe {
   @ApiProperty({ type: PlatformPrincipal }) principal!: PlatformPrincipal;
   @ApiProperty({ type: [String] }) permissions!: readonly string[];
-  @ApiProperty({ enum: [true] }) readOnly!: true;
+  @ApiProperty({ enum: [false] }) readOnly!: false;
 }
 export class PlatformCounts {
   @ApiProperty() branches!: number;
@@ -101,6 +104,9 @@ export class PlatformOverview {
 }
 
 export const PLATFORM_AUDIT_ACTIONS = [
+  'platform.business.create',
+  'platform.owner.access_link.issue',
+  'platform.business.status.update',
   'platform.me.read',
   'platform.overview.read',
   'platform.businesses.read',
@@ -211,4 +217,114 @@ export class PlatformUserDetail {
   @ApiProperty({ type: PlatformUser }) profile!: PlatformUser;
   @ApiProperty({ type: PlatformUserMembershipPage })
   memberships!: PlatformUserMembershipPage;
+}
+
+const trimPlatform = ({ value }: { value: unknown }) =>
+  typeof value === 'string' ? value.trim() : value;
+@ValidatorConstraint({ name: 'platformTimezone' })
+class PlatformTimezone implements ValidatorConstraintInterface {
+  validate(value: unknown) {
+    if (typeof value !== 'string') return false;
+    try {
+      new Intl.DateTimeFormat('en', { timeZone: value });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  defaultMessage() {
+    return 'timezone must be a valid IANA timezone';
+  }
+}
+export class PlatformBusinessCreate {
+  @ApiProperty()
+  @Transform(trimPlatform)
+  @IsString()
+  @Length(1, 120)
+  @Matches(/\S/)
+  name!: string;
+  @ApiPropertyOptional({ default: 'Asia/Ho_Chi_Minh' })
+  @Transform(trimPlatform)
+  @IsString()
+  @Length(1, 80)
+  @Validate(PlatformTimezone)
+  timezone: string = 'Asia/Ho_Chi_Minh';
+  @ApiPropertyOptional({ default: 'VND' })
+  @Transform(trimPlatform)
+  @Matches(/^[A-Z]{3}$/)
+  currency: string = 'VND';
+  @ApiPropertyOptional({ default: 'Trụ sở chính' })
+  @Transform(trimPlatform)
+  @IsString()
+  @Length(1, 120)
+  @Matches(/\S/)
+  firstBranchName: string = 'Trụ sở chính';
+  @ApiProperty()
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim().toLowerCase() : value,
+  )
+  @IsString()
+  @Length(3, 254)
+  @Matches(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)
+  ownerEmail!: string;
+  @ApiProperty()
+  @Transform(trimPlatform)
+  @IsString()
+  @Length(1, 120)
+  @Matches(/\S/)
+  ownerDisplayName!: string;
+}
+export class PlatformOwnerLinkInput {
+  @ApiProperty({ format: 'uuid' }) @IsUUID() membershipId!: string;
+}
+export class PlatformBusinessStatusInput {
+  @ApiProperty({ enum: ['ACTIVE', 'DISABLED'] })
+  @IsIn(['ACTIVE', 'DISABLED'])
+  status!: 'ACTIVE' | 'DISABLED';
+}
+export class PlatformBusinessRecord {
+  @ApiProperty({ format: 'uuid' }) id!: string;
+  @ApiProperty() name!: string;
+  @ApiProperty({ enum: ['ACTIVE', 'DISABLED'] }) status!: string;
+  @ApiProperty() timezone!: string;
+  @ApiProperty() currency!: string;
+  @ApiProperty({ format: 'date-time' }) createdAt!: string;
+  @ApiProperty({ format: 'date-time' }) updatedAt!: string;
+}
+export class PlatformFirstBranch {
+  @ApiProperty({ format: 'uuid' }) id!: string;
+  @ApiProperty() name!: string;
+}
+export class PlatformProvisionedOwner {
+  @ApiProperty({ format: 'uuid' }) userId!: string;
+  @ApiProperty() created!: boolean;
+}
+export class PlatformOwnerLinkResponse {
+  @ApiProperty({
+    description: 'Credential, shown once. Never persist or log this URL.',
+  })
+  accessUrl!: string;
+}
+export class PlatformProvisioningResponse extends PlatformOwnerLinkResponse {
+  @ApiProperty({ type: PlatformBusinessRecord })
+  business!: PlatformBusinessRecord;
+  @ApiProperty({ type: PlatformFirstBranch }) branch!: PlatformFirstBranch;
+  @ApiProperty({ type: PlatformProvisionedOwner })
+  owner!: PlatformProvisionedOwner;
+}
+export class PlatformBusinessOwner {
+  @ApiProperty({ format: 'uuid' }) membershipId!: string;
+  @ApiProperty({ format: 'uuid' }) userId!: string;
+  @ApiProperty() displayName!: string;
+  @ApiProperty({ enum: ['ACTIVE', 'DISABLED'] }) status!: string;
+  @ApiProperty({ enum: ['ACTIVE', 'DISABLED'] }) profileStatus!: string;
+}
+export class PlatformBusinessOwners {
+  @ApiProperty({ type: [PlatformBusinessOwner] })
+  data!: PlatformBusinessOwner[];
+  @ApiProperty() total!: number;
+}
+export class PlatformBusinessDetail extends PlatformBusiness {
+  @ApiProperty({ type: PlatformBusinessOwners })
+  owners!: PlatformBusinessOwners;
 }

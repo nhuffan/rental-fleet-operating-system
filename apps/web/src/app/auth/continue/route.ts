@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { cookies } from "next/headers";
 import { serverClient } from "@/lib/supabase/server";
 import { publicEnv } from "@/lib/env";
 import { resolveLoginDestination, safeReturnPath } from "@/lib/auth-navigation";
@@ -24,12 +25,18 @@ export async function GET(request: NextRequest) {
       data: { session },
     } = await client.auth.getSession();
     if (!session) return redirect(`/login${login.size ? `?${login}` : ""}`);
+    const business = (await cookies()).get("current-business")?.value;
     const target = await resolveLoginDestination(next, async (path) => {
       const response = await fetch(
         `${process.env.API_INTERNAL_URL ?? publicEnv().api}/api/v1${path}`,
         {
           cache: "no-store",
-          headers: { Authorization: `Bearer ${session.access_token}` },
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            ...(path === "/me" && business
+              ? { "X-Business-Id": business }
+              : {}),
+          },
         },
       );
       return response.status;

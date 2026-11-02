@@ -195,7 +195,7 @@ it('rejects cross-tenant vehicles, fractional or nonfinite prices and malformed 
     { daily_rate: null, extra_hour_rate: '1' },
     { effective_from: 'infinity' },
     { effective_until: '2025-01-01T00:00:00Z' },
-  ])
+  ] as Values[])
     await expect(card(changes)).rejects.toMatchObject({ code: '23514' });
 });
 it('preserves a copied quote when its source rate changes and prevents mutable history', async () => {

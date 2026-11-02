@@ -45,7 +45,10 @@ export async function requirePlatformPermission(
     | "platform.overview.read"
     | "platform.business.read"
     | "platform.audit.read"
-    | "platform.user.read",
+    | "platform.user.read"
+    | "platform.business.create"
+    | "platform.business.manage"
+    | "platform.owner.access",
 ) {
   const context = await platformContext();
   if (!context.permissions.includes(permission))

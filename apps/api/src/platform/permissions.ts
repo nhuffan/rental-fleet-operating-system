@@ -4,6 +4,9 @@ export const PLATFORM_PERMISSIONS = [
   'platform.business.read',
   'platform.audit.read',
   'platform.user.read',
+  'platform.business.create',
+  'platform.business.manage',
+  'platform.owner.access',
 ] as const;
 export type PlatformPermission = (typeof PLATFORM_PERMISSIONS)[number];
 export function platformPermissionsFor(

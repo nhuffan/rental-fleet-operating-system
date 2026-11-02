@@ -431,7 +431,7 @@ export function AppShell({
               {preview
                 ? "Design preview"
                 : platform
-                  ? "Dữ liệu trực tiếp · Chỉ đọc"
+                  ? "Quản trị doanh nghiệp & Owner"
                   : "SaaS Core"}
             </span>
           </footer>

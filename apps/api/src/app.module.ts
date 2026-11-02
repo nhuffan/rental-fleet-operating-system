@@ -13,6 +13,7 @@ import { AlertsService } from './alerts/alerts.service.js';
 import { CommercialController } from './commercial/commercial.controller.js';
 import { CommercialService } from './commercial/commercial.service.js';
 import { PlatformController } from './platform/platform.controller.js';
+import { AuthAdminService } from './platform/auth-admin.service.js';
 import { PlatformService } from './platform/platform.service.js';
 import { PlatformGuard } from './platform/guards.js';
 import { GpsIngress } from './telematics/gps/ingress.js';
@@ -57,6 +58,7 @@ import { AuthGuard, TenantGuard, PermissionGuard } from './auth/guards.js';
     TollService,
     PricingService,
     PlatformService,
+    AuthAdminService,
     PlatformGuard,
     CoreService,
     FleetService,

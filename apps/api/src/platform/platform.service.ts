@@ -1,10 +1,12 @@
 import {
   BadRequestException,
+  ConflictException,
   Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import type { PoolClient } from 'pg';
+import { AuthAdminService } from './auth-admin.service.js';
 import { PageQuery } from '../core/dto.js';
 import { Database } from '../database/database.js';
 import {
@@ -17,6 +19,14 @@ import {
   type PlatformPermission,
 } from './permissions.js';
 import {
+  PlatformBusinessCreate,
+  PlatformBusinessStatusInput,
+  PlatformOwnerLinkInput,
+  type PlatformProvisioningResponse,
+  type PlatformOwnerLinkResponse,
+  type PlatformBusinessRecord,
+  type PlatformBusinessDetail,
+  type PlatformBusinessOwner,
   PlatformBusinessQuery,
   PlatformAuditQuery,
   PlatformUserQuery,
@@ -51,7 +61,10 @@ const userProjection = `p.user_id as id,p.display_name as "displayName",p.status
 const userJoins = `left join public.platform_memberships pm on pm.user_id=p.user_id left join lateral(select count(*)::int n,count(*) filter(where bm.status='ACTIVE' and b.status='ACTIVE' and p.status='ACTIVE')::int active,jsonb_agg(distinct bm.role_key order by bm.role_key) roles from public.business_memberships bm join public.businesses b on b.id=bm.business_id where bm.user_id=p.user_id and bm.role_key='OWNER')m on true`;
 @Injectable()
 export class PlatformService {
-  constructor(@Inject(Database) private readonly database: Database) {}
+  constructor(
+    @Inject(Database) private readonly database: Database,
+    @Inject(AuthAdminService) private readonly authAdmin?: AuthAdminService,
+  ) {}
   private async read<T>(
     c: PlatformContext,
     permission: PlatformPermission | null,
@@ -107,7 +120,7 @@ export class PlatformService {
           role: p.role,
         },
         permissions: platformPermissionsFor(p.role),
-        readOnly: true,
+        readOnly: false,
       }),
     );
   }
@@ -141,7 +154,7 @@ export class PlatformService {
     c: PlatformContext,
     id: string,
     requestId: string,
-  ): Promise<PlatformBusiness> {
+  ): Promise<PlatformBusinessDetail> {
     return this.read(
       c,
       'platform.business.read',
@@ -158,7 +171,18 @@ export class PlatformService {
             code: 'PLATFORM_BUSINESS_NOT_FOUND',
             message: 'Business not found',
           });
-        return result.rows[0];
+        const owners = await tx.query<PlatformBusinessOwner>(
+          `select m.id as "membershipId",m.user_id as "userId",p.display_name as "displayName",m.status,p.status as "profileStatus" from public.business_memberships m join public.user_profiles p on p.user_id=m.user_id where m.business_id=$1 and m.role_key='OWNER' order by p.display_name,m.id limit 100`,
+          [id],
+        );
+        const total = await tx.query<{ total: number }>(
+          "select count(*)::int total from public.business_memberships where business_id=$1 and role_key='OWNER'",
+          [id],
+        );
+        return {
+          ...Object.assign({}, result.rows[0]),
+          owners: { data: owners.rows, total: total.rows[0].total },
+        };
       },
     );
   }
@@ -317,6 +341,279 @@ export class PlatformService {
       jsonb_build_object('branches',coalesce(sum((counts->>'branches')::int),0),'activeBranches',coalesce(sum((counts->>'activeBranches')::int),0),'memberships',coalesce(sum((counts->>'memberships')::int),0),'activeMemberships',coalesce(sum((counts->>'activeMemberships')::int),0),'vehicles',coalesce(sum((counts->>'vehicles')::int),0),'activeVehicles',coalesce(sum((counts->>'activeVehicles')::int),0),'rentals',coalesce(sum((counts->>'rentals')::int),0),'activeRentals',coalesce(sum((counts->>'activeRentals')::int),0),'reservedRentals',coalesce(sum((counts->>'reservedRentals')::int),0)) totals,
       jsonb_build_object('sourceMode','TEST','FRESH',coalesce(sum((gps->>'FRESH')::int),0),'STALE',coalesce(sum((gps->>'STALE')::int),0),'OFFLINE',coalesce(sum((gps->>'OFFLINE')::int),0),'NO_DATA',coalesce(sum((gps->>'NO_DATA')::int),0),'UNASSIGNED',coalesce(sum((gps->>'UNASSIGNED')::int),0)) gps from summary`);
         return result.rows[0];
+      },
+    );
+  }
+  private async principal(
+    tx: Pick<PoolClient, 'query'>,
+    c: PlatformContext,
+    permission: PlatformPermission,
+    lock = false,
+  ) {
+    const principal = await findPlatformPrincipal(tx, c.userId, lock);
+    if (!platformPermissionsFor(principal.role).includes(permission))
+      throw platformDenied();
+    return principal;
+  }
+  private async write<T>(
+    c: PlatformContext,
+    permission: PlatformPermission,
+    requestId: string,
+    action: string,
+    entityId: string | null,
+    operation: (tx: PoolClient) => Promise<{
+      value: T;
+      entityId?: string;
+      metadata?: Record<string, unknown>;
+    }>,
+    reusedClient?: PoolClient,
+  ) {
+    const tx = reusedClient ?? (await this.database.pool.connect());
+    try {
+      await tx.query('begin');
+      const principal = await this.principal(tx, c, permission, true);
+      const result = await operation(tx);
+      await tx.query(
+        'insert into public.platform_audit_logs(actor_user_id,action,entity_type,entity_id,metadata) values($1,$2,$3,$4,$5::jsonb)',
+        [
+          principal.userId,
+          action,
+          'business',
+          result.entityId ?? entityId,
+          JSON.stringify({ requestId, ...result.metadata }),
+        ],
+      );
+      await tx.query('commit');
+      return result.value;
+    } catch (error) {
+      await tx.query('rollback');
+      throw error;
+    } finally {
+      if (!reusedClient) tx.release();
+    }
+  }
+  private async authUser(tx: Pick<PoolClient, 'query'>, email: string) {
+    return (
+      (
+        await tx.query<{ id: string }>(
+          'select id from auth.users where lower(email)=$1',
+          [email],
+        )
+      ).rows[0]?.id ?? null
+    );
+  }
+  private async requireActiveOwnerProfile(
+    tx: Pick<PoolClient, 'query'>,
+    userId: string,
+    lock = false,
+  ) {
+    const profile = (
+      await tx.query<{ status: string }>(
+        'select status from public.user_profiles where user_id=$1' +
+          (lock ? ' for update' : ''),
+        [userId],
+      )
+    ).rows[0];
+    if (profile && profile.status !== 'ACTIVE')
+      throw new ConflictException({
+        code: 'PLATFORM_OWNER_DISABLED',
+        message:
+          'The Owner profile is disabled; onboarding cannot reactivate it',
+      });
+  }
+  async createBusiness(
+    c: PlatformContext,
+    body: PlatformBusinessCreate,
+    requestId: string,
+  ): Promise<PlatformProvisioningResponse> {
+    // No identity capability is issued until the independent platform grant is checked.
+    await this.principal(this.database.pool, c, 'platform.business.create');
+    const email = body.ownerEmail.trim().toLowerCase();
+    const serial = await this.database.pool.connect();
+    let createdId: string | null = null;
+    try {
+      // Session lock spans Auth calls and the DB transaction without holding tenant locks.
+      // All platform onboarding for one email is serialized, including failed-request cleanup.
+      await serial.query('select pg_advisory_lock(190019,hashtext($1))', [
+        email,
+      ]);
+      await this.principal(serial, c, 'platform.business.create');
+      let userId = await this.authUser(serial, email);
+      if (userId) await this.requireActiveOwnerProfile(serial, userId);
+      if (!userId) {
+        try {
+          const created = await this.authAdmin!.createConfirmedUser(email);
+          userId = created.id;
+          createdId = userId;
+        } catch (error) {
+          userId = await this.authUser(serial, email);
+          if (!userId) throw error;
+        }
+      }
+      await this.requireActiveOwnerProfile(serial, userId);
+      const { hashedToken } = await this.authAdmin!.issueRecoveryToken(email);
+      const ownerUserId = userId;
+      const value = await this.write(
+        c,
+        'platform.business.create',
+        requestId,
+        'platform.business.create',
+        null,
+        async (tx) => {
+          await this.requireActiveOwnerProfile(tx, ownerUserId, true);
+          const business = (
+            await tx.query<PlatformBusinessRecord>(
+              'insert into public.businesses(name,timezone,currency) values($1,$2,$3) returning id,name,status,timezone,currency,created_at as "createdAt",updated_at as "updatedAt"',
+              [body.name, body.timezone, body.currency],
+            )
+          ).rows[0];
+          const branch = (
+            await tx.query<{ id: string; name: string }>(
+              'insert into public.branches(business_id,name) values($1,$2) returning id,name',
+              [business.id, body.firstBranchName],
+            )
+          ).rows[0];
+          await tx.query(
+            'insert into public.user_profiles(user_id,display_name) values($1,$2) on conflict(user_id) do nothing',
+            [ownerUserId, body.ownerDisplayName],
+          );
+          await this.requireActiveOwnerProfile(tx, ownerUserId, true);
+          await tx.query(
+            "insert into public.business_memberships(business_id,user_id,role_key,status) values($1,$2,'OWNER','ACTIVE')",
+            [business.id, ownerUserId],
+          );
+          return {
+            value: {
+              business,
+              branch,
+              owner: { userId: ownerUserId, created: createdId !== null },
+              accessUrl: this.authAdmin!.accessUrl(hashedToken, business.id),
+            },
+            entityId: business.id,
+            metadata: {
+              businessId: business.id,
+              ownerUserId,
+              ownerCreated: createdId !== null,
+            },
+          };
+        },
+        serial,
+      );
+      createdId = null;
+      return value;
+    } catch (error) {
+      if (createdId) {
+        // Never delete an identity that another operation has made visible through a
+        // profile/membership. Failed cleanup leaves an ungranted orphan safe to retry.
+        try {
+          const refs = await serial.query<{ used: boolean }>(
+            `select exists(select 1 from public.user_profiles where user_id=$1 union all select 1 from public.business_memberships where user_id=$1 union all select 1 from public.platform_memberships where user_id=$1) used`,
+            [createdId],
+          );
+          if (!refs.rows[0].used) await this.authAdmin!.deleteUser(createdId);
+        } catch {
+          /* No provider error, email or capability is logged. */
+        }
+      }
+      throw error;
+    } finally {
+      try {
+        await serial.query('select pg_advisory_unlock(190019,hashtext($1))', [
+          email,
+        ]);
+      } finally {
+        serial.release();
+      }
+    }
+  }
+  ownerLink(
+    c: PlatformContext,
+    id: string,
+    body: PlatformOwnerLinkInput,
+    requestId: string,
+  ): Promise<PlatformOwnerLinkResponse> {
+    return this.write(
+      c,
+      'platform.owner.access',
+      requestId,
+      'platform.owner.access_link.issue',
+      id,
+      async (tx) => {
+        const business = (
+          await tx.query<{ status: string }>(
+            'select status from public.businesses where id=$1 for update',
+            [id],
+          )
+        ).rows[0];
+        if (!business)
+          throw new NotFoundException({
+            code: 'PLATFORM_BUSINESS_NOT_FOUND',
+            message: 'Business not found',
+          });
+        if (business.status !== 'ACTIVE')
+          throw new ConflictException({
+            code: 'PLATFORM_BUSINESS_DISABLED',
+            message: 'Activate the business before issuing Owner access',
+          });
+        const member = (
+          await tx.query<{ userId: string; email: string }>(
+            `select m.user_id as "userId",u.email from public.business_memberships m join public.user_profiles p on p.user_id=m.user_id join auth.users u on u.id=m.user_id where m.id=$1 and m.business_id=$2 and m.role_key='OWNER' and m.status='ACTIVE' and p.status='ACTIVE' for update of m,p`,
+            [body.membershipId, id],
+          )
+        ).rows[0];
+        if (!member?.email)
+          throw new NotFoundException({
+            code: 'PLATFORM_OWNER_NOT_AVAILABLE',
+            message: 'Active Owner not found in this business',
+          });
+        const { hashedToken } = await this.authAdmin!.issueRecoveryToken(
+          member.email,
+        );
+        return {
+          value: { accessUrl: this.authAdmin!.accessUrl(hashedToken, id) },
+          metadata: { businessId: id, ownerUserId: member.userId },
+        };
+      },
+    );
+  }
+  businessStatus(
+    c: PlatformContext,
+    id: string,
+    body: PlatformBusinessStatusInput,
+    requestId: string,
+  ): Promise<PlatformBusinessRecord> {
+    return this.write(
+      c,
+      'platform.business.manage',
+      requestId,
+      'platform.business.status.update',
+      id,
+      async (tx) => {
+        const before = (
+          await tx.query<PlatformBusinessRecord>(
+            'select id,status from public.businesses where id=$1 for update',
+            [id],
+          )
+        ).rows[0];
+        if (!before)
+          throw new NotFoundException({
+            code: 'PLATFORM_BUSINESS_NOT_FOUND',
+            message: 'Business not found',
+          });
+        const value = (
+          await tx.query<PlatformBusinessRecord>(
+            'update public.businesses set status=$2,updated_at=clock_timestamp() where id=$1 returning id,name,status,timezone,currency,created_at as "createdAt",updated_at as "updatedAt"',
+            [id, body.status],
+          )
+        ).rows[0];
+        return {
+          value,
+          metadata: {
+            from: before.status,
+            to: body.status,
+            fields: ['status'],
+          },
+        };
       },
     );
   }

@@ -305,9 +305,9 @@ export function PlatformOverviewPanel({
         </div>
       </div>
       <p className="platform-scope-note">
-        <Icon name="shield" size={16} /> Console chỉ đọc metadata và tổng hợp.
-        GPS TEST chưa xác minh thiết bị vật lý; không hiển thị tọa độ, thông tin
-        khách thuê hoặc tài chính doanh nghiệp.
+        <Icon name="shield" size={16} /> Quản trị doanh nghiệp và quyền Owner ·
+        Không truy cập nghiệp vụ tenant. GPS TEST chưa xác minh thiết bị vật lý;
+        không hiển thị tọa độ, thông tin khách thuê hoặc tài chính doanh nghiệp.
       </p>
     </>
   );

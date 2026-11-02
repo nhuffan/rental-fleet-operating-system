@@ -1,13 +1,16 @@
 import Link from "next/link";
 import { Badge, Panel, PanelHeader } from "@/components/ui/primitives";
 import { formatDate } from "@/lib/query";
-import type { PlatformBusiness } from "./types";
+import type { PlatformBusinessDetail as BusinessDetail } from "./types";
+import { BusinessAccess } from "./business-access";
 import { MetricCard } from "@/components/data-display/metric-card";
 import { PlatformGpsHealth, PlatformIdentity } from "./presentation";
 export function PlatformBusinessDetail({
   business: b,
+  permissions,
 }: {
-  business: PlatformBusiness;
+  business: BusinessDetail;
+  permissions: readonly string[];
 }) {
   return (
     <>
@@ -20,7 +23,6 @@ export function PlatformBusinessDetail({
           <Badge tone={b.status === "ACTIVE" ? "success" : "neutral"}>
             {b.status === "ACTIVE" ? "Hoạt động" : "Đã vô hiệu hóa"}
           </Badge>
-          <Badge tone="info">Chỉ đọc</Badge>
         </div>
       </Panel>
       <div className="panel-body inline">
@@ -37,6 +39,7 @@ export function PlatformBusinessDetail({
           Nhật ký platform liên quan
         </Link>
       </div>
+      <BusinessAccess business={b} permissions={permissions} />
       <div className="metric-grid platform-detail-metrics">
         <MetricCard
           label="Xe đang hoạt động"
@@ -151,14 +154,14 @@ export function PlatformBusinessDetail({
           <PanelHeader title="Phạm vi hỗ trợ" icon="shield" />
           <div className="panel-body">
             <p>
-              Console hiện cung cấp metadata và số liệu tổng hợp. Quản lý trạng
-              thái, cấu hình và quyền của doanh nghiệp chưa được triển khai.
+              Console hỗ trợ cấp doanh nghiệp, quyền Owner và quản lý trạng thái
+              hoạt động. Mọi thay đổi được ghi vào nhật ký nền tảng riêng.
             </p>
             <p className="quiet">
               Có thể tra cứu người dùng và nhật ký platform qua các liên kết
-              phía trên. Quản lý tính năng, tích hợp và cài đặt hệ thống chưa
-              khả dụng; console không cấp quyền vận hành Owner hoặc truy cập tài
-              chính doanh nghiệp.
+              phía trên. Tính năng, tích hợp và cài đặt hệ thống chưa khả dụng;
+              cấp phát nền tảng không cho phép truy cập tài chính hoặc vận hành
+              trong doanh nghiệp.
             </p>
           </div>
         </Panel>

@@ -161,6 +161,9 @@ it('denies tenant OWNER and forged metadata regardless of selected business; nev
     'platform.business.read',
     'platform.audit.read',
     'platform.user.read',
+    'platform.business.create',
+    'platform.business.manage',
+    'platform.owner.access',
   ]);
 });
 it.each(['membership', 'profile', 'role'])(
@@ -230,7 +233,7 @@ it('returns only approved metadata, truthful counts and separate atomic read aud
       displayName: 'Operator',
       role: 'PLATFORM_OPERATOR',
     },
-    readOnly: true,
+    readOnly: false,
   });
   const row = await service.business(operator, businessA, rid());
   expect(row).toMatchObject({
@@ -261,12 +264,18 @@ it('returns only approved metadata, truthful counts and separate atomic read aud
     'gps',
     'id',
     'name',
+    'owners',
     'status',
     'timezone',
     'updatedAt',
   ]);
+  expect(row.owners.data[0]).toMatchObject({
+    userId: owner,
+    displayName: 'Private Owner',
+    status: 'ACTIVE',
+    profileStatus: 'ACTIVE',
+  });
   for (const privateText of [
-    'Private Owner',
     'Private address',
     'Private model',
     'PRIVATE-UID',
@@ -275,7 +284,6 @@ it('returns only approved metadata, truthful counts and separate atomic read aud
     'email',
     'eventKey',
     'deviceId',
-    'userId',
   ])
     expect(JSON.stringify(row)).not.toContain(privateText);
   const overview = await service.overview(operator, rid());

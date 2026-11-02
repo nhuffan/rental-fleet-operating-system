@@ -159,7 +159,7 @@ export interface paths {
         };
         get: operations["PlatformController_businesses"];
         put?: never;
-        post?: never;
+        post: operations["PlatformController_createBusiness"];
         delete?: never;
         options?: never;
         head?: never;
@@ -228,6 +228,38 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/platform/businesses/{id}/owner-links": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PlatformController_ownerLink"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/platform/businesses/{id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["PlatformController_businessStatus"];
         trace?: never;
     };
     "/api/v1/me": {
@@ -1288,7 +1320,7 @@ export interface components {
             principal: components["schemas"]["PlatformPrincipal"];
             permissions: string[];
             /** @enum {boolean} */
-            readOnly: true;
+            readOnly: false;
         };
         PlatformBusinessStats: {
             total: number;
@@ -1353,7 +1385,7 @@ export interface components {
             /** Format: uuid */
             actorId: string;
             /** @enum {string} */
-            action: "platform.me.read" | "platform.overview.read" | "platform.businesses.read" | "platform.business.read" | "platform.audit.read" | "platform.users.read" | "platform.user.read" | "platform_membership.create" | "other";
+            action: "platform.business.create" | "platform.owner.access_link.issue" | "platform.business.status.update" | "platform.me.read" | "platform.overview.read" | "platform.businesses.read" | "platform.business.read" | "platform.audit.read" | "platform.users.read" | "platform.user.read" | "platform_membership.create" | "other";
             /** @enum {string} */
             entityType: "platform" | "business" | "user" | "platform_membership" | "other";
             /** Format: uuid */
@@ -1419,6 +1451,90 @@ export interface components {
         PlatformUserDetail: {
             profile: components["schemas"]["PlatformUser"];
             memberships: components["schemas"]["PlatformUserMembershipPage"];
+        };
+        PlatformBusinessOwner: {
+            /** Format: uuid */
+            membershipId: string;
+            /** Format: uuid */
+            userId: string;
+            displayName: string;
+            /** @enum {string} */
+            status: "ACTIVE" | "DISABLED";
+            /** @enum {string} */
+            profileStatus: "ACTIVE" | "DISABLED";
+        };
+        PlatformBusinessOwners: {
+            data: components["schemas"]["PlatformBusinessOwner"][];
+            total: number;
+        };
+        PlatformBusinessDetail: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** @enum {string} */
+            status: "ACTIVE" | "DISABLED";
+            timezone: string;
+            currency: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            counts: components["schemas"]["PlatformCounts"];
+            gps: components["schemas"]["PlatformGpsHealth"];
+            owners: components["schemas"]["PlatformBusinessOwners"];
+        };
+        PlatformBusinessCreate: {
+            name: string;
+            /** @default Asia/Ho_Chi_Minh */
+            timezone: string;
+            /** @default VND */
+            currency: string;
+            /** @default Trụ sở chính */
+            firstBranchName: string;
+            ownerEmail: string;
+            ownerDisplayName: string;
+        };
+        PlatformBusinessRecord: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** @enum {string} */
+            status: "ACTIVE" | "DISABLED";
+            timezone: string;
+            currency: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        PlatformFirstBranch: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+        };
+        PlatformProvisionedOwner: {
+            /** Format: uuid */
+            userId: string;
+            created: boolean;
+        };
+        PlatformProvisioningResponse: {
+            /** @description Credential, shown once. Never persist or log this URL. */
+            accessUrl: string;
+            business: components["schemas"]["PlatformBusinessRecord"];
+            branch: components["schemas"]["PlatformFirstBranch"];
+            owner: components["schemas"]["PlatformProvisionedOwner"];
+        };
+        PlatformOwnerLinkInput: {
+            /** Format: uuid */
+            membershipId: string;
+        };
+        PlatformOwnerLinkResponse: {
+            /** @description Credential, shown once. Never persist or log this URL. */
+            accessUrl: string;
+        };
+        PlatformBusinessStatusInput: {
+            /** @enum {string} */
+            status: "ACTIVE" | "DISABLED";
         };
         UserResponse: {
             id: string;
@@ -3970,12 +4086,125 @@ export interface operations {
             };
         };
     };
+    PlatformController_createBusiness: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlatformBusinessCreate"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformProvisioningResponse"];
+                };
+            };
+            /** @description Standard API error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
     PlatformController_audit: {
         parameters: {
             query?: {
                 page?: components["schemas"]["Object"];
                 limit?: components["schemas"]["Object"];
-                action?: "platform.me.read" | "platform.overview.read" | "platform.businesses.read" | "platform.business.read" | "platform.audit.read" | "platform.users.read" | "platform.user.read" | "platform_membership.create" | "other";
+                action?: "platform.business.create" | "platform.owner.access_link.issue" | "platform.business.status.update" | "platform.me.read" | "platform.overview.read" | "platform.businesses.read" | "platform.business.read" | "platform.audit.read" | "platform.users.read" | "platform.user.read" | "platform_membership.create" | "other";
                 businessId?: string;
                 /** @description Inclusive; UTC offset required. Defaults to 30 days before until. Range at most 366 days. */
                 from?: string;
@@ -4338,7 +4567,237 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PlatformBusiness"];
+                    "application/json": components["schemas"]["PlatformBusinessDetail"];
+                };
+            };
+            /** @description Standard API error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    PlatformController_ownerLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlatformOwnerLinkInput"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformOwnerLinkResponse"];
+                };
+            };
+            /** @description Standard API error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    PlatformController_businessStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlatformBusinessStatusInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformBusinessRecord"];
                 };
             };
             /** @description Standard API error */

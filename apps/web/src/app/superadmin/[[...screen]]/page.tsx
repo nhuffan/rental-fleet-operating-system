@@ -23,7 +23,7 @@ import type {
   PlatformAuditPage,
   PlatformUserPage,
   PlatformUserDetail,
-  PlatformBusiness,
+  PlatformBusinessDetail as BusinessDetail,
   PlatformBusinessPage,
   PlatformOverview,
 } from "@/features/platform/live/types";
@@ -131,7 +131,7 @@ export default async function Superadmin({
     await requirePlatformPermission("platform.business.read");
     if (screen.length === 2) {
       if (!validId(screen[1])) notFound();
-      const b = await platformApi<PlatformBusiness>(
+      const b = await platformApi<BusinessDetail>(
         `/platform/businesses/${screen[1]}`,
         `/superadmin/businesses/${screen[1]}`,
         { notFoundOn404: true },
@@ -143,9 +143,12 @@ export default async function Superadmin({
           </Link>
           <PageHeader
             title="Chi tiết doanh nghiệp"
-            description="Metadata và số liệu tổng hợp được phép xem; không thay đổi dữ liệu doanh nghiệp."
+            description="Quản lý trạng thái, quyền truy cập Owner và xem số liệu tổng hợp doanh nghiệp."
           />
-          <PlatformBusinessDetail business={b} />
+          <PlatformBusinessDetail
+            business={b}
+            permissions={context.permissions}
+          />
         </>
       );
     }
@@ -160,7 +163,12 @@ export default async function Superadmin({
           title="Doanh nghiệp"
           description="Tìm kiếm và tra cứu doanh nghiệp bằng dữ liệu thật, có phân trang và quyền platform riêng."
         />
-        <BusinessesPanel key="businesses" initial={data} filters={filters} />
+        <BusinessesPanel
+          key="businesses"
+          initial={data}
+          filters={filters}
+          permissions={context.permissions}
+        />
       </>
     );
   }

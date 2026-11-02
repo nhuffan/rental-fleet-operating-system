@@ -643,7 +643,7 @@ Input: `Stage_17_Toll_Import_Reconciliation.md`. Implemented **2026-10-25** on `
 
 ## Stage 18 output
 
-Input: `Stage_18_Rental_Pricing_and_Quotation.md`. Implemented **2026-10-25** on `main`, clean baseline **a8cbb67**. Source, CLI migration, generated contracts, focused tests and this output are ready together. Commit/push remains pending clarification because the direct prior instruction held commit/push while this input plan requests exactly one implementation commit and push; no commit was created during implementation.
+Input: `Stage_18_Rental_Pricing_and_Quotation.md`. Implemented **2026-10-25** on `main`, clean baseline **a8cbb67**. Source, CLI migration, generated contracts, focused tests and this output are ready together. Commit/push was initially held during implementation. The user subsequently authorized it; Git records implementation commit **d82384a**, present on configured `origin/main` when Stage 19 began (2026-11-02).
 
 ### Delivered
 
@@ -669,3 +669,28 @@ Input: `Stage_18_Rental_Pricing_and_Quotation.md`. Implemented **2026-10-25** on
 ### Next-stage Handoff
 
 - Preserve the tenant lock, hash revalidation, immutable original quotation, exact whole-money limits and separation from received Commercial funds. Future contract amendments must append explicit agreement history rather than edit the original snapshot. This stage's implementation commit, when authorized, must contain all source/migration/contracts/tests/output and be followed by a normal push to configured `origin/main`; no SHA-only follow-up commit.
+
+## Stage 19 output
+
+Input: `Week1_Stage_19_20_Plan.md` (Stage 19). Implemented **2026-11-02** on `main`, clean baseline **d82384a**. This stage's implementation commit will include source, generated contracts, tests, configuration/docs and this output. The user explicitly authorized commit/push for Stage 19 and Stage 20 after approval review initially required direct confirmation. This stage is delivered in one implementation commit followed by a normal push to configured origin/main; Git is authoritative for its SHA.
+
+### Delivered
+
+- Added independent platform business create/manage and Owner access-link permissions, platform-only writes and redacted atomic platform audit. Provisioning creates business/initial branch/OWNER membership, reuses case-normalized Auth identities and preserves existing profiles/passwords. Disabled profiles cannot be silently enabled. Per-email advisory serialization and exact-ID unreferenced-user compensation prevent duplicate identities; the DB transaction reuses its client to avoid pool starvation. No tenant metadata grants platform access.
+- Added active Owner link reissue and business ACTIVE/DISABLED controls, with independent principal/profile rechecks and shared tenant locking. Bounded Owner projections expose support IDs/display names/status, not Auth email or operational tenant data. UI reuses shared FormDialog and keeps the one-time access URL in transient state only, with explicit copy and no-store responses.
+- Recovery confirmation accepts only recovery OTP hashes, ignores return URLs, verifies server-side and redirects to a clean set-password page. A short HttpOnly identity/session-bound proof gates the password flow; a CSRF-protected server action updates only the current authenticated identity. Business UUID remains a selection hint. Local signup is disabled; password minimum remains aligned with checked-in config (6). Development logging suppresses recovery URL queries and Server Action arguments; API logs do not contain bodies or provider errors. Updated current operating docs.
+
+### Minimal Verification
+
+- `pnpm --filter api exec vitest run src/platform src/database/platform-migrations.spec.ts src/database/pricing-migrations.spec.ts`: **30/30 PASS, four suites**, covering independent permission/revocation checks, provisioning/existing-email behavior, rollback/compensation, active Owner/profile/business checks, status/tenant denial, separate audit and schema prerequisites. Fixed a pre-existing Stage 18 test array annotation blocking typecheck, without pricing behavior changes.
+- `pnpm --filter web exec node --test test/platform-provisioning-presentation.test.mjs test/recovery-flow.test.mjs test/auth-navigation.test.mjs`: **33/33 PASS** for permission-gated controls, transient links, recovery type/hash/redirect checks, proof identity/session/expiry, password confirmation and verified role landing. API/Web typecheck/lint/build and API openapi **PASS**. Lint reported non-blocking class-spread warnings in SQL projection/test DTO fixtures. `git diff --check` **PASS**.
+- No migration is required for Stage 19. No hosted account or real business/status was changed for QA. User approved temporary servers; `pnpm dev` session **14369** runs Web4000/API9000 and will be stopped when this task ends. Browser tool still reports disabled despite user enablement; no real browser onboarding/password-setting verification is claimed.
+
+### Boundaries & Remaining
+
+- Hosted signup/OTP expiry/redirect allowlist/leaked-password settings are a documented administrator checklist, **not applied or verified remotely**. Local config does not configure the hosted project. Real Auth adapter/one-time link/set-password roundtrip remains final validation; tests use isolated DB fixtures and a mocked provider. Password entry remains a human action. Recipient URL necessarily contains the one-time hash until consumption; production proxy logs must redact query credentials.
+- Manual private link delivery only; no SMTP sender/new throttler/billing/Customer Portal. Ambiguous network success requires checking the business list before retrying to avoid duplicate businesses. No screenshot or separate report generated.
+
+### Next-stage Handoff
+
+- Stage 20 adds legal profiles/immutable printable documents without exposing tenant operational records to platform principals. Keep one implementation commit per stage with normal push to configured origin/main after authorization; no SHA-only follow-up commit.

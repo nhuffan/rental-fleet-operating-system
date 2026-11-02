@@ -11,3 +11,10 @@ export type PlatformAuditPage = Schemas["PlatformAuditPage"];
 export type PlatformUser = Schemas["PlatformUser"];
 export type PlatformUserPage = Schemas["PlatformUserPage"];
 export type PlatformUserDetail = Schemas["PlatformUserDetail"];
+
+export type PlatformBusinessDetail = Schemas["PlatformBusinessDetail"];
+export type PlatformBusinessCreate = Schemas["PlatformBusinessCreate"];
+export type PlatformProvisioningResponse =
+  Schemas["PlatformProvisioningResponse"];
+export type PlatformOwnerLinkResponse = Schemas["PlatformOwnerLinkResponse"];
+export type PlatformBusinessRecord = Schemas["PlatformBusinessRecord"];

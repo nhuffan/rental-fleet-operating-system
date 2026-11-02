@@ -17,12 +17,15 @@ import type { BusinessFilters } from "./query";
 import type { PlatformBusinessPage } from "./types";
 import { PlatformIdentity, PlatformGpsHealth } from "./presentation";
 import { Icon } from "@/components/ui/icon";
+import { CreateBusiness } from "./create-business";
 export function BusinessesPanel({
   initial,
   filters,
+  permissions,
 }: {
   initial: PlatformBusinessPage;
   filters: BusinessFilters;
+  permissions: readonly string[];
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -37,12 +40,8 @@ export function BusinessesPanel({
     <Panel className="platform-list-panel">
       <PanelHeader
         title="Danh sách doanh nghiệp"
-        subtitle={`${initial.total} doanh nghiệp phù hợp · Trang ${initial.page} · Chỉ đọc`}
-        action={
-          <span className="platform-result-count">
-            {initial.data.length} hiển thị
-          </span>
-        }
+        subtitle={`${initial.total} doanh nghiệp phù hợp · Trang ${initial.page}`}
+        action={<CreateBusiness permissions={permissions} />}
         icon="business"
       />
       <FilterBar

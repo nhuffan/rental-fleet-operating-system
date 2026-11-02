@@ -1,5 +1,9 @@
 import {
+  Body,
   Controller,
+  Header,
+  Patch,
+  Post,
   Get,
   Inject,
   Param,
@@ -8,7 +12,12 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOkResponse,
+  ApiCreatedResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { PageQuery } from '../core/dto.js';
 import { AuthGuard } from '../auth/guards.js';
 import {
@@ -17,19 +26,25 @@ import {
   type PlatformRequest,
 } from './guards.js';
 import {
+  PlatformBusinessCreate,
+  PlatformBusinessStatusInput,
+  PlatformOwnerLinkInput,
+  PlatformProvisioningResponse,
+  PlatformOwnerLinkResponse,
+  PlatformBusinessRecord,
+  PlatformBusinessDetail,
   PlatformAuditPage,
   PlatformAuditQuery,
   PlatformUserPage,
   PlatformUserQuery,
   PlatformUserDetail,
-  PlatformBusiness,
   PlatformBusinessPage,
   PlatformBusinessQuery,
   PlatformMe,
   PlatformOverview,
 } from './dto.js';
 import { PlatformService } from './platform.service.js';
-@ApiTags('Platform read console')
+@ApiTags('Platform console')
 @ApiBearerAuth()
 @UseGuards(AuthGuard, PlatformGuard)
 @Controller('platform')
@@ -78,8 +93,40 @@ export class PlatformController {
   }
   @Get('businesses/:id')
   @RequirePlatformPermission('platform.business.read')
-  @ApiOkResponse({ type: PlatformBusiness })
+  @ApiOkResponse({ type: PlatformBusinessDetail })
   business(@Req() r: PlatformRequest, @Param('id', ParseUUIDPipe) id: string) {
     return this.platform.business(r.platform, id, r.requestId);
+  }
+  @Post('businesses')
+  @Header('Cache-Control', 'no-store')
+  @RequirePlatformPermission('platform.business.create')
+  @ApiCreatedResponse({ type: PlatformProvisioningResponse })
+  createBusiness(
+    @Req() r: PlatformRequest,
+    @Body() body: PlatformBusinessCreate,
+  ) {
+    return this.platform.createBusiness(r.platform, body, r.requestId);
+  }
+  @Post('businesses/:id/owner-links')
+  @Header('Cache-Control', 'no-store')
+  @RequirePlatformPermission('platform.owner.access')
+  @ApiCreatedResponse({ type: PlatformOwnerLinkResponse })
+  ownerLink(
+    @Req() r: PlatformRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: PlatformOwnerLinkInput,
+  ) {
+    return this.platform.ownerLink(r.platform, id, body, r.requestId);
+  }
+  @Patch('businesses/:id/status')
+  @Header('Cache-Control', 'no-store')
+  @RequirePlatformPermission('platform.business.manage')
+  @ApiOkResponse({ type: PlatformBusinessRecord })
+  businessStatus(
+    @Req() r: PlatformRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: PlatformBusinessStatusInput,
+  ) {
+    return this.platform.businessStatus(r.platform, id, body, r.requestId);
   }
 }
