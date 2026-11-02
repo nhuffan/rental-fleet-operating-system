@@ -43,6 +43,42 @@ export const RENTAL_STATUSES = [
 export const MAX_RENTAL_AMOUNT = 999999999.99;
 const timezoneDate = /T.*(?:Z|[+-]\d{2}:\d{2})$/;
 export class CustomerCreate {
+  @ApiPropertyOptional({
+    description:
+      'Full value on detail; identification numbers are masked in list responses.',
+  })
+  @ValidateIf(optional)
+  @Transform(trim)
+  @IsString()
+  @Length(0, 32)
+  idNumber?: string;
+  @ApiPropertyOptional({
+    description:
+      'Full value on detail; identification numbers are masked in list responses.',
+  })
+  @ValidateIf(optional)
+  @Transform(trim)
+  @IsString()
+  @Length(0, 500)
+  address?: string;
+  @ApiPropertyOptional({
+    description:
+      'Full value on detail; identification numbers are masked in list responses.',
+  })
+  @ValidateIf(optional)
+  @Transform(trim)
+  @IsString()
+  @Length(0, 32)
+  driverLicenseNumber?: string;
+  @ApiPropertyOptional({
+    description:
+      'Full value on detail; identification numbers are masked in list responses.',
+  })
+  @ValidateIf(optional)
+  @Transform(trim)
+  @IsString()
+  @Length(0, 8)
+  driverLicenseClass?: string;
   @ApiProperty() @Transform(trim) @IsString() @Length(1, 120) name!: string;
   @ApiPropertyOptional({
     default: '',
@@ -73,6 +109,42 @@ export class CustomerCreate {
   status?: string;
 }
 export class CustomerUpdate {
+  @ApiPropertyOptional({
+    description:
+      'Full value on detail; identification numbers are masked in list responses.',
+  })
+  @ValidateIf(optional)
+  @Transform(trim)
+  @IsString()
+  @Length(0, 32)
+  idNumber?: string;
+  @ApiPropertyOptional({
+    description:
+      'Full value on detail; identification numbers are masked in list responses.',
+  })
+  @ValidateIf(optional)
+  @Transform(trim)
+  @IsString()
+  @Length(0, 500)
+  address?: string;
+  @ApiPropertyOptional({
+    description:
+      'Full value on detail; identification numbers are masked in list responses.',
+  })
+  @ValidateIf(optional)
+  @Transform(trim)
+  @IsString()
+  @Length(0, 32)
+  driverLicenseNumber?: string;
+  @ApiPropertyOptional({
+    description:
+      'Full value on detail; identification numbers are masked in list responses.',
+  })
+  @ValidateIf(optional)
+  @Transform(trim)
+  @IsString()
+  @Length(0, 8)
+  driverLicenseClass?: string;
   @ApiPropertyOptional()
   @ValidateIf(optional)
   @Transform(trim)

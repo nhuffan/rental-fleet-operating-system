@@ -178,6 +178,13 @@ export class CoreService {
           .update(businesses)
           .set({
             name: body.name,
+            legalName: body.legalName,
+            address: body.address,
+            phone: body.phone,
+            taxCode: body.taxCode,
+            representativeName: body.representativeName,
+            representativeTitle: body.representativeTitle,
+            contractTerms: body.contractTerms,
             timezone: body.timezone,
             currency: body.currency,
             updatedAt: new Date(),

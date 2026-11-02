@@ -17,7 +17,7 @@ import { DataTable, Pagination } from "@/components/data-display/table";
 import { MutationNotice } from "@/components/feedback/mutation-notice";
 import { queryString } from "@/lib/query";
 import { CustomerEditor } from "./customer-editor";
-import type { Customer, CustomerPage } from "./types";
+import type { CustomerPage } from "./types";
 import type { CustomerFilters } from "./query";
 export function CustomersPanel({
   initial,
@@ -29,7 +29,7 @@ export function CustomersPanel({
   filters: CustomerFilters;
 }) {
   const router = useRouter();
-  const [editing, setEditing] = useState<Customer | "new" | null>(null);
+  const [editing, setEditing] = useState<"new" | null>(null);
   const [message, setMessage] = useState("");
   const [pending, startTransition] = useTransition();
   const canEdit = context.permissions.includes("customer.manage");
@@ -144,6 +144,16 @@ export function CustomersPanel({
                 render: (customer) => customer.email || "—",
               },
               {
+                key: "idNumber",
+                label: "CCCD / giấy tờ",
+                render: (customer) => customer.idNumber || "—",
+              },
+              {
+                key: "driverLicenseNumber",
+                label: "GPLX",
+                render: (customer) => customer.driverLicenseNumber || "—",
+              },
+              {
                 key: "status",
                 label: "Trạng thái",
                 render: (customer) => <StatusBadge status={customer.status} />,
@@ -157,16 +167,8 @@ export function CustomersPanel({
                       className="button button-secondary"
                       href={`/app/customers/${customer.id}`}
                     >
-                      Chi tiết
+                      {canEdit ? "Chi tiết / chỉnh sửa" : "Chi tiết"}
                     </Link>
-                    {canEdit && (
-                      <Button
-                        variant="ghost"
-                        onClick={() => setEditing(customer)}
-                      >
-                        Chỉnh sửa
-                      </Button>
-                    )}
                   </div>
                 ),
               },
@@ -179,10 +181,14 @@ export function CustomersPanel({
           />
         </div>
       </Panel>
+      <p className="quiet">
+        Số CCCD và GPLX được che trên danh sách. Mở hồ sơ chi tiết để xem hoặc
+        chỉnh sửa.
+      </p>
       {editing && (
         <CustomerEditor
           businessId={context.business.id}
-          customer={editing === "new" ? null : editing}
+          customer={null}
           onClose={() => setEditing(null)}
           onSaved={() => setMessage("Đã lưu thông tin khách hàng.")}
         />

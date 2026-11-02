@@ -8,6 +8,7 @@ import {
   Panel,
   PanelHeader,
   StatusBadge,
+  Textarea,
 } from "@/components/ui/primitives";
 import { MutationNotice } from "@/components/feedback/mutation-notice";
 export function BusinessProfile({
@@ -41,6 +42,17 @@ export function BusinessProfile({
                   name: String(data.get("name")).trim(),
                   timezone: String(data.get("timezone")).trim(),
                   currency: String(data.get("currency")),
+                  legalName: String(data.get("legalName")).trim(),
+                  address: String(data.get("address")).trim(),
+                  phone: String(data.get("phone")).trim(),
+                  taxCode: String(data.get("taxCode")).trim(),
+                  representativeName: String(
+                    data.get("representativeName"),
+                  ).trim(),
+                  representativeTitle: String(
+                    data.get("representativeTitle"),
+                  ).trim(),
+                  contractTerms: String(data.get("contractTerms")).trim(),
                 },
               });
             }}
@@ -83,6 +95,83 @@ export function BusinessProfile({
                     <small>Mã ISO gồm 3 ký tự, ví dụ VND.</small>
                   </label>
                 </div>
+              </div>
+              <div className="form-section">
+                <h3>Hồ sơ pháp lý cho hợp đồng</h3>
+                <p>
+                  Thông tin này được lưu vào phiên bản hợp đồng khi phát hành.
+                  Để trống mục chưa có để điền tay trên bản in.
+                </p>
+                <label className="form-field">
+                  Tên pháp lý doanh nghiệp
+                  <Input
+                    name="legalName"
+                    maxLength={120}
+                    defaultValue={business.legalName}
+                    autoComplete="organization"
+                  />
+                </label>
+                <label className="form-field">
+                  Địa chỉ doanh nghiệp
+                  <Textarea
+                    name="address"
+                    maxLength={500}
+                    rows={2}
+                    defaultValue={business.address}
+                    autoComplete="street-address"
+                  />
+                </label>
+                <div className="form-grid">
+                  <label className="form-field">
+                    Điện thoại doanh nghiệp
+                    <Input
+                      name="phone"
+                      type="tel"
+                      maxLength={32}
+                      pattern={String.raw`(?:\+)?[0-9][0-9 \-]{4,31}`}
+                      defaultValue={business.phone}
+                      autoComplete="tel"
+                    />
+                  </label>
+                  <label className="form-field">
+                    Mã số thuế
+                    <Input
+                      name="taxCode"
+                      maxLength={32}
+                      defaultValue={business.taxCode}
+                    />
+                  </label>
+                  <label className="form-field">
+                    Người đại diện
+                    <Input
+                      name="representativeName"
+                      maxLength={120}
+                      defaultValue={business.representativeName}
+                    />
+                  </label>
+                  <label className="form-field">
+                    Chức vụ người đại diện
+                    <Input
+                      name="representativeTitle"
+                      maxLength={80}
+                      defaultValue={business.representativeTitle}
+                    />
+                  </label>
+                </div>
+                <label className="form-field">
+                  Điều khoản hợp đồng mặc định
+                  <Textarea
+                    name="contractTerms"
+                    maxLength={8000}
+                    rows={12}
+                    defaultValue={business.contractTerms}
+                    placeholder="Để trống để dùng 10 điều khoản gợi ý về sử dụng xe, giấy tờ, thời hạn, giá, cọc, km/nhiên liệu, trách nhiệm, vi phạm, trả trễ và giải quyết tranh chấp."
+                  />
+                  <small>
+                    Thay đổi chỉ áp dụng khi phát hành phiên bản hợp đồng tiếp
+                    theo. Bản đã phát hành được giữ nguyên.
+                  </small>
+                </label>
               </div>
               {editable && (
                 <div className="form-actions">

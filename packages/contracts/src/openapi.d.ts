@@ -4,6 +4,39 @@
  */
 
 export interface paths {
+    "/api/v1/rentals/{id}/contract": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ContractController_list"];
+        put?: never;
+        /** @description Issues an immutable contract version under the tenant lock. Returns the identical latest snapshot with HTTP200 when content is unchanged. Does not sign a legal agreement or create a financial movement. */
+        post: operations["ContractController_issue"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/rentals/{id}/contract/{version}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ContractController_version"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/health": {
         parameters: {
             query?: never;
@@ -1143,6 +1176,145 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        ContractBusinessResponse: {
+            legalName: string;
+            name: string;
+            address: string;
+            phone: string;
+            taxCode: string;
+            representativeName: string;
+            representativeTitle: string;
+            timezone: string;
+            currency: string;
+        };
+        ContractCustomerResponse: {
+            name: string;
+            phone: string;
+            email: string;
+            idNumber: string;
+            address: string;
+            driverLicenseNumber: string;
+            driverLicenseClass: string;
+        };
+        ContractVehicleResponse: {
+            licensePlate: string;
+            make: string;
+            model: string;
+        };
+        ContractRentalResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            startAt: string;
+            /** Format: date-time */
+            endAt: string;
+            /** @enum {string} */
+            status: "RESERVED" | "ACTIVE" | "COMPLETED";
+            /** @description Exact database amount; legacy fractional values are not rounded. */
+            rentalAmount: string;
+            depositRequiredAmount: string;
+            depositReceived: boolean;
+            notes: string;
+        };
+        PricingLineResponse: {
+            /** @enum {string} */
+            kind: "HOUR" | "DAY" | "EXTRA_HOUR" | "DAY_CAP" | "MINIMUM";
+            units: string;
+            unitPrice: string;
+            amount: string;
+        };
+        PricingBreakdownResponse: {
+            /** @enum {string} */
+            currency: "VND";
+            /** @enum {string} */
+            timeZone: "Asia/Ho_Chi_Minh";
+            /** Format: uuid */
+            vehicleId: string;
+            /** Format: date-time */
+            startAt: string;
+            /** Format: date-time */
+            endAt: string;
+            durationSeconds: string;
+            /** @enum {string} */
+            billingMode: "HOURLY" | "DAILY";
+            /** Format: uuid */
+            rateCardId: string;
+            rateVersion: number;
+            rateName: string;
+            /** @enum {string} */
+            rateSource: "VEHICLE" | "BUSINESS";
+            hourlyRate: string | null;
+            dailyRate: string | null;
+            minimumCharge: string;
+            extraHourRate: string | null;
+            /** Format: date-time */
+            effectiveFrom: string;
+            /** Format: date-time */
+            effectiveUntil: string | null;
+            lines: components["schemas"]["PricingLineResponse"][];
+            calculatedAmount: string;
+            quoteHash: string;
+        };
+        PricingSnapshotResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            rentalId: string;
+            /** Format: uuid */
+            vehicleId: string;
+            /** Format: uuid */
+            rateCardId: string | null;
+            /** @enum {string} */
+            mode: "CALCULATED" | "OVERRIDE" | "MANUAL";
+            breakdown: components["schemas"]["PricingBreakdownResponse"] | null;
+            agreedAmount: string;
+            overrideReason: string | null;
+            /** Format: uuid */
+            createdBy: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        ContractSnapshotResponse: {
+            /** @enum {number} */
+            schemaVersion: 1;
+            business: components["schemas"]["ContractBusinessResponse"];
+            customer: components["schemas"]["ContractCustomerResponse"];
+            vehicle: components["schemas"]["ContractVehicleResponse"];
+            rental: components["schemas"]["ContractRentalResponse"];
+            pricing: components["schemas"]["PricingSnapshotResponse"] | null;
+            terms: string;
+            missing: string[];
+        };
+        ContractDocumentResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            businessId: string;
+            /** Format: uuid */
+            rentalId: string;
+            seq: number;
+            docNumber: string;
+            version: number;
+            contentHash: string;
+            snapshot: components["schemas"]["ContractSnapshotResponse"];
+            /** Format: uuid */
+            issuedBy: string;
+            /** Format: date-time */
+            issuedAt: string;
+        };
+        ContractVersionResponse: {
+            version: number;
+            docNumber: string;
+            /** Format: date-time */
+            issuedAt: string;
+        };
+        ContractDocumentsResponse: {
+            latest: components["schemas"]["ContractDocumentResponse"] | null;
+            /** @description Latest 100 versions; older versions remain accessible by version. */
+            versions: components["schemas"]["ContractVersionResponse"][];
+            versionCount: number;
+            dataChanged: boolean;
+        };
         Object: Record<string, never>;
         AlertResponse: {
             /** @description Stable derived identity; not a persisted event or authorization credential. */
@@ -1542,6 +1714,13 @@ export interface components {
             displayName: string;
         };
         BusinessResponse: {
+            legalName: string;
+            address: string;
+            phone: string;
+            taxCode: string;
+            representativeName: string;
+            representativeTitle: string;
+            contractTerms: string;
             /** Format: uuid */
             id: string;
             name: string;
@@ -1568,6 +1747,13 @@ export interface components {
             businesses: components["schemas"]["BusinessChoice"][];
         };
         BusinessUpdate: {
+            legalName?: string;
+            address?: string;
+            phone?: string;
+            taxCode?: string;
+            representativeName?: string;
+            representativeTitle?: string;
+            contractTerms?: string;
             name?: string;
             /** @example Asia/Ho_Chi_Minh */
             timezone?: string;
@@ -1662,6 +1848,14 @@ export interface components {
             data: components["schemas"]["AuditResponse"][];
         };
         CustomerResponse: {
+            /** @description Identification numbers are masked on list responses. */
+            idNumber: string;
+            /** @description Identification numbers are masked on list responses. */
+            address: string;
+            /** @description Identification numbers are masked on list responses. */
+            driverLicenseNumber: string;
+            /** @description Identification numbers are masked on list responses. */
+            driverLicenseClass: string;
             /** Format: uuid */
             id: string;
             /** Format: uuid */
@@ -1684,6 +1878,14 @@ export interface components {
             data: components["schemas"]["CustomerResponse"][];
         };
         CustomerCreate: {
+            /** @description Full value on detail; identification numbers are masked in list responses. */
+            idNumber?: string;
+            /** @description Full value on detail; identification numbers are masked in list responses. */
+            address?: string;
+            /** @description Full value on detail; identification numbers are masked in list responses. */
+            driverLicenseNumber?: string;
+            /** @description Full value on detail; identification numbers are masked in list responses. */
+            driverLicenseClass?: string;
             name: string;
             /**
              * @description At least one of phone or email is required.
@@ -1701,70 +1903,20 @@ export interface components {
             status: "ACTIVE" | "INACTIVE";
         };
         CustomerUpdate: {
+            /** @description Full value on detail; identification numbers are masked in list responses. */
+            idNumber?: string;
+            /** @description Full value on detail; identification numbers are masked in list responses. */
+            address?: string;
+            /** @description Full value on detail; identification numbers are masked in list responses. */
+            driverLicenseNumber?: string;
+            /** @description Full value on detail; identification numbers are masked in list responses. */
+            driverLicenseClass?: string;
             name?: string;
             phone?: string;
             email?: string;
             notes?: string;
             /** @enum {string} */
             status?: "ACTIVE" | "INACTIVE";
-        };
-        PricingLineResponse: {
-            /** @enum {string} */
-            kind: "HOUR" | "DAY" | "EXTRA_HOUR" | "DAY_CAP" | "MINIMUM";
-            units: string;
-            unitPrice: string;
-            amount: string;
-        };
-        PricingBreakdownResponse: {
-            /** @enum {string} */
-            currency: "VND";
-            /** @enum {string} */
-            timeZone: "Asia/Ho_Chi_Minh";
-            /** Format: uuid */
-            vehicleId: string;
-            /** Format: date-time */
-            startAt: string;
-            /** Format: date-time */
-            endAt: string;
-            durationSeconds: string;
-            /** @enum {string} */
-            billingMode: "HOURLY" | "DAILY";
-            /** Format: uuid */
-            rateCardId: string;
-            rateVersion: number;
-            rateName: string;
-            /** @enum {string} */
-            rateSource: "VEHICLE" | "BUSINESS";
-            hourlyRate: string | null;
-            dailyRate: string | null;
-            minimumCharge: string;
-            extraHourRate: string | null;
-            /** Format: date-time */
-            effectiveFrom: string;
-            /** Format: date-time */
-            effectiveUntil: string | null;
-            lines: components["schemas"]["PricingLineResponse"][];
-            calculatedAmount: string;
-            quoteHash: string;
-        };
-        PricingSnapshotResponse: {
-            /** Format: uuid */
-            id: string;
-            /** Format: uuid */
-            rentalId: string;
-            /** Format: uuid */
-            vehicleId: string;
-            /** Format: uuid */
-            rateCardId: string | null;
-            /** @enum {string} */
-            mode: "CALCULATED" | "OVERRIDE" | "MANUAL";
-            breakdown: components["schemas"]["PricingBreakdownResponse"] | null;
-            agreedAmount: string;
-            overrideReason: string | null;
-            /** Format: uuid */
-            createdBy: string;
-            /** Format: date-time */
-            createdAt: string;
         };
         RentalPricingSelection: {
             /** @enum {string} */
@@ -2822,6 +2974,358 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    ContractController_list: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Business-Id"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContractDocumentsResponse"];
+                };
+            };
+            /** @description Standard API error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    ContractController_issue: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Business-Id"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContractDocumentResponse"];
+                };
+            };
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContractDocumentResponse"];
+                };
+            };
+            /** @description Standard API error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    ContractController_version: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Business-Id"?: string;
+            };
+            path: {
+                id: string;
+                version: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContractDocumentResponse"];
+                };
+            };
+            /** @description Standard API error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
     AppController_health: {
         parameters: {
             query?: never;

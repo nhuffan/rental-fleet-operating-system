@@ -57,6 +57,24 @@ export function CustomerDetail({
             <dd>{customer.email || "—"}</dd>
           </div>
           <div>
+            <dt>Số CCCD / giấy tờ tùy thân</dt>
+            <dd>{customer.idNumber || "Chưa cập nhật"}</dd>
+          </div>
+          <div>
+            <dt>Số giấy phép lái xe</dt>
+            <dd>{customer.driverLicenseNumber || "Chưa cập nhật"}</dd>
+          </div>
+          <div>
+            <dt>Hạng giấy phép lái xe</dt>
+            <dd>{customer.driverLicenseClass || "Chưa cập nhật"}</dd>
+          </div>
+          <div>
+            <dt>Địa chỉ</dt>
+            <dd className="rental-notes">
+              {customer.address || "Chưa cập nhật"}
+            </dd>
+          </div>
+          <div>
             <dt>Trạng thái</dt>
             <dd>
               <StatusBadge status={customer.status} />

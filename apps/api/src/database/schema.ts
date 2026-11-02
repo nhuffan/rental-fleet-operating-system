@@ -30,6 +30,13 @@ export const businesses = pgTable('businesses', {
   status: text().notNull().default('ACTIVE'),
   timezone: text().notNull().default('Asia/Ho_Chi_Minh'),
   currency: text().notNull().default('VND'),
+  legalName: text('legal_name').notNull().default(''),
+  address: text('address').notNull().default(''),
+  phone: text('phone').notNull().default(''),
+  taxCode: text('tax_code').notNull().default(''),
+  representativeName: text('representative_name').notNull().default(''),
+  representativeTitle: text('representative_title').notNull().default(''),
+  contractTerms: text('contract_terms').notNull().default(''),
   ...times(),
 });
 export const profiles = pgTable('user_profiles', {
@@ -252,6 +259,10 @@ export const customers = pgTable(
     name: text().notNull(),
     phone: text().notNull().default(''),
     email: text().notNull().default(''),
+    idNumber: text('id_number').notNull().default(''),
+    address: text('address').notNull().default(''),
+    driverLicenseNumber: text('driver_license_number').notNull().default(''),
+    driverLicenseClass: text('driver_license_class').notNull().default(''),
     notes: text().notNull().default(''),
     status: text().notNull().default('ACTIVE'),
     ...times(),
@@ -1332,6 +1343,50 @@ export const tollReviewEvents = pgTable(
       t.tollTransactionId,
       t.createdAt,
       t.id,
+    ),
+  ],
+);
+
+export const rentalContractDocuments = pgTable(
+  'rental_contract_documents',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    businessId: uuid('business_id')
+      .notNull()
+      .references(() => businesses.id, { onDelete: 'restrict' }),
+    rentalId: uuid('rental_id').notNull(),
+    seq: integer().notNull(),
+    docNumber: text('doc_number').notNull(),
+    version: integer().notNull(),
+    contentHash: text('content_hash').notNull(),
+    snapshot: jsonb()
+      .notNull()
+      .$type<
+        import('../rentals/contract-responses.js').ContractSnapshotResponse
+      >(),
+    issuedBy: uuid('issued_by').notNull(),
+    issuedAt: timestamp('issued_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    unique('rental_contract_documents_business_seq_unique').on(
+      t.businessId,
+      t.seq,
+    ),
+    unique('rental_contract_documents_rental_version_unique').on(
+      t.rentalId,
+      t.version,
+    ),
+    foreignKey({
+      name: 'rental_contract_documents_rental_tenant_fk',
+      columns: [t.businessId, t.rentalId],
+      foreignColumns: [rentals.businessId, rentals.id],
+    }).onDelete('restrict'),
+    index('rental_contract_documents_business_rental_version').on(
+      t.businessId,
+      t.rentalId,
+      t.version.desc(),
     ),
   ],
 );

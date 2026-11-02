@@ -646,7 +646,7 @@ async function pricedFixture() {
       businessId: a.businessId,
       vehicleId: fixture.vehicle.id,
       name: 'Hourly fixture',
-    createdBy: a.userId,
+      createdBy: a.userId,
       hourlyRate: '100000',
       effectiveFrom: new Date(Date.now() - 86400000),
     })
@@ -786,5 +786,46 @@ it('persists explicit override reason and rolls back its snapshot when the renta
     mode: 'OVERRIDE',
     agreedAmount: '75000',
     overrideReason: 'Agreed fixed price',
+  });
+});
+
+it('keeps identity documents scoped to detail and masks both customer and nested rental lists', async () => {
+  const { customer, body } = await fixtures();
+  const updated = await service.updateCustomer(
+    a,
+    customer.id,
+    {
+      idNumber: '012345678901',
+      address: 'Fixture address',
+      driverLicenseNumber: 'DL123456789',
+      driverLicenseClass: 'B2',
+    },
+    'identity-fields',
+  );
+  expect(updated.idNumber).toBe('012345678901');
+  expect((await service.customer(a, customer.id)).driverLicenseNumber).toBe(
+    'DL123456789',
+  );
+  await service.createRental(a, body, 'identity-rental');
+  const customers = await service.listCustomers(a, new CustomerQuery());
+  expect(customers.data[0]).toMatchObject({
+    idNumber: '***901',
+    driverLicenseNumber: '***789',
+  });
+  const rows = await service.listRentals(a, new RentalQuery());
+  expect(rows.data[0].customer).toMatchObject({
+    idNumber: '***901',
+    driverLicenseNumber: '***789',
+  });
+  const logs = await db
+    .select()
+    .from(schema.auditLogs)
+    .where(eq(schema.auditLogs.businessId, a.businessId));
+  const audit = JSON.stringify(logs);
+  expect(audit).not.toContain('012345678901');
+  expect(audit).not.toContain('DL123456789');
+  expect(audit).not.toContain('Fixture address');
+  await expect(service.customer(b, customer.id)).rejects.toMatchObject({
+    response: { code: 'CUSTOMER_NOT_FOUND' },
   });
 });

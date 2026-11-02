@@ -386,3 +386,33 @@ body {
     display: none;
   }
 }
+
+/* Printed rental documents leave the viewport shell so every A4 page can flow. */
+@media print {
+  body:has(.print-document) {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+    background: #fff;
+  }
+  body:has(.print-document) .app-sidebar,
+  body:has(.print-document) .topbar,
+  body:has(.print-document) .workspace-footer,
+  body:has(.print-document) .skip-link,
+  body:has(.print-document) .sidebar-backdrop {
+    display: none !important;
+  }
+  body:has(.print-document) .workspace,
+  body:has(.print-document) .workspace-main,
+  body:has(.print-document) .workspace-scroll,
+  body:has(.print-document) .workspace-content,
+  body:has(.print-document) .workspace-route-content {
+    display: block;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    overflow: visible;
+    padding: 0;
+    margin: 0;
+  }
+}

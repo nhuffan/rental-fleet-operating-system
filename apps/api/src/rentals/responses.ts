@@ -10,6 +10,22 @@ import {
   type InspectionCondition,
 } from './dto.js';
 export class CustomerResponse {
+  @ApiProperty({
+    description: 'Identification numbers are masked on list responses.',
+  })
+  idNumber!: string;
+  @ApiProperty({
+    description: 'Identification numbers are masked on list responses.',
+  })
+  address!: string;
+  @ApiProperty({
+    description: 'Identification numbers are masked on list responses.',
+  })
+  driverLicenseNumber!: string;
+  @ApiProperty({
+    description: 'Identification numbers are masked on list responses.',
+  })
+  driverLicenseClass!: string;
   @ApiProperty({ format: 'uuid' }) id!: string;
   @ApiProperty({ format: 'uuid' }) businessId!: string;
   @ApiProperty() name!: string;

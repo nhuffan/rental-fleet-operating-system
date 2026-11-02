@@ -1,6 +1,722 @@
 {
   "openapi": "3.0.0",
   "paths": {
+    "/api/v1/rentals/{id}/contract": {
+      "get": {
+        "operationId": "ContractController_list",
+        "parameters": [
+          {
+            "name": "X-Business-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractDocumentsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Rental contract documents"
+        ]
+      },
+      "post": {
+        "description": "Issues an immutable contract version under the tenant lock. Returns the identical latest snapshot with HTTP200 when content is unchanged. Does not sign a legal agreement or create a financial movement.",
+        "operationId": "ContractController_issue",
+        "parameters": [
+          {
+            "name": "X-Business-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractDocumentResponse"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractDocumentResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "Rental contract documents"
+        ]
+      }
+    },
+    "/api/v1/rentals/{id}/contract/{version}": {
+      "get": {
+        "operationId": "ContractController_version",
+        "parameters": [
+          {
+            "name": "X-Business-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractDocumentResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Rental contract documents"
+        ]
+      }
+    },
     "/api/v1/health": {
       "get": {
         "operationId": "AppController_health",
@@ -22009,6 +22725,517 @@
       }
     },
     "schemas": {
+      "ContractBusinessResponse": {
+        "type": "object",
+        "properties": {
+          "legalName": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "taxCode": {
+            "type": "string"
+          },
+          "representativeName": {
+            "type": "string"
+          },
+          "representativeTitle": {
+            "type": "string"
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "legalName",
+          "name",
+          "address",
+          "phone",
+          "taxCode",
+          "representativeName",
+          "representativeTitle",
+          "timezone",
+          "currency"
+        ]
+      },
+      "ContractCustomerResponse": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "idNumber": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          },
+          "driverLicenseNumber": {
+            "type": "string"
+          },
+          "driverLicenseClass": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "phone",
+          "email",
+          "idNumber",
+          "address",
+          "driverLicenseNumber",
+          "driverLicenseClass"
+        ]
+      },
+      "ContractVehicleResponse": {
+        "type": "object",
+        "properties": {
+          "licensePlate": {
+            "type": "string"
+          },
+          "make": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "licensePlate",
+          "make",
+          "model"
+        ]
+      },
+      "ContractRentalResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "startAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "RESERVED",
+              "ACTIVE",
+              "COMPLETED"
+            ]
+          },
+          "rentalAmount": {
+            "type": "string",
+            "description": "Exact database amount; legacy fractional values are not rounded."
+          },
+          "depositRequiredAmount": {
+            "type": "string"
+          },
+          "depositReceived": {
+            "type": "boolean"
+          },
+          "notes": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "startAt",
+          "endAt",
+          "status",
+          "rentalAmount",
+          "depositRequiredAmount",
+          "depositReceived",
+          "notes"
+        ]
+      },
+      "PricingLineResponse": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "HOUR",
+              "DAY",
+              "EXTRA_HOUR",
+              "DAY_CAP",
+              "MINIMUM"
+            ]
+          },
+          "units": {
+            "type": "string"
+          },
+          "unitPrice": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "units",
+          "unitPrice",
+          "amount"
+        ]
+      },
+      "PricingBreakdownResponse": {
+        "type": "object",
+        "properties": {
+          "currency": {
+            "type": "string",
+            "enum": [
+              "VND"
+            ]
+          },
+          "timeZone": {
+            "type": "string",
+            "enum": [
+              "Asia/Ho_Chi_Minh"
+            ]
+          },
+          "vehicleId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "startAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "durationSeconds": {
+            "type": "string"
+          },
+          "billingMode": {
+            "type": "string",
+            "enum": [
+              "HOURLY",
+              "DAILY"
+            ]
+          },
+          "rateCardId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "rateVersion": {
+            "type": "number"
+          },
+          "rateName": {
+            "type": "string"
+          },
+          "rateSource": {
+            "type": "string",
+            "enum": [
+              "VEHICLE",
+              "BUSINESS"
+            ]
+          },
+          "hourlyRate": {
+            "type": "string",
+            "nullable": true
+          },
+          "dailyRate": {
+            "type": "string",
+            "nullable": true
+          },
+          "minimumCharge": {
+            "type": "string"
+          },
+          "extraHourRate": {
+            "type": "string",
+            "nullable": true
+          },
+          "effectiveFrom": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "effectiveUntil": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PricingLineResponse"
+            }
+          },
+          "calculatedAmount": {
+            "type": "string"
+          },
+          "quoteHash": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "currency",
+          "timeZone",
+          "vehicleId",
+          "startAt",
+          "endAt",
+          "durationSeconds",
+          "billingMode",
+          "rateCardId",
+          "rateVersion",
+          "rateName",
+          "rateSource",
+          "hourlyRate",
+          "dailyRate",
+          "minimumCharge",
+          "extraHourRate",
+          "effectiveFrom",
+          "effectiveUntil",
+          "lines",
+          "calculatedAmount",
+          "quoteHash"
+        ]
+      },
+      "PricingSnapshotResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "rentalId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "vehicleId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "rateCardId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "CALCULATED",
+              "OVERRIDE",
+              "MANUAL"
+            ]
+          },
+          "breakdown": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PricingBreakdownResponse"
+              }
+            ]
+          },
+          "agreedAmount": {
+            "type": "string"
+          },
+          "overrideReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdBy": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "rentalId",
+          "vehicleId",
+          "rateCardId",
+          "mode",
+          "breakdown",
+          "agreedAmount",
+          "overrideReason",
+          "createdBy",
+          "createdAt"
+        ]
+      },
+      "ContractSnapshotResponse": {
+        "type": "object",
+        "properties": {
+          "schemaVersion": {
+            "type": "number",
+            "enum": [
+              1
+            ]
+          },
+          "business": {
+            "$ref": "#/components/schemas/ContractBusinessResponse"
+          },
+          "customer": {
+            "$ref": "#/components/schemas/ContractCustomerResponse"
+          },
+          "vehicle": {
+            "$ref": "#/components/schemas/ContractVehicleResponse"
+          },
+          "rental": {
+            "$ref": "#/components/schemas/ContractRentalResponse"
+          },
+          "pricing": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PricingSnapshotResponse"
+              }
+            ]
+          },
+          "terms": {
+            "type": "string"
+          },
+          "missing": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "business",
+          "customer",
+          "vehicle",
+          "rental",
+          "pricing",
+          "terms",
+          "missing"
+        ]
+      },
+      "ContractDocumentResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "businessId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "rentalId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "seq": {
+            "type": "number"
+          },
+          "docNumber": {
+            "type": "string"
+          },
+          "version": {
+            "type": "number"
+          },
+          "contentHash": {
+            "type": "string"
+          },
+          "snapshot": {
+            "$ref": "#/components/schemas/ContractSnapshotResponse"
+          },
+          "issuedBy": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "issuedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "businessId",
+          "rentalId",
+          "seq",
+          "docNumber",
+          "version",
+          "contentHash",
+          "snapshot",
+          "issuedBy",
+          "issuedAt"
+        ]
+      },
+      "ContractVersionResponse": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "number"
+          },
+          "docNumber": {
+            "type": "string"
+          },
+          "issuedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "version",
+          "docNumber",
+          "issuedAt"
+        ]
+      },
+      "ContractDocumentsResponse": {
+        "type": "object",
+        "properties": {
+          "latest": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContractDocumentResponse"
+              }
+            ]
+          },
+          "versions": {
+            "description": "Latest 100 versions; older versions remain accessible by version.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContractVersionResponse"
+            }
+          },
+          "versionCount": {
+            "type": "number"
+          },
+          "dataChanged": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "latest",
+          "versions",
+          "versionCount",
+          "dataChanged"
+        ]
+      },
       "Object": {
         "type": "object",
         "properties": {}
@@ -23361,6 +24588,27 @@
       "BusinessResponse": {
         "type": "object",
         "properties": {
+          "legalName": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "taxCode": {
+            "type": "string"
+          },
+          "representativeName": {
+            "type": "string"
+          },
+          "representativeTitle": {
+            "type": "string"
+          },
+          "contractTerms": {
+            "type": "string"
+          },
           "id": {
             "type": "string",
             "format": "uuid"
@@ -23387,6 +24635,13 @@
           }
         },
         "required": [
+          "legalName",
+          "address",
+          "phone",
+          "taxCode",
+          "representativeName",
+          "representativeTitle",
+          "contractTerms",
           "id",
           "name",
           "status",
@@ -23457,6 +24712,27 @@
       "BusinessUpdate": {
         "type": "object",
         "properties": {
+          "legalName": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "taxCode": {
+            "type": "string"
+          },
+          "representativeName": {
+            "type": "string"
+          },
+          "representativeTitle": {
+            "type": "string"
+          },
+          "contractTerms": {
+            "type": "string"
+          },
           "name": {
             "type": "string"
           },
@@ -23778,6 +25054,22 @@
       "CustomerResponse": {
         "type": "object",
         "properties": {
+          "idNumber": {
+            "type": "string",
+            "description": "Identification numbers are masked on list responses."
+          },
+          "address": {
+            "type": "string",
+            "description": "Identification numbers are masked on list responses."
+          },
+          "driverLicenseNumber": {
+            "type": "string",
+            "description": "Identification numbers are masked on list responses."
+          },
+          "driverLicenseClass": {
+            "type": "string",
+            "description": "Identification numbers are masked on list responses."
+          },
           "id": {
             "type": "string",
             "format": "uuid"
@@ -23815,6 +25107,10 @@
           }
         },
         "required": [
+          "idNumber",
+          "address",
+          "driverLicenseNumber",
+          "driverLicenseClass",
           "id",
           "businessId",
           "name",
@@ -23855,6 +25151,22 @@
       "CustomerCreate": {
         "type": "object",
         "properties": {
+          "idNumber": {
+            "type": "string",
+            "description": "Full value on detail; identification numbers are masked in list responses."
+          },
+          "address": {
+            "type": "string",
+            "description": "Full value on detail; identification numbers are masked in list responses."
+          },
+          "driverLicenseNumber": {
+            "type": "string",
+            "description": "Full value on detail; identification numbers are masked in list responses."
+          },
+          "driverLicenseClass": {
+            "type": "string",
+            "description": "Full value on detail; identification numbers are masked in list responses."
+          },
           "name": {
             "type": "string"
           },
@@ -23887,6 +25199,22 @@
       "CustomerUpdate": {
         "type": "object",
         "properties": {
+          "idNumber": {
+            "type": "string",
+            "description": "Full value on detail; identification numbers are masked in list responses."
+          },
+          "address": {
+            "type": "string",
+            "description": "Full value on detail; identification numbers are masked in list responses."
+          },
+          "driverLicenseNumber": {
+            "type": "string",
+            "description": "Full value on detail; identification numbers are masked in list responses."
+          },
+          "driverLicenseClass": {
+            "type": "string",
+            "description": "Full value on detail; identification numbers are masked in list responses."
+          },
           "name": {
             "type": "string"
           },
@@ -23907,216 +25235,6 @@
             ]
           }
         }
-      },
-      "PricingLineResponse": {
-        "type": "object",
-        "properties": {
-          "kind": {
-            "type": "string",
-            "enum": [
-              "HOUR",
-              "DAY",
-              "EXTRA_HOUR",
-              "DAY_CAP",
-              "MINIMUM"
-            ]
-          },
-          "units": {
-            "type": "string"
-          },
-          "unitPrice": {
-            "type": "string"
-          },
-          "amount": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "kind",
-          "units",
-          "unitPrice",
-          "amount"
-        ]
-      },
-      "PricingBreakdownResponse": {
-        "type": "object",
-        "properties": {
-          "currency": {
-            "type": "string",
-            "enum": [
-              "VND"
-            ]
-          },
-          "timeZone": {
-            "type": "string",
-            "enum": [
-              "Asia/Ho_Chi_Minh"
-            ]
-          },
-          "vehicleId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "startAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "endAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "durationSeconds": {
-            "type": "string"
-          },
-          "billingMode": {
-            "type": "string",
-            "enum": [
-              "HOURLY",
-              "DAILY"
-            ]
-          },
-          "rateCardId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "rateVersion": {
-            "type": "number"
-          },
-          "rateName": {
-            "type": "string"
-          },
-          "rateSource": {
-            "type": "string",
-            "enum": [
-              "VEHICLE",
-              "BUSINESS"
-            ]
-          },
-          "hourlyRate": {
-            "type": "string",
-            "nullable": true
-          },
-          "dailyRate": {
-            "type": "string",
-            "nullable": true
-          },
-          "minimumCharge": {
-            "type": "string"
-          },
-          "extraHourRate": {
-            "type": "string",
-            "nullable": true
-          },
-          "effectiveFrom": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "effectiveUntil": {
-            "type": "string",
-            "nullable": true,
-            "format": "date-time"
-          },
-          "lines": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/PricingLineResponse"
-            }
-          },
-          "calculatedAmount": {
-            "type": "string"
-          },
-          "quoteHash": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "currency",
-          "timeZone",
-          "vehicleId",
-          "startAt",
-          "endAt",
-          "durationSeconds",
-          "billingMode",
-          "rateCardId",
-          "rateVersion",
-          "rateName",
-          "rateSource",
-          "hourlyRate",
-          "dailyRate",
-          "minimumCharge",
-          "extraHourRate",
-          "effectiveFrom",
-          "effectiveUntil",
-          "lines",
-          "calculatedAmount",
-          "quoteHash"
-        ]
-      },
-      "PricingSnapshotResponse": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "rentalId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "vehicleId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "rateCardId": {
-            "type": "string",
-            "nullable": true,
-            "format": "uuid"
-          },
-          "mode": {
-            "type": "string",
-            "enum": [
-              "CALCULATED",
-              "OVERRIDE",
-              "MANUAL"
-            ]
-          },
-          "breakdown": {
-            "nullable": true,
-            "type": "object",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PricingBreakdownResponse"
-              }
-            ]
-          },
-          "agreedAmount": {
-            "type": "string"
-          },
-          "overrideReason": {
-            "type": "string",
-            "nullable": true
-          },
-          "createdBy": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          }
-        },
-        "required": [
-          "id",
-          "rentalId",
-          "vehicleId",
-          "rateCardId",
-          "mode",
-          "breakdown",
-          "agreedAmount",
-          "overrideReason",
-          "createdBy",
-          "createdAt"
-        ]
       },
       "RentalPricingSelection": {
         "type": "object",

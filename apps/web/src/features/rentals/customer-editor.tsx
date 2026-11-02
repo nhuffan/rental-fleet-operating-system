@@ -49,6 +49,12 @@ export function CustomerEditor({
               phone: String(form.get("phone")).trim(),
               email: String(form.get("email")).trim(),
               notes: String(form.get("notes")).trim(),
+              idNumber: String(form.get("idNumber")).trim(),
+              address: String(form.get("address")).trim(),
+              driverLicenseNumber: String(
+                form.get("driverLicenseNumber"),
+              ).trim(),
+              driverLicenseClass: String(form.get("driverLicenseClass")).trim(),
               status: form.get("status") as "ACTIVE" | "INACTIVE",
             };
             if (body.phone && !/^\+?[0-9][0-9 -]{4,31}$/.test(body.phone)) {
@@ -111,6 +117,55 @@ export function CustomerEditor({
                   type="email"
                   maxLength={254}
                   defaultValue={customer?.email ?? ""}
+                />
+              </label>
+            </div>
+            <div className="form-section">
+              <h3>Giấy tờ và địa chỉ</h3>
+              <p>
+                Các mục này không bắt buộc. Số giấy tờ đầy đủ chỉ dùng trong hồ
+                sơ chi tiết và bản hợp đồng đã phát hành.
+              </p>
+              <div className="form-grid">
+                <label className="form-field">
+                  Số CCCD / giấy tờ tùy thân
+                  <Input
+                    name="idNumber"
+                    type="text"
+                    maxLength={32}
+                    defaultValue={customer?.idNumber ?? ""}
+                    autoComplete="off"
+                  />
+                </label>
+                <label className="form-field">
+                  Số giấy phép lái xe
+                  <Input
+                    name="driverLicenseNumber"
+                    type="text"
+                    maxLength={32}
+                    defaultValue={customer?.driverLicenseNumber ?? ""}
+                    autoComplete="off"
+                  />
+                </label>
+                <label className="form-field">
+                  Hạng giấy phép lái xe
+                  <Input
+                    name="driverLicenseClass"
+                    type="text"
+                    maxLength={8}
+                    defaultValue={customer?.driverLicenseClass ?? ""}
+                    autoComplete="off"
+                  />
+                </label>
+              </div>
+              <label className="form-field">
+                Địa chỉ khách hàng
+                <Textarea
+                  name="address"
+                  maxLength={500}
+                  rows={2}
+                  defaultValue={customer?.address ?? ""}
+                  autoComplete="street-address"
                 />
               </label>
             </div>

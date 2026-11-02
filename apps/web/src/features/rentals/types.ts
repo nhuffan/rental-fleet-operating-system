@@ -29,3 +29,6 @@ export type EvidenceRetentionSettings =
 export type EvidenceStorageUsage = Schemas["EvidenceStorageUsageResponse"];
 export type EvidenceRentalHold = Schemas["EvidenceRentalHoldResponse"];
 export type EvidenceImportant = Schemas["EvidenceImportantResponse"];
+
+export type ContractDocument = Schemas["ContractDocumentResponse"];
+export type ContractDocuments = Schemas["ContractDocumentsResponse"];

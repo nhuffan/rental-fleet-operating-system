@@ -41,6 +41,7 @@ type Mutation =
   | { path: `/customers/${string}`; body: CustomerUpdate; method?: "PATCH" }
   | { path: "/rentals"; body: RentalCreate; method: "POST" }
   | { path: `/rentals/${string}`; body: RentalUpdate; method?: "PATCH" }
+  | { path: `/rentals/${string}/contract`; body?: never; method: "POST" }
   | { path: `/rentals/${string}/reserve`; body?: never; method: "POST" }
   | {
       path: `/rentals/${string}/handover`;
@@ -107,6 +108,12 @@ export function useMutation(businessId: string) {
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
         const messages: Record<string, string> = {
+          CONTRACT_NOT_READY:
+            "Xác nhận đặt xe trước khi phát hành. Hợp đồng đã hủy không thể phát hành thêm.",
+          CONTRACT_SEQUENCE_EXHAUSTED:
+            "Đã hết dải số hợp đồng của doanh nghiệp. Liên hệ quản trị viên.",
+          CONTRACT_SNAPSHOT_TOO_LARGE:
+            "Nội dung hợp đồng quá dài. Rút gọn điều khoản hoặc ghi chú trước khi phát hành.",
           PRICING_PREVIEW_CHANGED:
             "Bảng giá đã thay đổi. Mở bản nháp và tải lại báo giá trước khi xác nhận đặt xe.",
           QUOTE_REFRESH_REQUIRED:

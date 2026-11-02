@@ -271,3 +271,38 @@ it('accepts endpoint fuel boundaries and explicit damaged conditions with requir
       ),
     ).toEqual([]);
 });
+
+it('trims optional identity fields and rejects oversized or null paper details', async () => {
+  const value = plainToInstance(CustomerUpdate, {
+    idNumber: ' 012345 ',
+    address: ' Address ',
+    driverLicenseNumber: ' DL123 ',
+    driverLicenseClass: ' B2 ',
+  });
+  expect(await validate(value, options)).toHaveLength(0);
+  expect(value).toMatchObject({
+    idNumber: '012345',
+    address: 'Address',
+    driverLicenseNumber: 'DL123',
+    driverLicenseClass: 'B2',
+  });
+  for (const field of [
+    'idNumber',
+    'driverLicenseNumber',
+    'driverLicenseClass',
+    'address',
+  ]) {
+    expect(
+      await validate(
+        plainToInstance(CustomerUpdate, { [field]: null }),
+        options,
+      ),
+    ).not.toHaveLength(0);
+    expect(
+      await validate(
+        plainToInstance(CustomerUpdate, { [field]: 'X'.repeat(501) }),
+        options,
+      ),
+    ).not.toHaveLength(0);
+  }
+});

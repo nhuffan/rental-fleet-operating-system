@@ -77,6 +77,16 @@ const missing = (code: string, message: string) =>
   new NotFoundException({ code, message });
 const money = (value: number | undefined) =>
   value === undefined ? undefined : value.toFixed(2);
+export function maskCustomerIdentity<
+  T extends { idNumber: string; driverLicenseNumber: string },
+>(customer: T) {
+  const mask = (value: string) => (value ? `***${value.slice(-3)}` : '');
+  return {
+    ...customer,
+    idNumber: mask(customer.idNumber),
+    driverLicenseNumber: mask(customer.driverLicenseNumber),
+  };
+}
 export function translateRentalConflict(error: unknown): never {
   const visited = new Set<unknown>();
   let current: unknown = error;
@@ -227,7 +237,12 @@ export class RentalService {
         .offset((q.page - 1) * q.limit),
       this.database.db.select({ total: count() }).from(customers).where(where),
     ]);
-    return { data, page: q.page, limit: q.limit, total: totals[0].total };
+    return {
+      data: data.map(maskCustomerIdentity),
+      page: q.page,
+      limit: q.limit,
+      total: totals[0].total,
+    };
   }
   private contact(phone: string | undefined, email: string | undefined) {
     if (!phone && !email)
@@ -254,6 +269,10 @@ export class RentalService {
           .values({
             businessId: c.businessId,
             name: body.name,
+            idNumber: body.idNumber,
+            address: body.address,
+            driverLicenseNumber: body.driverLicenseNumber,
+            driverLicenseClass: body.driverLicenseClass,
             phone: body.phone,
             email: body.email,
             notes: body.notes,
@@ -301,6 +320,10 @@ export class RentalService {
           .update(customers)
           .set({
             name: body.name,
+            idNumber: body.idNumber,
+            address: body.address,
+            driverLicenseNumber: body.driverLicenseNumber,
+            driverLicenseClass: body.driverLicenseClass,
             phone: body.phone,
             email: body.email,
             notes: body.notes,
@@ -354,13 +377,16 @@ export class RentalService {
       quotation?: typeof rentalQuoteSnapshots.$inferSelect | null;
     },
     now: Date,
+    maskIdentity = false,
   ) {
     return {
       ...row.rental,
       quotation: row.quotation ? presentPricingSnapshot(row.quotation) : null,
       rentalAmount: Number(row.rental.rentalAmount),
       depositRequiredAmount: Number(row.rental.depositRequiredAmount),
-      customer: row.customer,
+      customer: maskIdentity
+        ? maskCustomerIdentity(row.customer)
+        : row.customer,
       vehicle: row.vehicle,
       isOverdue: isOverdue(row.rental, now),
     };
@@ -493,7 +519,7 @@ export class RentalService {
         .where(where),
     ]);
     return {
-      data: rows.map((row) => this.present(row, now)),
+      data: rows.map((row) => this.present(row, now, true)),
       page: q.page,
       limit: q.limit,
       total: totals[0].total,

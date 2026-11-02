@@ -1,4 +1,4 @@
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   IsIn,
   IsInt,
@@ -28,6 +28,63 @@ export class PageQuery {
   limit = 20;
 }
 export class BusinessUpdate {
+  @ApiPropertyOptional()
+  @ValidateIf((_o, value) => value !== undefined)
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
+  @IsString()
+  @Length(0, 120)
+  legalName?: string;
+  @ApiPropertyOptional()
+  @ValidateIf((_o, value) => value !== undefined)
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
+  @IsString()
+  @Length(0, 500)
+  address?: string;
+  @ApiPropertyOptional()
+  @ValidateIf((_o, value) => value !== undefined)
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
+  @IsString()
+  @Length(0, 32)
+  @Matches(/^(?:\+?[0-9][0-9 -]{4,31})?$/)
+  phone?: string;
+  @ApiPropertyOptional()
+  @ValidateIf((_o, value) => value !== undefined)
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
+  @IsString()
+  @Length(0, 32)
+  taxCode?: string;
+  @ApiPropertyOptional()
+  @ValidateIf((_o, value) => value !== undefined)
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
+  @IsString()
+  @Length(0, 120)
+  representativeName?: string;
+  @ApiPropertyOptional()
+  @ValidateIf((_o, value) => value !== undefined)
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
+  @IsString()
+  @Length(0, 80)
+  representativeTitle?: string;
+  @ApiPropertyOptional()
+  @ValidateIf((_o, value) => value !== undefined)
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
+  @IsString()
+  @Length(0, 8000)
+  contractTerms?: string;
   @ApiPropertyOptional()
   @ValidateIf((_o, value) => value !== undefined)
   @IsString()

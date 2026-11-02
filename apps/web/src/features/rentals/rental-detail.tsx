@@ -11,6 +11,10 @@ import { formatMoney } from "./query";
 import { RentalStatus } from "./rental-status";
 import { RentalActionEditor, type RentalAction } from "./rental-action-editor";
 import type { Rental, RentalInspection } from "./types";
+import {
+  RentalDocuments,
+  type RentalDocumentIndex,
+} from "./documents/document-panel";
 import { RentalQuotation } from "./pricing/rental-quotation";
 import { RentalInspections } from "./rental-inspections";
 import { RentalCommercialPanel } from "@/features/commercial/rental-commercial-panel";
@@ -23,8 +27,10 @@ export function RentalDetail({
   commercial,
   commercialIssue,
   inspections,
+  documents,
 }: {
   rental: Rental;
+  documents: RentalDocumentIndex;
   inspections: RentalInspection[];
   context: Me;
   initialMessage?: string;
@@ -212,6 +218,14 @@ export function RentalDetail({
           </div>
         </Panel>
       </div>
+      <RentalDocuments
+        rental={rental}
+        inspections={inspections}
+        index={documents}
+        businessId={context.business.id}
+        timeZone={context.business.timezone}
+        canManage={canManage}
+      />
       <RentalQuotation rental={rental} />
       <div id="rental-inspections">
         <RentalInspections

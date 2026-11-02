@@ -5,6 +5,13 @@ export class UserResponse {
   @ApiProperty() displayName!: string;
 }
 export class BusinessResponse {
+  @ApiProperty() legalName!: string;
+  @ApiProperty() address!: string;
+  @ApiProperty() phone!: string;
+  @ApiProperty() taxCode!: string;
+  @ApiProperty() representativeName!: string;
+  @ApiProperty() representativeTitle!: string;
+  @ApiProperty() contractTerms!: string;
   @ApiProperty({ format: 'uuid' }) id!: string;
   @ApiProperty() name!: string;
   @ApiProperty() status!: string;

@@ -1,3 +1,5 @@
+import { ContractController } from './rentals/contract.controller.js';
+import { ContractService } from './rentals/contract.service.js';
 import { PricingController } from './pricing/pricing.controller.js';
 import { PricingService } from './pricing/pricing.service.js';
 import { TollController } from './tolls/toll.controller.js';
@@ -36,6 +38,7 @@ import { RentalService } from './rentals/rental.service.js';
 import { AuthGuard, TenantGuard, PermissionGuard } from './auth/guards.js';
 @Module({
   controllers: [
+    ContractController,
     AppController,
     AlertsController,
     CommercialController,
@@ -52,6 +55,7 @@ import { AuthGuard, TenantGuard, PermissionGuard } from './auth/guards.js';
     PricingController,
   ],
   providers: [
+    ContractService,
     Database,
     AlertsService,
     CommercialService,

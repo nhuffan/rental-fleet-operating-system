@@ -8,6 +8,14 @@ import { PageHeader } from "@/components/ui/primitives";
 const business = {
   id: "00000000-0000-4000-8000-000000000001",
   name: "Minh An Mobility",
+  legalName: "",
+  address: "",
+  phone: "",
+  taxCode: "",
+  representativeName: "",
+  representativeTitle: "",
+  contractTerms: "",
+
   status: "ACTIVE",
   timezone: "Asia/Ho_Chi_Minh",
   currency: "VND",

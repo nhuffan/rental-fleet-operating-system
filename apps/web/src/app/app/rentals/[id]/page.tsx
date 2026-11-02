@@ -7,7 +7,11 @@ import { RentalDetail } from "@/features/rentals/rental-detail";
 import { rentalContext } from "@/features/rentals/server";
 import { validId, type SearchParams } from "@/lib/query";
 import type { RentalCommercial } from "@/features/commercial/types";
-import type { Rental, RentalInspections } from "@/features/rentals/types";
+import type {
+  ContractDocuments,
+  Rental,
+  RentalInspections,
+} from "@/features/rentals/types";
 export default async function RentalPage({
   params,
   searchParams,
@@ -18,11 +22,12 @@ export default async function RentalPage({
   const context = await rentalContext("rental.read");
   const { id } = await params;
   if (!validId(id)) notFound();
-  const [rental, inspections] = await Promise.all([
+  const [rental, inspections, documents] = await Promise.all([
     api<Rental>(`/rentals/${id}`, { notFoundOn404: true }),
     api<RentalInspections>(`/rentals/${id}/inspections`, {
       notFoundOn404: true,
     }),
+    api<ContractDocuments>(`/rentals/${id}/contract`, { notFoundOn404: true }),
   ]);
   let commercial: RentalCommercial | null = null;
   let commercialIssue: "currency" | "unavailable" | undefined;
@@ -65,6 +70,18 @@ export default async function RentalPage({
         key={`${context.business.id}:${id}`}
         rental={rental}
         inspections={inspections.data}
+        documents={{
+          latest: documents.latest
+            ? {
+                version: documents.latest.version,
+                docNumber: documents.latest.docNumber,
+                issuedAt: documents.latest.issuedAt,
+              }
+            : null,
+          versions: documents.versions,
+          versionCount: documents.versionCount,
+          dataChanged: documents.dataChanged,
+        }}
         commercial={commercial}
         commercialIssue={commercialIssue}
         tripRange={tripRange}

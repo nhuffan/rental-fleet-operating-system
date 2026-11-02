@@ -1,0 +1,164 @@
+.rental-document-actions {
+  display: grid;
+  gap: var(--space-4);
+}
+.rental-document-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--border);
+}
+.rental-document-row:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+.rental-document-row .quiet {
+  margin: 6px 0 0;
+}
+.print-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+.print-warning {
+  margin-bottom: var(--space-4);
+}
+.print-document {
+  width: 100%;
+  max-width: 210mm;
+  margin: 0 auto;
+  padding: 16mm;
+  background: #fff;
+  color: #111;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.print-document h1,
+.print-document h2,
+.print-document p,
+.print-document dt,
+.print-document dd,
+.print-document strong,
+.print-document li {
+  color: #111;
+}
+.print-document-heading {
+  text-align: center;
+  margin-bottom: 24px;
+}
+.print-document-heading h1 {
+  font-size: 23px;
+  line-height: 1.3;
+  margin: 18px 0 10px;
+}
+.print-document-heading p {
+  margin: 3px 0;
+}
+.print-document h2 {
+  font-size: 16px;
+  margin: 22px 0 9px;
+}
+.print-fields {
+  margin: 0;
+}
+.print-fields > div {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 12px;
+  padding: 3px 0;
+}
+.print-fields dt {
+  font-weight: 500;
+}
+.print-fields dd {
+  margin: 0;
+}
+.print-terms,
+.print-preserve {
+  white-space: pre-wrap;
+}
+.print-pricing {
+  font-size: 12px;
+}
+.print-signatures {
+  margin-top: 28px;
+  break-inside: avoid;
+}
+.print-signatures > div {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  text-align: center;
+}
+.print-signatures section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.print-signatures small {
+  font-size: 12px;
+  color: #333;
+}
+.print-signatures span {
+  margin-top: 90px;
+}
+@media (max-width: 640px) {
+  .rental-document-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .print-document {
+    padding: 18px;
+  }
+  .print-fields > div {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}
+@page rentalDocument {
+  size: A4;
+  margin: 16mm;
+}
+@media print {
+  .print-document {
+    page: rentalDocument;
+    width: auto;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    box-shadow: none;
+    font-size: 10pt;
+    line-height: 1.5;
+  }
+  .print-document h1 {
+    font-size: 17pt;
+  }
+  .print-document h2 {
+    font-size: 12pt;
+    break-after: avoid;
+  }
+  .print-fields > div {
+    break-inside: avoid;
+    grid-template-columns: 45mm minmax(0, 1fr);
+  }
+  .print-document p,
+  .print-document li {
+    orphans: 3;
+    widows: 3;
+  }
+  .print-document .print-terms {
+    white-space: pre-wrap;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
