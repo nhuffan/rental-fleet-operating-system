@@ -399,7 +399,8 @@ body {
   body:has(.print-document) .topbar,
   body:has(.print-document) .workspace-footer,
   body:has(.print-document) .skip-link,
-  body:has(.print-document) .sidebar-backdrop {
+  body:has(.print-document) .sidebar-backdrop,
+  body:has(.print-document) nextjs-portal {
     display: none !important;
   }
   body:has(.print-document) .workspace,

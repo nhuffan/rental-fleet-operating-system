@@ -84,7 +84,7 @@ test("missing information leaves dotted handwriting fields and dates use the bus
 test("print documents use A4 flow and hide the application frame only in print", () => {
   const css = readFileSync("src/styles/print-documents.css", "utf8");
   const shell = readFileSync("src/styles/app-shell.css", "utf8");
-  assert.match(css, /@page rentalDocument\s*\{\s*size: A4/);
+  assert.match(css, /@page\s*\{\s*size: A4/);
   assert.match(css, /@media print/);
   assert.match(css, /\.no-print\s*\{\s*display: none !important/);
   for (const selector of [

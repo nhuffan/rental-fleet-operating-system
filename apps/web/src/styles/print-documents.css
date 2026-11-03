@@ -123,13 +123,12 @@
     gap: 0;
   }
 }
-@page rentalDocument {
+@page {
   size: A4;
   margin: 16mm;
 }
 @media print {
   .print-document {
-    page: rentalDocument;
     width: auto;
     max-width: none;
     margin: 0;
