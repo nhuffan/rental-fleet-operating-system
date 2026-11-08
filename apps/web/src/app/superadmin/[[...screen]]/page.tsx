@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { EmptyState, PageHeader, Panel } from "@/components/ui/primitives";
+import { PageHeader } from "@/components/ui/primitives";
 import { queryString, validId, type SearchParams } from "@/lib/query";
 import {
   platformApi,
   platformContext,
   requirePlatformPermission,
 } from "@/features/platform/live/server";
+import { SystemPanel } from "@/features/platform/live/system-panel";
 import { PlatformOverviewPanel } from "@/features/platform/live/overview";
 import { BusinessesPanel } from "@/features/platform/live/businesses-panel";
 import { PlatformBusinessDetail } from "@/features/platform/live/business-detail";
@@ -26,12 +27,23 @@ import type {
   PlatformBusinessDetail as BusinessDetail,
   PlatformBusinessPage,
   PlatformOverview,
+  PlatformSystem,
 } from "@/features/platform/live/types";
-const unavailable: Record<string, string> = {
-  features: "Quản lý tính năng",
-  integrations: "Tích hợp & GPS",
-  settings: "Cài đặt hệ thống",
-};
+const systemScreens: Record<string, { title: string; description: string }> =
+  {
+    features: {
+      title: "Tính năng",
+      description: "Tính năng đã triển khai, chỉ dữ liệu TEST và chưa triển khai.",
+    },
+    integrations: {
+      title: "Tích hợp & GPS",
+      description: "Trạng thái cấu hình Supabase, Storage, Traccar và bản đồ.",
+    },
+    settings: {
+      title: "Cài đặt hệ thống",
+      description: "Môi trường, cơ sở dữ liệu và giới hạn vận hành hiện tại.",
+    },
+  };
 export default async function Superadmin({
   params,
   searchParams,
@@ -172,26 +184,22 @@ export default async function Superadmin({
       </>
     );
   }
-  if (screen.length === 1 && unavailable[screen[0]])
+  if (screen.length === 1 && systemScreens[screen[0]]) {
+    await requirePlatformPermission("platform.system.read");
+    const data = await platformApi<PlatformSystem>(
+      "/platform/system",
+      `/superadmin/${screen[0]}`,
+    );
+    const mode = screen[0] as "features" | "integrations" | "settings";
     return (
       <>
         <PageHeader
-          title={unavailable[screen[0]]}
-          description="Chức năng này chưa được triển khai cho console live."
+          title={systemScreens[mode].title}
+          description={systemScreens[mode].description}
         />
-        <Panel>
-          <EmptyState
-            icon="shield"
-            title="Chức năng chưa sẵn sàng"
-            description="Phần này đang được phát triển; hiện chưa có thao tác quản trị khả dụng."
-          />
-          <div className="panel-body">
-            <Link className="button button-secondary" href="/superadmin">
-              Về tổng quan nền tảng
-            </Link>
-          </div>
-        </Panel>
+        <SystemPanel mode={mode} data={data} />
       </>
     );
+  }
   notFound();
 }

@@ -3174,6 +3174,218 @@
         ]
       }
     },
+    "/api/v1/platform/system": {
+      "get": {
+        "operationId": "PlatformController_system",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformSystem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Platform console"
+        ]
+      }
+    },
     "/api/v1/platform/businesses": {
       "get": {
         "operationId": "PlatformController_businesses",
@@ -3733,6 +3945,7 @@
                 "platform.audit.read",
                 "platform.users.read",
                 "platform.user.read",
+                "platform.system.read",
                 "platform_membership.create",
                 "other"
               ]
@@ -24948,6 +25161,167 @@
           "gps"
         ]
       },
+      "PlatformSystemDatabase": {
+        "type": "object",
+        "properties": {
+          "reachable": {
+            "type": "boolean"
+          },
+          "latestMigration": {
+            "type": "string",
+            "nullable": true
+          },
+          "migrationCount": {
+            "type": "number",
+            "nullable": true
+          }
+        },
+        "required": [
+          "reachable",
+          "latestMigration",
+          "migrationCount"
+        ]
+      },
+      "PlatformIntegrationStatus": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "CONFIGURED",
+              "NOT_CONFIGURED",
+              "TEST_ONLY",
+              "PUBLIC"
+            ]
+          },
+          "detail": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "status",
+          "detail"
+        ]
+      },
+      "PlatformFeatureStatus": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "AVAILABLE",
+              "TEST",
+              "NOT_IMPLEMENTED"
+            ]
+          },
+          "description": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "status",
+          "description"
+        ]
+      },
+      "PlatformSystemLimits": {
+        "type": "object",
+        "properties": {
+          "gpsRequestsPerMinute": {
+            "type": "number"
+          },
+          "gpsDeviceRequestsPerMinute": {
+            "type": "number"
+          },
+          "gpsMaxBodyBytes": {
+            "type": "number"
+          },
+          "evidenceMaxImages": {
+            "type": "number"
+          },
+          "evidenceMaxVideos": {
+            "type": "number"
+          },
+          "evidenceMaxTenantBytes": {
+            "type": "number"
+          },
+          "reportMaxDays": {
+            "type": "number"
+          },
+          "reportMaxRows": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "gpsRequestsPerMinute",
+          "gpsDeviceRequestsPerMinute",
+          "gpsMaxBodyBytes",
+          "evidenceMaxImages",
+          "evidenceMaxVideos",
+          "evidenceMaxTenantBytes",
+          "reportMaxDays",
+          "reportMaxRows"
+        ]
+      },
+      "PlatformSystem": {
+        "type": "object",
+        "properties": {
+          "asOf": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "environment": {
+            "type": "string",
+            "enum": [
+              "development",
+              "test",
+              "staging",
+              "production"
+            ]
+          },
+          "database": {
+            "$ref": "#/components/schemas/PlatformSystemDatabase"
+          },
+          "integrations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlatformIntegrationStatus"
+            }
+          },
+          "features": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlatformFeatureStatus"
+            }
+          },
+          "limits": {
+            "$ref": "#/components/schemas/PlatformSystemLimits"
+          }
+        },
+        "required": [
+          "asOf",
+          "environment",
+          "database",
+          "integrations",
+          "features",
+          "limits"
+        ]
+      },
       "PlatformBusiness": {
         "type": "object",
         "properties": {
@@ -25048,6 +25422,7 @@
               "platform.audit.read",
               "platform.users.read",
               "platform.user.read",
+              "platform.system.read",
               "platform_membership.create",
               "other"
             ]

@@ -164,6 +164,7 @@ it('denies tenant OWNER and forged metadata regardless of selected business; nev
     'platform.business.create',
     'platform.business.manage',
     'platform.owner.access',
+    'platform.system.read',
   ]);
 });
 it.each(['membership', 'profile', 'role'])(
@@ -680,3 +681,23 @@ it.each(['platform.audit.read', 'platform.users.read', 'platform.user.read'])(
     }
   },
 );
+
+it('returns read-only system status with platform audit and no secret values', async () => {
+  process.env.SUPABASE_SECRET_KEY = 'SECRET-KEY-VALUE-999';
+  try {
+    const status = await service.system(operator, rid());
+    expect(status).toMatchObject({
+      database: { reachable: true },
+      limits: { gpsRequestsPerMinute: 600 },
+    });
+    expect(status.features.length).toBeGreaterThan(5);
+    expect(JSON.stringify(status)).not.toContain('SECRET-KEY-VALUE-999');
+    const audit = await db.query(
+      "select metadata from platform_audit_logs where action='platform.system.read' and actor_user_id=$1",
+      [operator.userId],
+    );
+    expect(audit.rows).toHaveLength(1);
+  } finally {
+    delete process.env.SUPABASE_SECRET_KEY;
+  }
+});

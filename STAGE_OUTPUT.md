@@ -316,3 +316,17 @@ Cập nhật: 08/11/2026. Mỗi stage chỉ gồm phần bàn giao và checklist
 - [ ] Cảnh báo → xe quá hạn hiện "Cần xử lý", xe còn ≤30 ngày hiện "Cần theo dõi"; xe ngưng hoạt động không báo.
 - [ ] Thương mại → không có giao dịch tự tạo sau khi ghi nhận chi phí dịch vụ.
 
+## Stage 23 output
+
+### Delivery
+
+- Superadmin có Tính năng, Tích hợp & GPS và Cài đặt hệ thống chỉ đọc: môi trường, kết nối DB, migration mới nhất, trạng thái cấu hình và giới hạn vận hành.
+- Không lộ khóa/token/DB URL; không có nút ghi giả. GPS vẫn ghi rõ TEST, cổng khách/thanh toán/thông báo ghi rõ chưa triển khai.
+
+### Cases to test
+
+- [ ] Superadmin → Tính năng → danh sách đúng trạng thái "Đã triển khai/Chỉ dữ liệu TEST/Chưa triển khai".
+- [ ] Tích hợp & GPS → hiện Đã cấu hình/Chưa cấu hình đúng với env; không thấy khóa, token hay URL kết nối.
+- [ ] Cài đặt hệ thống → môi trường, migration mới nhất và giới hạn hiển thị; Nhật ký nền tảng có sự kiện đọc hệ thống.
+- [ ] Owner mở `/superadmin/settings` → bị từ chối.
+

@@ -42,6 +42,7 @@ import {
   PlatformBusinessQuery,
   PlatformMe,
   PlatformOverview,
+  PlatformSystem,
 } from './dto.js';
 import { PlatformService } from './platform.service.js';
 @ApiTags('Platform console')
@@ -62,6 +63,12 @@ export class PlatformController {
   @ApiOkResponse({ type: PlatformOverview })
   overview(@Req() r: PlatformRequest) {
     return this.platform.overview(r.platform, r.requestId);
+  }
+  @Get('system')
+  @RequirePlatformPermission('platform.system.read')
+  @ApiOkResponse({ type: PlatformSystem })
+  system(@Req() r: PlatformRequest) {
+    return this.platform.system(r.platform, r.requestId);
   }
   @Get('businesses')
   @RequirePlatformPermission('platform.business.read')

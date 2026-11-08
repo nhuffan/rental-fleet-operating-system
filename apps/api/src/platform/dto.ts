@@ -114,6 +114,7 @@ export const PLATFORM_AUDIT_ACTIONS = [
   'platform.audit.read',
   'platform.users.read',
   'platform.user.read',
+  'platform.system.read',
   'platform_membership.create',
   'other',
 ] as const;
@@ -327,4 +328,50 @@ export class PlatformBusinessOwners {
 export class PlatformBusinessDetail extends PlatformBusiness {
   @ApiProperty({ type: PlatformBusinessOwners })
   owners!: PlatformBusinessOwners;
+}
+
+export class PlatformSystemDatabase {
+  @ApiProperty() reachable!: boolean;
+  @ApiProperty({ type: String, nullable: true }) latestMigration!:
+    string | null;
+  @ApiProperty({ type: Number, nullable: true }) migrationCount!:
+    number | null;
+}
+export class PlatformIntegrationStatus {
+  @ApiProperty() key!: string;
+  @ApiProperty() label!: string;
+  @ApiProperty({
+    enum: ['CONFIGURED', 'NOT_CONFIGURED', 'TEST_ONLY', 'PUBLIC'],
+  })
+  status!: string;
+  @ApiProperty() detail!: string;
+}
+export class PlatformFeatureStatus {
+  @ApiProperty() key!: string;
+  @ApiProperty() label!: string;
+  @ApiProperty({ enum: ['AVAILABLE', 'TEST', 'NOT_IMPLEMENTED'] })
+  status!: string;
+  @ApiProperty() description!: string;
+}
+export class PlatformSystemLimits {
+  @ApiProperty() gpsRequestsPerMinute!: number;
+  @ApiProperty() gpsDeviceRequestsPerMinute!: number;
+  @ApiProperty() gpsMaxBodyBytes!: number;
+  @ApiProperty() evidenceMaxImages!: number;
+  @ApiProperty() evidenceMaxVideos!: number;
+  @ApiProperty() evidenceMaxTenantBytes!: number;
+  @ApiProperty() reportMaxDays!: number;
+  @ApiProperty() reportMaxRows!: number;
+}
+export class PlatformSystem {
+  @ApiProperty({ format: 'date-time' }) asOf!: string;
+  @ApiProperty({ enum: ['development', 'test', 'staging', 'production'] })
+  environment!: string;
+  @ApiProperty({ type: PlatformSystemDatabase })
+  database!: PlatformSystemDatabase;
+  @ApiProperty({ type: [PlatformIntegrationStatus] })
+  integrations!: PlatformIntegrationStatus[];
+  @ApiProperty({ type: [PlatformFeatureStatus] })
+  features!: PlatformFeatureStatus[];
+  @ApiProperty({ type: PlatformSystemLimits }) limits!: PlatformSystemLimits;
 }

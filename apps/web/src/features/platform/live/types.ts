@@ -18,3 +18,4 @@ export type PlatformProvisioningResponse =
   Schemas["PlatformProvisioningResponse"];
 export type PlatformOwnerLinkResponse = Schemas["PlatformOwnerLinkResponse"];
 export type PlatformBusinessRecord = Schemas["PlatformBusinessRecord"];
+export type PlatformSystem = Schemas["PlatformSystem"];

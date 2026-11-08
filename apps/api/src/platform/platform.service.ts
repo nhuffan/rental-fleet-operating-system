@@ -8,6 +8,7 @@ import {
 import type { PoolClient } from 'pg';
 import { AuthAdminService } from './auth-admin.service.js';
 import { PageQuery } from '../core/dto.js';
+import { FEATURE_CATALOG, integrationStatus, systemLimits } from './system.js';
 import { Database } from '../database/database.js';
 import {
   findPlatformPrincipal,
@@ -40,6 +41,7 @@ import {
   type PlatformBusinessPage,
   type PlatformMe,
   type PlatformOverview,
+  type PlatformSystem,
 } from './dto.js';
 const counts = (alias: string) =>
   `jsonb_build_object('branches',coalesce(br.n,0),'activeBranches',coalesce(br.active,0),'memberships',coalesce(m.n,0),'activeMemberships',coalesce(m.active,0),'vehicles',coalesce(v.n,0),'activeVehicles',coalesce(v.active,0),'rentals',coalesce(r.n,0),'activeRentals',coalesce(r.active,0),'reservedRentals',coalesce(r.reserved,0)) as ${alias}`;
@@ -104,6 +106,49 @@ export class PlatformService {
     } finally {
       tx.release();
     }
+  }
+  system(c: PlatformContext, requestId: string): Promise<PlatformSystem> {
+    return this.read(
+      c,
+      'platform.system.read',
+      requestId,
+      'platform.system.read',
+      null,
+      async (tx) => {
+        const now = await tx.query<{ at: Date }>('select now() as at');
+        // supabase_migrations exists only where the Supabase CLI applied history.
+        const history = await tx.query<{ present: boolean }>(
+          "select to_regclass('supabase_migrations.schema_migrations') is not null as present",
+        );
+        let latestMigration: string | null = null,
+          migrationCount: number | null = null;
+        if (history.rows[0].present) {
+          const migrations = await tx.query<{
+            latest: string | null;
+            total: number;
+          }>(
+            'select max(version) as latest, count(*)::int as total from supabase_migrations.schema_migrations',
+          );
+          latestMigration = migrations.rows[0].latest;
+          migrationCount = migrations.rows[0].total;
+        }
+        const environment = process.env.APP_ENV;
+        return {
+          asOf: now.rows[0].at.toISOString(),
+          environment:
+            environment &&
+            ['development', 'test', 'staging', 'production'].includes(
+              environment,
+            )
+              ? environment
+              : 'development',
+          database: { reachable: true, latestMigration, migrationCount },
+          integrations: integrationStatus(process.env),
+          features: [...FEATURE_CATALOG],
+          limits: systemLimits(),
+        };
+      },
+    );
   }
   me(c: PlatformContext, requestId: string): Promise<PlatformMe> {
     return this.read(

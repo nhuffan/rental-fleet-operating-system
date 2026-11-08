@@ -33,6 +33,7 @@ const platformItems: [string, string, IconName][] = [
   ["features", "Tính năng", "grid"],
   ["integrations", "Tích hợp & GPS", "signal"],
   ["audit", "Nhật ký nền tảng", "audit"],
+  ["settings", "Cài đặt hệ thống", "settings"],
 ];
 export function AppShell({
   children,
@@ -123,14 +124,17 @@ export function AppShell({
                     ? platformContext?.permissions.includes(
                         "platform.user.read",
                       )
-                    : true),
+                    : ["features", "integrations", "settings"].includes(path)
+                      ? platformContext?.permissions.includes(
+                          "platform.system.read",
+                        )
+                      : true),
         )
+        .filter(([path]) => !preview || path !== "settings")
         .map(([path, label, icon]) => ({
           href: prefix + (path ? `/${path}` : ""),
           label,
           icon,
-          unavailable:
-            !preview && !["", "businesses", "users", "audit"].includes(path),
         }))
     : [
         { href: prefix, label: "Tổng quan", icon: "grid" },
@@ -314,9 +318,6 @@ export function AppShell({
             <span className="sidebar-size-row" key={`${path}:${index}`}>
               <Icon name={icon as IconName} />
               <span>{label}</span>
-              {["features", "integrations"].includes(path) && (
-                <small>Chưa có</small>
-              )}
             </span>
           ))}
           <span className="sidebar-size-heading">

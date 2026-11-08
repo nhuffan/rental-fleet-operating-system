@@ -183,6 +183,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/platform/system": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PlatformController_system"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/platform/businesses": {
         parameters: {
             query?: never;
@@ -1582,6 +1598,45 @@ export interface components {
             totals: components["schemas"]["PlatformCounts"];
             gps: components["schemas"]["PlatformGpsHealth"];
         };
+        PlatformSystemDatabase: {
+            reachable: boolean;
+            latestMigration: string | null;
+            migrationCount: number | null;
+        };
+        PlatformIntegrationStatus: {
+            key: string;
+            label: string;
+            /** @enum {string} */
+            status: "CONFIGURED" | "NOT_CONFIGURED" | "TEST_ONLY" | "PUBLIC";
+            detail: string;
+        };
+        PlatformFeatureStatus: {
+            key: string;
+            label: string;
+            /** @enum {string} */
+            status: "AVAILABLE" | "TEST" | "NOT_IMPLEMENTED";
+            description: string;
+        };
+        PlatformSystemLimits: {
+            gpsRequestsPerMinute: number;
+            gpsDeviceRequestsPerMinute: number;
+            gpsMaxBodyBytes: number;
+            evidenceMaxImages: number;
+            evidenceMaxVideos: number;
+            evidenceMaxTenantBytes: number;
+            reportMaxDays: number;
+            reportMaxRows: number;
+        };
+        PlatformSystem: {
+            /** Format: date-time */
+            asOf: string;
+            /** @enum {string} */
+            environment: "development" | "test" | "staging" | "production";
+            database: components["schemas"]["PlatformSystemDatabase"];
+            integrations: components["schemas"]["PlatformIntegrationStatus"][];
+            features: components["schemas"]["PlatformFeatureStatus"][];
+            limits: components["schemas"]["PlatformSystemLimits"];
+        };
         PlatformBusiness: {
             /** Format: uuid */
             id: string;
@@ -1609,7 +1664,7 @@ export interface components {
             /** Format: uuid */
             actorId: string;
             /** @enum {string} */
-            action: "platform.business.create" | "platform.owner.access_link.issue" | "platform.business.status.update" | "platform.me.read" | "platform.overview.read" | "platform.businesses.read" | "platform.business.read" | "platform.audit.read" | "platform.users.read" | "platform.user.read" | "platform_membership.create" | "other";
+            action: "platform.business.create" | "platform.owner.access_link.issue" | "platform.business.status.update" | "platform.me.read" | "platform.overview.read" | "platform.businesses.read" | "platform.business.read" | "platform.audit.read" | "platform.users.read" | "platform.user.read" | "platform.system.read" | "platform_membership.create" | "other";
             /** @enum {string} */
             entityType: "platform" | "business" | "user" | "platform_membership" | "other";
             /** Format: uuid */
@@ -4659,6 +4714,115 @@ export interface operations {
             };
         };
     };
+    PlatformController_system: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformSystem"];
+                };
+            };
+            /** @description Standard API error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
     PlatformController_businesses: {
         parameters: {
             query?: {
@@ -4893,7 +5057,7 @@ export interface operations {
             query?: {
                 page?: components["schemas"]["Object"];
                 limit?: components["schemas"]["Object"];
-                action?: "platform.business.create" | "platform.owner.access_link.issue" | "platform.business.status.update" | "platform.me.read" | "platform.overview.read" | "platform.businesses.read" | "platform.business.read" | "platform.audit.read" | "platform.users.read" | "platform.user.read" | "platform_membership.create" | "other";
+                action?: "platform.business.create" | "platform.owner.access_link.issue" | "platform.business.status.update" | "platform.me.read" | "platform.overview.read" | "platform.businesses.read" | "platform.business.read" | "platform.audit.read" | "platform.users.read" | "platform.user.read" | "platform.system.read" | "platform_membership.create" | "other";
                 businessId?: string;
                 /** @description Inclusive; UTC offset required. Defaults to 30 days before until. Range at most 366 days. */
                 from?: string;
