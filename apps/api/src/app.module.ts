@@ -34,6 +34,11 @@ import { PortalAccessService } from './portal/portal-access.service.js';
 import { PortalController } from './portal/portal.controller.js';
 import { PortalService } from './portal/portal.service.js';
 import { JobScheduler } from './jobs/job-scheduler.js';
+import {
+  integrationRegistry,
+  NOTIFICATION_CHANNEL,
+  PAYMENT_PROVIDER,
+} from './integrations/registry.js';
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller.js';
 import { Database } from './database/database.js';
@@ -75,6 +80,14 @@ import { AuthGuard, TenantGuard, PermissionGuard } from './auth/guards.js';
     ReportsService,
     PortalService,
     JobScheduler,
+    {
+      provide: NOTIFICATION_CHANNEL,
+      useFactory: () => integrationRegistry.notification(process.env),
+    },
+    {
+      provide: PAYMENT_PROVIDER,
+      useFactory: () => integrationRegistry.payment(process.env),
+    },
     PortalAccessService,
     CustomerGuard,
     PlatformService,

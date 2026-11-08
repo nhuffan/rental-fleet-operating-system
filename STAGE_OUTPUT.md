@@ -387,3 +387,15 @@ Cập nhật: 08/11/2026. Mỗi stage chỉ gồm phần bàn giao và checklist
 - [ ] `JOB_EVIDENCE_RETENTION=apply` nhưng chưa bật xóa → job báo "skipped", không xóa tệp nào.
 - [ ] Cấu hình sai (`JOB_GPS_RETENTION=bogus`) → job tắt, API vẫn chạy bình thường.
 
+## Stage 28 output
+
+### Delivery
+
+- Khung tích hợp cho thông báo email/push và thanh toán: mặc định "none" không gửi và không thu gì; thêm nhà cung cấp sau này chỉ cần viết adapter và đăng ký. Chưa nối nhà cung cấp nào, chưa có giao diện nghiệp vụ.
+- Superadmin → Tích hợp & GPS hiện trạng thái hai khung này (chưa nối nhà cung cấp, hoặc cấu hình sai tên).
+
+### Cases to test
+
+- [ ] Không đặt biến môi trường → Tích hợp & GPS ghi "Chưa cấu hình" cho thông báo và thanh toán; API khởi động bình thường.
+- [ ] Đặt `NOTIFICATIONS_PROVIDER=abc` (chưa có adapter) → API từ chối khởi động; đặt lại `none` → khởi động bình thường.
+

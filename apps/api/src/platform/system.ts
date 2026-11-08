@@ -1,5 +1,6 @@
 import { GPS_INGRESS_LIMITS } from '../telematics/gps/ingress.js';
 import { evidenceLimits } from '../evidence/config.js';
+import { integrationRegistry } from '../integrations/registry.js';
 
 export type SystemStatus = 'CONFIGURED' | 'NOT_CONFIGURED' | 'TEST_ONLY' | 'PUBLIC';
 export type FeatureStatus = 'AVAILABLE' | 'TEST' | 'NOT_IMPLEMENTED';
@@ -51,6 +52,16 @@ export function integrationStatus(env: Env) {
         ? 'Nhận bản tin TEST qua webhook có token; chưa xác nhận thiết bị vật lý.'
         : 'Token webhook chưa đủ 32 ký tự: việc nhận bản tin GPS đang tắt.',
     },
+    providerStatus(
+      'notifications',
+      'Thông báo email/push',
+      env.NOTIFICATIONS_PROVIDER,
+    ),
+    providerStatus(
+      'payments',
+      'Thanh toán trực tuyến',
+      env.PAYMENTS_PROVIDER,
+    ),
     {
       key: 'osm_tiles',
       label: 'Bản đồ OpenStreetMap',
@@ -61,6 +72,30 @@ export function integrationStatus(env: Env) {
   ];
 }
 
+// Selecting a name that no adapter registered is a misconfiguration, never "connected".
+function providerStatus(
+  kind: 'notifications' | 'payments',
+  label: string,
+  selected: string | undefined,
+) {
+  const name = (selected ?? 'none').trim() || 'none';
+  const known = integrationRegistry.names()[kind];
+  if (name === 'none')
+    return {
+      key: kind,
+      label,
+      status: 'NOT_CONFIGURED' as SystemStatus,
+      detail: 'Chưa nối nhà cung cấp; hệ thống không gửi/thu gì qua dịch vụ ngoài.',
+    };
+  return {
+    key: kind,
+    label,
+    status: (known.includes(name) ? 'CONFIGURED' : 'NOT_CONFIGURED') as SystemStatus,
+    detail: known.includes(name)
+      ? `Đang dùng nhà cung cấp "${name}".`
+      : 'Nhà cung cấp đã chọn chưa được cài đặt trong mã nguồn; tính năng đang tắt.',
+  };
+}
 const feature = (
   key: string,
   label: string,
@@ -79,8 +114,8 @@ export const FEATURE_CATALOG = [
   feature('gps', 'GPS và hành trình', 'TEST', 'Chỉ nguồn Traccar TEST; chưa có thiết bị vật lý.'),
   feature('platform', 'Superadmin: doanh nghiệp, Owner và nhật ký', 'AVAILABLE', 'Quyền nền tảng độc lập với quyền doanh nghiệp.'),
   feature('customer_portal', 'Cổng khách thuê xe', 'AVAILABLE', 'Khách xem hợp đồng và in hợp đồng đã phát hành; chưa đặt xe, thanh toán hay thông báo.'),
-  feature('online_payments', 'Thanh toán online và hóa đơn', 'NOT_IMPLEMENTED', 'Chưa tích hợp cổng thanh toán, hóa đơn hay VAT.'),
-  feature('notifications', 'Thông báo email/push', 'NOT_IMPLEMENTED', 'Chưa có dịch vụ gửi thông báo.'),
+  feature('online_payments', 'Thanh toán online và hóa đơn', 'NOT_IMPLEMENTED', 'Đã có khung tích hợp nhưng chưa nối cổng thanh toán, hóa đơn hay VAT.'),
+  feature('notifications', 'Thông báo email/push', 'NOT_IMPLEMENTED', 'Đã có khung tích hợp nhưng chưa nối dịch vụ gửi email/push.'),
   feature('billing', 'Gói dịch vụ và thanh toán nền tảng', 'NOT_IMPLEMENTED', 'Chưa có quyền lợi theo gói hay thanh toán.'),
 ] as const;
 
