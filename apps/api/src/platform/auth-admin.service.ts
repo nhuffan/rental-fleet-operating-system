@@ -64,11 +64,11 @@ export class AuthAdminService {
       throw unavailable();
     }
   }
-  accessUrl(hashedToken: string, businessId: string) {
+  accessUrl(hashedToken: string, businessId?: string) {
     const url = new URL('/auth/confirm', loadConfig().origin);
     url.searchParams.set('token_hash', hashedToken);
     url.searchParams.set('type', 'recovery');
-    url.searchParams.set('business', businessId);
+    if (businessId) url.searchParams.set('business', businessId);
     return url.toString();
   }
 }

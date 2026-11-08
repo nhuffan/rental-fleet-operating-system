@@ -43,7 +43,7 @@ describe('platform system status projection', () => {
     );
     expect(status).toMatchObject({
       gps: 'TEST',
-      customer_portal: 'NOT_IMPLEMENTED',
+      customer_portal: 'AVAILABLE',
       online_payments: 'NOT_IMPLEMENTED',
       reports: 'AVAILABLE',
     });

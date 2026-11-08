@@ -330,3 +330,18 @@ Cập nhật: 08/11/2026. Mỗi stage chỉ gồm phần bàn giao và checklist
 - [ ] Cài đặt hệ thống → môi trường, migration mới nhất và giới hạn hiển thị; Nhật ký nền tảng có sự kiện đọc hệ thống.
 - [ ] Owner mở `/superadmin/settings` → bị từ chối.
 
+## Stage 24 output
+
+### Delivery
+
+- Cổng khách thuê `/portal`: khách đăng nhập bằng link do Owner cấp, xem danh sách hợp đồng của chính mình và xem/in hợp đồng đã phát hành.
+- Owner cấp/cấp lại link ở Chi tiết khách hàng (email chưa có tài khoản). Cổng chỉ đọc: chưa đặt xe, thanh toán hay thông báo. Migration chưa áp dụng lên project development.
+
+### Cases to test
+
+- [ ] Khách có email → Owner bấm "Cấp quyền cổng khách" → nhận link; mở link, đặt mật khẩu → vào đúng `/portal` và thấy hợp đồng của mình.
+- [ ] Khách A không mở được hợp đồng của khách B hay doanh nghiệp khác (đổi ID trên URL → không tìm thấy); hợp đồng nháp không hiện.
+- [ ] Email đã có tài khoản → báo lỗi, không tạo link; ngưng hoạt động khách/doanh nghiệp → khách bị chặn ngay.
+- [ ] Tài khoản khách mở `/app` hoặc `/superadmin` → bị từ chối; Owner mở `/portal` → bị từ chối.
+- [ ] Portal → mở bản in hợp đồng → không có thanh điều hướng khi in.
+

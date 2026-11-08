@@ -28,6 +28,11 @@ import {
 import { GpsService } from './telematics/gps/gps.service.js';
 import { ReportsController } from './reports/reports.controller.js';
 import { ReportsService } from './reports/reports.service.js';
+import { CustomerGuard } from './portal/guards.js';
+import { PortalAccessController } from './portal/portal-access.controller.js';
+import { PortalAccessService } from './portal/portal-access.service.js';
+import { PortalController } from './portal/portal.controller.js';
+import { PortalService } from './portal/portal.service.js';
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller.js';
 import { Database } from './database/database.js';
@@ -56,6 +61,8 @@ import { AuthGuard, TenantGuard, PermissionGuard } from './auth/guards.js';
     TollController,
     PricingController,
     ReportsController,
+    PortalController,
+    PortalAccessController,
   ],
   providers: [
     ContractService,
@@ -65,6 +72,9 @@ import { AuthGuard, TenantGuard, PermissionGuard } from './auth/guards.js';
     TollService,
     PricingService,
     ReportsService,
+    PortalService,
+    PortalAccessService,
+    CustomerGuard,
     PlatformService,
     AuthAdminService,
     PlatformGuard,

@@ -1429,3 +1429,33 @@ export const vehicleServiceRecords = pgTable(
     ),
   ],
 );
+
+export const customerPortalAccounts = pgTable(
+  'customer_portal_accounts',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    businessId: uuid('business_id')
+      .notNull()
+      .references(() => businesses.id, { onDelete: 'restrict' }),
+    customerId: uuid('customer_id').notNull(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => profiles.userId, { onDelete: 'cascade' }),
+    createdBy: uuid('created_by').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    foreignKey({
+      name: 'customer_portal_accounts_customer_tenant_fk',
+      columns: [table.businessId, table.customerId],
+      foreignColumns: [customers.businessId, customers.id],
+    }).onDelete('restrict'),
+    unique('customer_portal_accounts_customer_unique').on(
+      table.businessId,
+      table.customerId,
+    ),
+    unique('customer_portal_accounts_user_unique').on(table.userId),
+  ],
+);

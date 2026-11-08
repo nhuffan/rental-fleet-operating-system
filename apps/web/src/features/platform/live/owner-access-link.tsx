@@ -8,15 +8,17 @@ import { Icon } from "@/components/ui/icon";
 export function OwnerAccessLink({
   accessUrl,
   onClose,
+  recipient = "Owner",
 }: {
   accessUrl: string;
   onClose: () => void;
+  recipient?: string;
 }) {
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState(false);
   return (
     <ConfirmDialog
-      title="Link đăng nhập cho Owner"
+      title={`Link đăng nhập cho ${recipient}`}
       onClose={onClose}
       footer={
         <Button type="button" onClick={onClose}>
@@ -26,7 +28,7 @@ export function OwnerAccessLink({
       }
     >
       <Notice tone="warning">
-        Chỉ hiển thị một lần — gửi riêng cho Owner. Người có link có thể đặt mật
+        Chỉ hiển thị một lần — gửi riêng cho {recipient}. Người có link có thể đặt mật
         khẩu cho tài khoản.
       </Notice>
       <p className="quiet">
@@ -35,7 +37,7 @@ export function OwnerAccessLink({
       </p>
       <p
         className="platform-access-credential"
-        aria-label="Link đặt mật khẩu cho Owner"
+        aria-label={`Link đặt mật khẩu cho ${recipient}`}
       >
         {accessUrl}
       </p>
@@ -63,7 +65,7 @@ export function OwnerAccessLink({
       )}
       <p role="status" className="sr-only">
         {copied
-          ? "Đã sao chép link. Gửi riêng cho Owner qua kênh bạn chọn."
+          ? "Đã sao chép link. Gửi riêng cho người nhận qua kênh bạn chọn."
           : ""}
       </p>
     </ConfirmDialog>

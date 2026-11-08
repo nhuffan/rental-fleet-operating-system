@@ -32,15 +32,18 @@ export async function proxy(request: NextRequest) {
   const tenant =
     request.nextUrl.pathname === "/app" ||
     request.nextUrl.pathname.startsWith("/app/");
+  const portal =
+    request.nextUrl.pathname === "/portal" ||
+    request.nextUrl.pathname.startsWith("/portal/");
   const setPassword = request.nextUrl.pathname === "/set-password";
-  if ((!user || error) && (tenant || platform || setPassword)) {
+  if ((!user || error) && (tenant || platform || portal || setPassword)) {
     const target = new URL("/login", request.url);
     if (!setPassword)
       target.searchParams.set(
         "next",
         safeReturnPath(
           request.nextUrl.pathname + request.nextUrl.search,
-          platform ? "/superadmin" : "/app",
+          platform ? "/superadmin" : portal ? "/portal" : "/app",
         ),
       );
     const redirect = NextResponse.redirect(target);
@@ -56,6 +59,7 @@ export const config = {
   matcher: [
     "/app/:path*",
     "/superadmin/:path*",
+    "/portal/:path*",
     "/login",
     "/access-denied",
     "/set-password",

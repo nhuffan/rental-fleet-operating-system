@@ -15,6 +15,8 @@ for (const [index, value] of [
   "/app/../../login",
   "/superadmin/../login",
   "/application",
+  "/portalx",
+  "/portal/../login",
   "/superadministrator",
   "/login?next=/superadmin",
   "/app\nredirect",
@@ -28,6 +30,8 @@ for (const value of [
   "/app/vehicles/00000000-0000-4000-8000-000000000001",
   "/superadmin",
   "/superadmin/businesses?page=2&search=test",
+  "/portal",
+  "/portal/rentals/00000000-0000-4000-8000-000000000001",
 ]) {
   test(`preserve allowed login return ${value}`, () =>
     assert.equal(safeReturnPath(value), value));
@@ -144,5 +148,42 @@ test("unexpected platform failures and network errors fail closed", async () => 
     resolveLoginDestination(null, async () => {
       throw new Error("Network unavailable");
     }),
+  );
+});
+
+test("a Customer lands in the portal only after Owner and platform grants are denied", async () => {
+  const probes = [];
+  assert.equal(
+    await resolveLoginDestination(null, async (path) => {
+      probes.push(path);
+      return path === "/portal/me" ? 200 : 403;
+    }),
+    "/portal",
+  );
+  assert.deepEqual(probes, ["/me", "/platform/me", "/portal/me"]);
+});
+
+test("a portal deep link is preserved only for a verified Customer grant", async () => {
+  const link = "/portal/rentals/00000000-0000-4000-8000-000000000001";
+  const probes = [];
+  assert.equal(
+    await resolveLoginDestination(link, async (path) => {
+      probes.push(path);
+      return 200;
+    }),
+    link,
+  );
+  assert.deepEqual(probes, ["/portal/me"]);
+  assert.equal(
+    await resolveLoginDestination(link, async (path) =>
+      path === "/me" ? 200 : 403,
+    ),
+    "/app",
+  );
+});
+
+test("an unexpected Customer probe failure fails closed", async () => {
+  await assert.rejects(
+    resolveLoginDestination(null, async (path) => (path === "/portal/me" ? 500 : 403)),
   );
 });

@@ -9,6 +9,7 @@ import {
   validId,
   type SearchParams,
 } from "@/lib/query";
+import type { PortalAccessStatus } from "@/features/portal/types";
 import type { Customer, RentalPage } from "@/features/rentals/types";
 export default async function CustomerPage({
   params,
@@ -21,11 +22,12 @@ export default async function CustomerPage({
   const { id } = await params;
   if (!validId(id)) notFound();
   const page = pageNumber((await searchParams).page);
-  const [customer, rentals] = await Promise.all([
+  const [customer, rentals, portalAccess] = await Promise.all([
     api<Customer>(`/customers/${id}`, { notFoundOn404: true }),
     context.permissions.includes("rental.read")
       ? api<RentalPage>(`/rentals?customerId=${id}&page=${page}&limit=20`)
       : Promise.resolve(null),
+    api<PortalAccessStatus>(`/customers/${id}/portal-access`),
   ]);
   return (
     <>
@@ -40,6 +42,7 @@ export default async function CustomerPage({
         key={`${context.business.id}:${id}`}
         customer={customer}
         rentals={rentals}
+        portalAccess={portalAccess}
         context={context}
       />
     </>

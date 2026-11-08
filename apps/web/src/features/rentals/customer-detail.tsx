@@ -13,15 +13,19 @@ import { Pagination } from "@/components/data-display/table";
 import { MutationNotice } from "@/components/feedback/mutation-notice";
 import { formatDate } from "@/lib/query";
 import { CustomerEditor } from "./customer-editor";
+import { CustomerPortalAccess } from "./customer-portal-access";
+import type { PortalAccessStatus } from "@/features/portal/types";
 import { RentalTable } from "./rental-table";
 import type { Customer, RentalPage } from "./types";
 export function CustomerDetail({
   customer,
   rentals,
+  portalAccess,
   context,
 }: {
   customer: Customer;
   rentals: RentalPage | null;
+  portalAccess: PortalAccessStatus;
   context: Me;
 }) {
   const router = useRouter();
@@ -92,6 +96,14 @@ export function CustomerDetail({
           </div>
         </dl>
       </Panel>
+      <CustomerPortalAccess
+        businessId={context.business.id}
+        customerId={customer.id}
+        hasEmail={customer.email.trim() !== ""}
+        active={customer.status === "ACTIVE"}
+        status={portalAccess}
+        canManage={context.permissions.includes("customer.manage")}
+      />
       {rentals && (
         <Panel className="rental-section">
           <PanelHeader

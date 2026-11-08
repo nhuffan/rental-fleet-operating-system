@@ -39,6 +39,7 @@ type Mutation =
       method: "POST";
     }
   | { path: "/customers"; body: CustomerCreate; method: "POST" }
+  | { path: `/customers/${string}/portal-access`; body?: never; method: "POST" }
   | { path: `/customers/${string}`; body: CustomerUpdate; method?: "PATCH" }
   | { path: "/rentals"; body: RentalCreate; method: "POST" }
   | { path: `/rentals/${string}`; body: RentalUpdate; method?: "PATCH" }
@@ -114,6 +115,16 @@ export function useMutation(businessId: string) {
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
         const messages: Record<string, string> = {
+          PORTAL_EMAIL_IN_USE:
+            "Email này đã có tài khoản. Dùng email khác cho khách hàng.",
+          PORTAL_EMAIL_REQUIRED:
+            "Khách hàng cần email hợp lệ để cấp quyền cổng khách.",
+          PORTAL_CUSTOMER_INACTIVE:
+            "Kích hoạt khách hàng trước khi cấp quyền cổng khách.",
+          PORTAL_IDENTITY_UNAVAILABLE:
+            "Không thể cấp lại link cho tài khoản này.",
+          PORTAL_CUSTOMER_CHANGED:
+            "Hồ sơ khách vừa thay đổi. Tải lại trang và thử lại.",
           SERVICE_DATE_FUTURE:
             "Ngày thực hiện không được ở tương lai.",
           SERVICE_NEXT_ODOMETER_INVALID:

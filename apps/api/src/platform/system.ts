@@ -78,7 +78,7 @@ export const FEATURE_CATALOG = [
   feature('alerts', 'Cảnh báo vận hành', 'AVAILABLE', 'Chỉ hiển thị trong ứng dụng; chưa gửi email/push.'),
   feature('gps', 'GPS và hành trình', 'TEST', 'Chỉ nguồn Traccar TEST; chưa có thiết bị vật lý.'),
   feature('platform', 'Superadmin: doanh nghiệp, Owner và nhật ký', 'AVAILABLE', 'Quyền nền tảng độc lập với quyền doanh nghiệp.'),
-  feature('customer_portal', 'Cổng khách thuê xe', 'NOT_IMPLEMENTED', 'Chưa có đăng nhập hay giao diện dành cho khách thuê.'),
+  feature('customer_portal', 'Cổng khách thuê xe', 'AVAILABLE', 'Khách xem hợp đồng và in hợp đồng đã phát hành; chưa đặt xe, thanh toán hay thông báo.'),
   feature('online_payments', 'Thanh toán online và hóa đơn', 'NOT_IMPLEMENTED', 'Chưa tích hợp cổng thanh toán, hóa đơn hay VAT.'),
   feature('notifications', 'Thông báo email/push', 'NOT_IMPLEMENTED', 'Chưa có dịch vụ gửi thông báo.'),
   feature('billing', 'Gói dịch vụ và thanh toán nền tảng', 'NOT_IMPLEMENTED', 'Chưa có quyền lợi theo gói hay thanh toán.'),
