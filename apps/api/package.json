@@ -21,6 +21,7 @@
     "test:e2e": "vitest run --config ./vitest.config.e2e.ts",
     "dev": "nest start --watch",
     "typecheck": "tsc --noEmit",
+    "smoke": "tsx scripts/smoke.ts",
     "db:migrate": "tsx scripts/migrate.ts",
     "db:seed": "tsx scripts/seed.ts",
     "openapi": "node scripts/openapi.mjs && pnpm --filter @rental-fleet/contracts generate",

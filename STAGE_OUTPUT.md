@@ -399,3 +399,16 @@ Cập nhật: 08/11/2026. Mỗi stage chỉ gồm phần bàn giao và checklist
 - [ ] Không đặt biến môi trường → Tích hợp & GPS ghi "Chưa cấu hình" cho thông báo và thanh toán; API khởi động bình thường.
 - [ ] Đặt `NOTIFICATIONS_PROVIDER=abc` (chưa có adapter) → API từ chối khởi động; đặt lại `none` → khởi động bình thường.
 
+## Stage 29 output
+
+### Delivery
+
+- Lệnh `pnpm smoke` kiểm tra nhanh sau khi deploy (API sống/sẵn sàng, header bảo mật, route riêng tư bị từ chối, Swagger và trang preview tắt ở production); không cần tài khoản, chỉ gửi yêu cầu GET.
+- Runbook "Launch checklist" trong docs/development.md: dự án Supabase, cấu hình Auth/SMTP, Superadmin đầu tiên, biến môi trường, mạng/CSP, bật job nền, vận hành, và các việc cần người quyết định. Chưa chạy trên môi trường thật.
+
+### Cases to test
+
+- [ ] Chạy `pnpm smoke` với API/Web local đang chạy (dev) → các kiểm tra PASS; tắt API → báo FAIL và thoát mã khác 0.
+- [ ] Chạy với `--production` trên bản build production → Swagger và `/dev-preview` được báo đã tắt.
+- [ ] Làm theo checklist trên một dự án Supabase staging mới → đăng nhập, quên mật khẩu và báo cáo hoạt động.
+

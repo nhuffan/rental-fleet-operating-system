@@ -17,6 +17,7 @@
     "test:e2e": "pnpm --filter api build && pnpm --filter api test:e2e",
     "db:migrate": "pnpm --filter api db:migrate",
     "db:seed": "pnpm --filter api db:seed",
+    "smoke": "pnpm --filter api smoke",
     "openapi": "pnpm --filter api openapi"
   },
   "devEngines": {
