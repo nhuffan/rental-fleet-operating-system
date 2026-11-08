@@ -359,3 +359,17 @@ Cập nhật: 08/11/2026. Mỗi stage chỉ gồm phần bàn giao và checklist
 - [ ] Tắt database → `/health/ready` trả 503 không lộ chi tiết; `/health` vẫn 200.
 - [ ] Mở bất kỳ trang → header `X-Frame-Options: DENY`; nhúng trang trong iframe bị chặn.
 
+## Stage 26 output
+
+### Delivery
+
+- Trang "Quên mật khẩu" ở Đăng nhập: nhập email → luôn hiện cùng một thông báo (không lộ email có tài khoản hay không); link trong email mở luồng đặt mật khẩu hiện có.
+- Mẫu email khôi phục đã thêm vào cấu hình Supabase local. Gửi thật chỉ hoạt động khi project hosted đã cấu hình SMTP và mẫu email; chưa thử gửi email.
+
+### Cases to test
+
+- [ ] Đăng nhập → "Quên mật khẩu?" → nhập email đã đăng ký → nhận email, mở link, đặt mật khẩu mới → vào đúng workspace.
+- [ ] Nhập email chưa đăng ký hoặc email sai định dạng → email sai định dạng báo lỗi; email lạ vẫn hiện thông báo chung như email thật.
+- [ ] Mở lại link đã dùng hoặc hết hạn → về Đăng nhập kèm hướng dẫn dùng "Quên mật khẩu?".
+- [ ] Tài khoản đã bị vô hiệu hóa đặt lại mật khẩu → đăng nhập vẫn bị từ chối.
+

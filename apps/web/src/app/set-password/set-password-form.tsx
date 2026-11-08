@@ -66,8 +66,8 @@ export function SetPasswordForm() {
             </Button>
           </form>
           <p className="login-help">
-            Link chỉ dùng một lần. Nếu phiên hết hạn, liên hệ quản trị viên để
-            cấp lại.
+            Link chỉ dùng một lần. Nếu phiên hết hạn, dùng &quot;Quên mật khẩu?&quot; ở
+            trang đăng nhập hoặc liên hệ quản trị viên.
           </p>
         </div>
       </section>

@@ -148,3 +148,24 @@ test("credential routes cannot log query/action arguments and remain fixed no-st
     /console\.|user_metadata|localStorage|sessionStorage/,
   );
 });
+
+import {
+  normalizeResetEmail,
+  RESET_REQUEST_NOTICE,
+} from "../src/lib/recovery-navigation.ts";
+test("self-service reset normalizes email and gives one generic notice", () => {
+  assert.equal(normalizeResetEmail("  User@Example.COM "), "user@example.com");
+  for (const value of [null, undefined, "", "no-at-sign", "a@b", "a b@c.de", "x".repeat(250) + "@a.bc", ["a@b.co"]])
+    assert.equal(normalizeResetEmail(value), null);
+  assert.ok(!/không tồn tại|không có tài khoản\./i.test(RESET_REQUEST_NOTICE));
+  assert.ok(RESET_REQUEST_NOTICE.startsWith("Nếu email này có tài khoản"));
+});
+test("recovery email template reuses the one-time hashed confirm route, never metadata or tokens in plain links", () => {
+  const config = readFileSync(new URL("../../../supabase/config.toml", import.meta.url), "utf8");
+  const template = readFileSync(new URL("../../../supabase/templates/recovery.html", import.meta.url), "utf8");
+  assert.match(config, /\[auth\.email\.template\.recovery\][\s\S]*?content_path = "\.\/supabase\/templates\/recovery\.html"/);
+  assert.match(template, /\{\{ \.SiteURL \}\}\/auth\/confirm\?token_hash=\{\{ \.TokenHash \}\}&type=recovery/);
+  assert.ok(!template.includes("{{ .Token }}") && !template.includes("ConfirmationURL"));
+  const params = new URLSearchParams("token_hash=" + "a".repeat(40) + "&type=recovery");
+  assert.ok(recoveryParameters(params));
+});

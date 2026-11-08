@@ -2,6 +2,7 @@
 import { BrandLockup } from "@/components/ui/brand-lockup";
 import { Button, Input } from "@/components/ui/primitives";
 import { Icon } from "@/components/ui/icon";
+import Link from "next/link";
 import { useState } from "react";
 import { browserClient } from "@/lib/supabase/client";
 export function LoginForm({
@@ -111,6 +112,9 @@ export function LoginForm({
               {pending ? "Đang đăng nhập…" : "Đăng nhập"}
             </Button>
           </form>
+          <p className="login-help">
+            <Link href="/forgot-password">Quên mật khẩu?</Link>
+          </p>
           <p className="login-help">
             Chưa có tài khoản? Liên hệ quản trị viên để được cấp quyền truy cập.
           </p>

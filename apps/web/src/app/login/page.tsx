@@ -11,7 +11,7 @@ export default async function Login({
     params.error === "workspace_unavailable"
       ? "Không thể xác minh quyền truy cập. Vui lòng thử đăng nhập lại."
       : params.error === "link_invalid"
-        ? "Link không hợp lệ, đã dùng hoặc đã hết hạn. Liên hệ quản trị viên để được cấp lại."
+        ? 'Link không hợp lệ, đã dùng hoặc đã hết hạn. Dùng "Quên mật khẩu?" để nhận link mới hoặc liên hệ quản trị viên.'
         : "";
   return <LoginForm destination={destination} initialError={initialError} />;
 }

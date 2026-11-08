@@ -34,3 +34,15 @@ export function passwordValidation(password: unknown, confirmation: unknown) {
     return "Hai mật khẩu chưa khớp. Vui lòng kiểm tra lại.";
   return "";
 }
+
+// Self-service reset always answers the same way so the form cannot be used to learn
+// which emails have accounts. Delivery depends on the project's Auth email settings.
+export const RESET_REQUEST_NOTICE =
+  "Nếu email này có tài khoản, chúng tôi đã gửi link đặt lại mật khẩu. Link chỉ dùng một lần và có thời hạn ngắn; hãy kiểm tra cả thư rác.";
+export function normalizeResetEmail(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const email = value.trim().toLowerCase();
+  return email.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+    ? email
+    : null;
+}

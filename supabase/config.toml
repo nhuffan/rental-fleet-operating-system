@@ -234,6 +234,16 @@ otp_expiry = 3600
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
 
+# Self-service password reset opens the app's /auth/confirm route with a one-time token hash.
+[auth.email.template.recovery]
+subject = "Đặt lại mật khẩu Rental Fleet OS"
+content_path = "./supabase/templates/recovery.html"
+
+# Self-service password reset opens the app's /auth/confirm route with a one-time token hash.
+[auth.email.template.recovery]
+subject = "Đặt lại mật khẩu Rental Fleet OS"
+content_path = "./supabase/templates/recovery.html"
+
 # Uncomment to customize email template
 # [auth.email.template.invite]
 # subject = "You have been invited"

@@ -34,7 +34,7 @@ export async function setPassword(
       )
     )
       return {
-        error: "Phiên đặt mật khẩu đã hết hạn. Nhờ quản trị viên cấp lại link.",
+        error: 'Phiên đặt mật khẩu đã hết hạn. Dùng "Quên mật khẩu?" ở trang đăng nhập hoặc nhờ quản trị viên cấp lại link.',
       };
     const { error: updateError } = await client.auth.updateUser({
       password: password as string,
