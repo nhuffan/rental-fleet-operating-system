@@ -52,10 +52,11 @@ jobs:
             sleep $((attempt * 20))
           done
           exit 1
+      # Build first: API e2e specs import compiled output from dist/, so typecheck needs it.
+      - run: pnpm build
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm test
-      - run: pnpm build
       - name: Generated contracts are up to date
         run: |
           pnpm openapi
