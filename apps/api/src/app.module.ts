@@ -33,6 +33,7 @@ import { PortalAccessController } from './portal/portal-access.controller.js';
 import { PortalAccessService } from './portal/portal-access.service.js';
 import { PortalController } from './portal/portal.controller.js';
 import { PortalService } from './portal/portal.service.js';
+import { JobScheduler } from './jobs/job-scheduler.js';
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller.js';
 import { Database } from './database/database.js';
@@ -73,6 +74,7 @@ import { AuthGuard, TenantGuard, PermissionGuard } from './auth/guards.js';
     PricingService,
     ReportsService,
     PortalService,
+    JobScheduler,
     PortalAccessService,
     CustomerGuard,
     PlatformService,

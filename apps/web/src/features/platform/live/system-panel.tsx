@@ -9,6 +9,7 @@ import {
   formatBytes,
   integrationStatusLabels,
   integrationTones,
+  jobModeLabels,
 } from "./system-presentation";
 import type { PlatformSystem } from "./types";
 
@@ -115,21 +116,46 @@ export function SystemPanel({
       `${data.limits.reportMaxDays} ngày, ${data.limits.reportMaxRows} dòng CSV`,
     ],
   ];
+  const jobRows = data.jobs.jobs.map((job) => [
+    job.label,
+    `${jobModeLabels[job.mode] ?? job.mode}${
+      job.lastRunAt
+        ? ` · chạy lần cuối ${formatDate(job.lastRunAt)} (${job.lastOutcome ?? "?"})`
+        : " · chưa chạy trong tiến trình này"
+    }`,
+  ]);
   return (
-    <Panel>
-      <PanelHeader
-        title="Cài đặt hệ thống"
-        subtitle={readOnlyNote}
-        icon="settings"
-      />
-      <dl className="detail-list">
-        {rows.map(([label, value]) => (
-          <div key={label}>
-            <dt>{label}</dt>
-            <dd>{value}</dd>
-          </div>
-        ))}
-      </dl>
-    </Panel>
+    <>
+      <Panel>
+        <PanelHeader
+          title="Cài đặt hệ thống"
+          subtitle={readOnlyNote}
+          icon="settings"
+        />
+        <dl className="detail-list">
+          {rows.map(([label, value]) => (
+            <div key={label}>
+              <dt>{label}</dt>
+              <dd>{value}</dd>
+            </div>
+          ))}
+        </dl>
+      </Panel>
+      <Panel>
+        <PanelHeader
+          title="Job nền"
+          subtitle={`${data.jobs.enabled ? "Đang bật" : "Đang tắt"} (JOBS_ENABLED). Trạng thái lần chạy tính theo từng tiến trình API và mất khi khởi động lại.`}
+          icon="clock"
+        />
+        <dl className="detail-list">
+          {jobRows.map(([label, value]) => (
+            <div key={label}>
+              <dt>{label}</dt>
+              <dd>{value}</dd>
+            </div>
+          ))}
+        </dl>
+      </Panel>
+    </>
   );
 }

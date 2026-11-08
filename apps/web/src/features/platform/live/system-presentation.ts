@@ -36,3 +36,8 @@ export function formatBytes(bytes: number) {
   if (bytes >= 1024) return `${Math.round((bytes / 1024) * 10) / 10} KiB`;
   return `${bytes} byte`;
 }
+export const jobModeLabels: Record<string, string> = {
+  off: "Tắt",
+  "dry-run": "Chỉ đếm (dry-run)",
+  apply: "Thực thi xóa",
+};

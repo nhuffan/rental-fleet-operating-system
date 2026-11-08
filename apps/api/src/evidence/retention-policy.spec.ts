@@ -73,6 +73,25 @@ it('requires an explicit enable flag and the exact development project/environme
   expect(retentionDeletionEnabled()).toBe(false);
   vi.unstubAllEnvs();
 });
+it('allows staging/production deletion only with the flag and a matching typed project confirmation', () => {
+  vi.stubEnv('SUPABASE_URL', 'https://prodref123.supabase.co');
+  vi.stubEnv('EVIDENCE_RETENTION_DELETE_ENABLED', 'true');
+  for (const env of ['staging', 'production']) {
+    vi.stubEnv('APP_ENV', env);
+    vi.stubEnv('EVIDENCE_RETENTION_DELETE_CONFIRM', '');
+    expect(retentionDeletionEnabled()).toBe(false);
+    vi.stubEnv('EVIDENCE_RETENTION_DELETE_CONFIRM', 'otherref');
+    expect(retentionDeletionEnabled()).toBe(false);
+    vi.stubEnv('EVIDENCE_RETENTION_DELETE_CONFIRM', 'prodref123');
+    expect(retentionDeletionEnabled()).toBe(true);
+    vi.stubEnv('EVIDENCE_RETENTION_DELETE_ENABLED', 'false');
+    expect(retentionDeletionEnabled()).toBe(false);
+    vi.stubEnv('EVIDENCE_RETENTION_DELETE_ENABLED', 'true');
+  }
+  vi.stubEnv('APP_ENV', 'test');
+  expect(retentionDeletionEnabled()).toBe(false);
+  vi.unstubAllEnvs();
+});
 it('bounds exponential retry backoff at one day', () => {
   expect(retentionBackoff(1)).toBe(60_000);
   expect(retentionBackoff(2)).toBe(120_000);

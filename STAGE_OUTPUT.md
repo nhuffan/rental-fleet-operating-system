@@ -373,3 +373,17 @@ Cập nhật: 08/11/2026. Mỗi stage chỉ gồm phần bàn giao và checklist
 - [ ] Mở lại link đã dùng hoặc hết hạn → về Đăng nhập kèm hướng dẫn dùng "Quên mật khẩu?".
 - [ ] Tài khoản đã bị vô hiệu hóa đặt lại mật khẩu → đăng nhập vẫn bị từ chối.
 
+## Stage 27 output
+
+### Delivery
+
+- Job nền tự dọn bản tin GPS quá hạn và xóa ảnh/video hết hạn lưu giữ theo chính sách; mặc định TẮT, mỗi job chọn tắt/chỉ đếm/thực thi, chỉ một instance chạy tại một thời điểm.
+- Xóa thật ảnh/video ở staging/production cần thêm cờ và nhập lại mã project. Superadmin → Cài đặt hệ thống hiện chế độ và lần chạy cuối. Chưa chạy trên database thật.
+
+### Cases to test
+
+- [ ] Đặt `JOBS_ENABLED=true`, `JOB_GPS_RETENTION=dry-run` trên môi trường dev → nhật ký có `job.run` với số đếm, dữ liệu không bị xóa; trang Cài đặt hệ thống hiện chế độ "Chỉ đếm".
+- [ ] Chạy hai API cùng lúc → chỉ một instance thực hiện mỗi lượt.
+- [ ] `JOB_EVIDENCE_RETENTION=apply` nhưng chưa bật xóa → job báo "skipped", không xóa tệp nào.
+- [ ] Cấu hình sai (`JOB_GPS_RETENTION=bogus`) → job tắt, API vẫn chạy bình thường.
+

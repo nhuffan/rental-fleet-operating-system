@@ -363,6 +363,18 @@ export class PlatformSystemLimits {
   @ApiProperty() reportMaxDays!: number;
   @ApiProperty() reportMaxRows!: number;
 }
+export class PlatformJobStatus {
+  @ApiProperty() key!: string;
+  @ApiProperty() label!: string;
+  @ApiProperty({ enum: ['off', 'dry-run', 'apply'] }) mode!: string;
+  @ApiProperty({ type: String, format: 'date-time', nullable: true })
+  lastRunAt!: string | null;
+  @ApiProperty({ type: String, nullable: true }) lastOutcome!: string | null;
+}
+export class PlatformJobs {
+  @ApiProperty() enabled!: boolean;
+  @ApiProperty({ type: [PlatformJobStatus] }) jobs!: PlatformJobStatus[];
+}
 export class PlatformSystem {
   @ApiProperty({ format: 'date-time' }) asOf!: string;
   @ApiProperty({ enum: ['development', 'test', 'staging', 'production'] })
@@ -374,4 +386,10 @@ export class PlatformSystem {
   @ApiProperty({ type: [PlatformFeatureStatus] })
   features!: PlatformFeatureStatus[];
   @ApiProperty({ type: PlatformSystemLimits }) limits!: PlatformSystemLimits;
+  @ApiProperty({
+    type: PlatformJobs,
+    description:
+      'In-process background jobs; last-run values are per API process and reset on restart.',
+  })
+  jobs!: PlatformJobs;
 }

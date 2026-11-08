@@ -4,10 +4,12 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import type { PoolClient } from 'pg';
 import { AuthAdminService } from './auth-admin.service.js';
 import { PageQuery } from '../core/dto.js';
+import { JobScheduler } from '../jobs/job-scheduler.js';
 import { FEATURE_CATALOG, integrationStatus, systemLimits } from './system.js';
 import { Database } from '../database/database.js';
 import {
@@ -66,6 +68,7 @@ export class PlatformService {
   constructor(
     @Inject(Database) private readonly database: Database,
     @Inject(AuthAdminService) private readonly authAdmin?: AuthAdminService,
+    @Optional() @Inject(JobScheduler) private readonly jobs?: JobScheduler,
   ) {}
   private async read<T>(
     c: PlatformContext,
@@ -146,6 +149,7 @@ export class PlatformService {
           integrations: integrationStatus(process.env),
           features: [...FEATURE_CATALOG],
           limits: systemLimits(),
+          jobs: this.jobs?.status() ?? { enabled: false, jobs: [] },
         };
       },
     );

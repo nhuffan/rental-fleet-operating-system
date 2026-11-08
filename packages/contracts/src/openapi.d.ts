@@ -1724,6 +1724,19 @@ export interface components {
             reportMaxDays: number;
             reportMaxRows: number;
         };
+        PlatformJobStatus: {
+            key: string;
+            label: string;
+            /** @enum {string} */
+            mode: "off" | "dry-run" | "apply";
+            /** Format: date-time */
+            lastRunAt: string | null;
+            lastOutcome: string | null;
+        };
+        PlatformJobs: {
+            enabled: boolean;
+            jobs: components["schemas"]["PlatformJobStatus"][];
+        };
         PlatformSystem: {
             /** Format: date-time */
             asOf: string;
@@ -1733,6 +1746,8 @@ export interface components {
             integrations: components["schemas"]["PlatformIntegrationStatus"][];
             features: components["schemas"]["PlatformFeatureStatus"][];
             limits: components["schemas"]["PlatformSystemLimits"];
+            /** @description In-process background jobs; last-run values are per API process and reset on restart. */
+            jobs: components["schemas"]["PlatformJobs"];
         };
         PlatformBusiness: {
             /** Format: uuid */

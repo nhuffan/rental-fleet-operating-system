@@ -15,11 +15,16 @@ export type RetentionLifecycle = {
 export type RetentionHold = { active: boolean; unresolvedDispute: boolean };
 export function retentionDeletionEnabled(): boolean {
   try {
+    if (process.env.EVIDENCE_RETENTION_DELETE_ENABLED !== 'true') return false;
+    const ref = new URL(process.env.SUPABASE_URL ?? '').hostname.split('.')[0];
+    if (process.env.APP_ENV === 'development')
+      return ref === 'eeryymswcufnebibigqf';
+    // Staging/production must type the exact project ref a second time so a copied
+    // env file cannot enable irreversible deletion by accident.
     return (
-      process.env.EVIDENCE_RETENTION_DELETE_ENABLED === 'true' &&
-      process.env.APP_ENV === 'development' &&
-      new URL(process.env.SUPABASE_URL ?? '').hostname ===
-        'eeryymswcufnebibigqf.supabase.co'
+      ['staging', 'production'].includes(process.env.APP_ENV ?? '') &&
+      Boolean(ref) &&
+      process.env.EVIDENCE_RETENTION_DELETE_CONFIRM === ref
     );
   } catch {
     return false;

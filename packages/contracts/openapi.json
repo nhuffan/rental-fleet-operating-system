@@ -26840,6 +26840,59 @@
           "reportMaxRows"
         ]
       },
+      "PlatformJobStatus": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "off",
+              "dry-run",
+              "apply"
+            ]
+          },
+          "lastRunAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "lastOutcome": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "mode",
+          "lastRunAt",
+          "lastOutcome"
+        ]
+      },
+      "PlatformJobs": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "jobs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlatformJobStatus"
+            }
+          }
+        },
+        "required": [
+          "enabled",
+          "jobs"
+        ]
+      },
       "PlatformSystem": {
         "type": "object",
         "properties": {
@@ -26873,6 +26926,14 @@
           },
           "limits": {
             "$ref": "#/components/schemas/PlatformSystemLimits"
+          },
+          "jobs": {
+            "description": "In-process background jobs; last-run values are per API process and reset on restart.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PlatformJobs"
+              }
+            ]
           }
         },
         "required": [
@@ -26881,7 +26942,8 @@
           "database",
           "integrations",
           "features",
-          "limits"
+          "limits",
+          "jobs"
         ]
       },
       "PlatformBusiness": {
