@@ -185,6 +185,15 @@ export function AppShell({
               },
             ]
           : []),
+        ...(!preview && context?.permissions.includes("report.read")
+          ? [
+              {
+                href: "/app/reports",
+                label: "Báo cáo",
+                icon: "grid" as const,
+              },
+            ]
+          : []),
         ...(preview || showPreviews
           ? fleetItems
               .filter(

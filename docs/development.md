@@ -344,6 +344,12 @@ The API accepts page/limit (maximum 100), kind, severity, vehicleId and rentalId
 
 The Owner inbox shows severity, relevant time, explicit GPS TEST labels, actionable Rental/Vehicle links and scoped counts with useful empty/loading/error states. Filters/page changes preserve content position. It refreshes every 60 seconds while visible and on return to the tab; tenant switching reloads and resets client state. No push/email, cron, VETC, billing, geofence or speculative alert is implemented.
 
+## Reports and CSV export
+
+`/app/reports` is a live read-only Owner view protected by `report.read`. `GET /reports/summary` returns recorded-movement revenue, expenses and estimated profit (reusing Commercial's exact-VND summary), a monthly series in `Asia/Ho_Chi_Minh`, rental counts by current status (rentals starting in the window), and rented-time utilization per active vehicle (top 50 by revenue) plus a fleet aggregate. Windows use explicit offsets, default to the previous 30 days and cannot exceed 366 days; the UI treats the end day as inclusive and sends the next Vietnam midnight. Utilization uses actual handover/return times when present, otherwise the scheduled interval, clipped to the window; it is an estimate, not an accounting figure.
+
+`GET /reports/export/{vehicles|customers|rentals|movements}` returns UTF-8 CSV with BOM, at most 10,000 rows (`422 REPORT_ROW_LIMIT` otherwise). It runs under the tenant lock with the usual active Owner/profile/business recheck and writes a redacted `report.export` audit event (kind only). Identity/licence numbers, addresses and notes are never exported, and cells starting with `= + - @` or control characters get a leading apostrophe. The web route handler `app/app/reports/export/[kind]` proxies the download so the bearer never appears in a URL.
+
 ## Web UI and preview boundaries
 
 Shared live presentation follows the business/platform reference previews without importing their data. `MetricCard`, `RecordIdentity`, shared tables/headers/status/filter/empty states and semantic CSS are presentation-only; both preview metric sections reuse MetricCard. Decorative fixture charts are not transferred to live pages. `/dev-preview` remains a labelled development reference, never a production source.

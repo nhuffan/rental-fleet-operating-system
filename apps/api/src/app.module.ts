@@ -26,6 +26,8 @@ import {
   TraccarController,
 } from './telematics/gps/gps.controller.js';
 import { GpsService } from './telematics/gps/gps.service.js';
+import { ReportsController } from './reports/reports.controller.js';
+import { ReportsService } from './reports/reports.service.js';
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller.js';
 import { Database } from './database/database.js';
@@ -53,6 +55,7 @@ import { AuthGuard, TenantGuard, PermissionGuard } from './auth/guards.js';
     TraccarController,
     TollController,
     PricingController,
+    ReportsController,
   ],
   providers: [
     ContractService,
@@ -61,6 +64,7 @@ import { AuthGuard, TenantGuard, PermissionGuard } from './auth/guards.js';
     CommercialService,
     TollService,
     PricingService,
+    ReportsService,
     PlatformService,
     AuthAdminService,
     PlatformGuard,

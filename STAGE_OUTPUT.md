@@ -1,6 +1,6 @@
 # Stage Output
 
-Cập nhật: 02/11/2026. Mỗi stage chỉ gồm phần bàn giao và checklist test thủ công.
+Cập nhật: 08/11/2026. Mỗi stage chỉ gồm phần bàn giao và checklist test thủ công.
 
 **Thứ tự test từ dữ liệu mới:** [tạo doanh nghiệp/Owner](#stage-19-output) → [tạo xe](#stage-3-output) → [bảng giá](#stage-18-output) → [khách hàng/đặt xe](#stage-4-output) → [phát hành/in hợp đồng](#stage-20-output) → [bàn giao/trả xe](#stage-14-output) kèm [ảnh/video](#stage-15-output) → [thu/hoàn cọc](#stage-11-output).
 
@@ -287,3 +287,17 @@ Cập nhật: 02/11/2026. Mỗi stage chỉ gồm phần bàn giao và checklist
 - [x] **Browser:** preview A4 hợp đồng/trả xe → không có shell hoặc trang trắng cuối, tiền bằng chữ đúng; trả xe đúng 125 km/−25 điểm phần trăm nhiên liệu và không tạo phí.
 - [ ] Từ panel Tài liệu → phát hành bằng dialog rồi xem/in biên bản bàn giao; dữ liệu bàn giao trên Web đã kiểm tra đúng 10.000 km/80% nhiên liệu.
 - [ ] Hợp đồng đã hủy → không phát hành; tiền lẻ/ngoại tệ → cảnh báo, tắt nút in và không làm tròn.
+
+## Stage 21 output
+
+### Delivery
+
+- Trang Báo cáo cho Owner: doanh thu, chi phí, lợi nhuận ước tính theo kỳ/tháng, công suất khai thác theo xe, hợp đồng theo trạng thái.
+- Xuất CSV danh sách xe, khách hàng, hợp đồng và giao dịch; không gồm số CCCD/GPLX, địa chỉ hay ghi chú. Chưa chạy thử trên trình duyệt.
+
+### Cases to test
+
+- [ ] Báo cáo → chọn kỳ có giao dịch → số doanh thu/chi phí khớp Thương mại; kỳ trên 366 ngày bị chặn.
+- [ ] Xe có hợp đồng hoàn tất trong kỳ → giờ thuê và công suất hợp lý; xe không có hợp đồng hiện 0%.
+- [ ] Xuất 4 loại CSV → mở bằng Excel đúng tiếng Việt; ô bắt đầu `=` không chạy công thức; không có số CCCD/GPLX.
+- [ ] Đổi doanh nghiệp → báo cáo và CSV chỉ chứa dữ liệu doanh nghiệp đó.
