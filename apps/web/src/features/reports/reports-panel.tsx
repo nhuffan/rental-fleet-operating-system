@@ -127,7 +127,7 @@ export function ReportsPanel({
         <DataTable
           caption="Báo cáo theo tháng"
           rows={months}
-          emptyState={{ title: "Chưa có giao dịch trong kỳ." }}
+          emptyState={{ title: "Chưa có giao dịch trong kỳ.", description: "Chọn kỳ khác hoặc ghi nhận giao dịch ở Thương mại." }}
           columns={[
             { key: "month", label: "Tháng", render: (r) => monthLabel(r.month) },
             {
@@ -158,7 +158,7 @@ export function ReportsPanel({
         <DataTable
           caption="Hiệu quả theo xe"
           rows={vehicles}
-          emptyState={{ title: "Chưa có xe đang hoạt động." }}
+          emptyState={{ title: "Chưa có xe đang hoạt động.", description: "Thêm hoặc kích hoạt xe để xem hiệu quả khai thác." }}
           columns={[
             {
               key: "vehicle",
@@ -193,7 +193,7 @@ export function ReportsPanel({
         <DataTable
           caption="Hợp đồng theo trạng thái"
           rows={statuses}
-          emptyState={{ title: "Chưa có hợp đồng bắt đầu trong kỳ." }}
+          emptyState={{ title: "Chưa có hợp đồng bắt đầu trong kỳ.", description: "Chỉ tính hợp đồng có ngày nhận xe trong kỳ đã chọn." }}
           columns={[
             {
               key: "status",

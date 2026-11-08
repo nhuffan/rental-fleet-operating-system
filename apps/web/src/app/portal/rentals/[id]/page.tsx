@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PageHeader, Panel, PanelHeader } from "@/components/ui/primitives";
-import { DataTable } from "@/components/data-display/table";
+import { PortalContractsTable } from "@/features/portal/portal-tables";
 import { RentalStatus } from "@/features/rentals/rental-status";
 import { portalApi } from "@/features/portal/server";
 import { portalMoney } from "@/features/portal/presentation";
@@ -64,31 +64,7 @@ export default async function PortalRental({
           subtitle="Mỗi phiên bản là bản chụp bất biến"
           icon="audit"
         />
-        <DataTable
-          caption="Các phiên bản hợp đồng"
-          rows={rental.contracts.map((c) => ({ ...c, id: String(c.version) }))}
-          emptyState={{
-            title: "Chưa phát hành hợp đồng",
-            description: "Doanh nghiệp sẽ phát hành hợp đồng sau khi xác nhận.",
-          }}
-          columns={[
-            { key: "number", label: "Số hợp đồng", render: (c) => c.docNumber },
-            { key: "version", label: "Phiên bản", render: (c) => `v${c.version}` },
-            { key: "issued", label: "Phát hành (VN)", render: (c) => formatDate(c.issuedAt) },
-            {
-              key: "open",
-              label: "Xem / in",
-              render: (c) => (
-                <Link
-                  className="fleet-record-link"
-                  href={`/portal/rentals/${rental.id}/contract/${c.version}`}
-                >
-                  Mở bản in
-                </Link>
-              ),
-            },
-          ]}
-        />
+        <PortalContractsTable rentalId={rental.id} contracts={rental.contracts} />
       </Panel>
     </>
   );

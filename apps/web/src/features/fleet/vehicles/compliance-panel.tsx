@@ -86,7 +86,10 @@ export function CompliancePanel({
         <DataTable
           caption="Lịch sử dịch vụ của xe"
           rows={records.data}
-          emptyState={{ title: "Chưa có lịch sử dịch vụ" }}
+          emptyState={{
+            title: "Chưa có lịch sử dịch vụ",
+            description: "Dùng Ghi nhận dịch vụ để lưu bảo dưỡng, đăng kiểm hoặc bảo hiểm.",
+          }}
           columns={[
             {
               key: "date",

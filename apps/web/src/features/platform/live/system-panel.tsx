@@ -1,3 +1,4 @@
+"use client";
 import { DataTable } from "@/components/data-display/table";
 import { Badge, Panel, PanelHeader } from "@/components/ui/primitives";
 import { formatDate } from "@/lib/query";

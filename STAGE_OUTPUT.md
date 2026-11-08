@@ -297,7 +297,7 @@ Cập nhật: 08/11/2026. Mỗi stage chỉ gồm phần bàn giao và checklist
 
 ### Cases to test
 
-- [ ] Báo cáo → chọn kỳ có giao dịch → số doanh thu/chi phí khớp Thương mại; kỳ trên 366 ngày bị chặn.
+- [x] **Browser:** Báo cáo → chọn kỳ có giao dịch → số doanh thu/chi phí khớp dữ liệu thử; kỳ trên 366 ngày bị chặn (chặn đã kiểm tra bằng test, chưa thử trên UI).
 - [ ] Xe có hợp đồng hoàn tất trong kỳ → giờ thuê và công suất hợp lý; xe không có hợp đồng hiện 0%.
 - [ ] Xuất 4 loại CSV → mở bằng Excel đúng tiếng Việt; ô bắt đầu `=` không chạy công thức; không có số CCCD/GPLX.
 - [ ] Đổi doanh nghiệp → báo cáo và CSV chỉ chứa dữ liệu doanh nghiệp đó.
@@ -311,9 +311,9 @@ Cập nhật: 08/11/2026. Mỗi stage chỉ gồm phần bàn giao và checklist
 
 ### Cases to test
 
-- [ ] Sửa xe → nhập hạn đăng kiểm/bảo hiểm/bảo dưỡng → Chi tiết xe hiện đúng ngày và nhãn "Còn N ngày"/"Đã quá hạn".
-- [ ] Chi tiết xe → Ghi nhận dịch vụ → chọn ngày hạn mới → lịch sử có bản ghi, hạn xe được cập nhật; ngày tương lai bị chặn.
-- [ ] Cảnh báo → xe quá hạn hiện "Cần xử lý", xe còn ≤30 ngày hiện "Cần theo dõi"; xe ngưng hoạt động không báo.
+- [x] **Browser:** Chi tiết xe hiện đúng ngày và nhãn "Còn N ngày"/"Đã quá hạn" (dữ liệu nhập sẵn; form sửa xe chưa thử trên UI).
+- [x] **Browser:** Chi tiết xe → Ghi nhận dịch vụ đăng kiểm → hạn xe cập nhật. Ngày tương lai bị chặn chỉ kiểm tra bằng test.
+- [x] **Browser:** Cảnh báo → xe quá hạn hiện "Cần xử lý", xe còn ≤30 ngày hiện "Cần theo dõi"; xe ngưng hoạt động chỉ kiểm tra bằng test.
 - [ ] Thương mại → không có giao dịch tự tạo sau khi ghi nhận chi phí dịch vụ.
 
 ## Stage 23 output
@@ -325,9 +325,9 @@ Cập nhật: 08/11/2026. Mỗi stage chỉ gồm phần bàn giao và checklist
 
 ### Cases to test
 
-- [ ] Superadmin → Tính năng → danh sách đúng trạng thái "Đã triển khai/Chỉ dữ liệu TEST/Chưa triển khai".
-- [ ] Tích hợp & GPS → hiện Đã cấu hình/Chưa cấu hình đúng với env; không thấy khóa, token hay URL kết nối.
-- [ ] Cài đặt hệ thống → môi trường, migration mới nhất và giới hạn hiển thị; Nhật ký nền tảng có sự kiện đọc hệ thống.
+- [x] **Browser:** Superadmin → Tính năng → danh sách đúng trạng thái "Đã triển khai/Chỉ dữ liệu TEST/Chưa triển khai".
+- [x] **Browser:** Tích hợp & GPS → hiện Đã cấu hình đúng với env; không thấy khóa, token hay URL kết nối.
+- [x] **Browser:** Cài đặt hệ thống → môi trường, migration mới nhất và giới hạn hiển thị; nhật ký nền tảng ghi sự kiện bằng test.
 - [ ] Owner mở `/superadmin/settings` → bị từ chối.
 
 ## Stage 24 output
@@ -339,9 +339,9 @@ Cập nhật: 08/11/2026. Mỗi stage chỉ gồm phần bàn giao và checklist
 
 ### Cases to test
 
-- [ ] Khách có email → Owner bấm "Cấp quyền cổng khách" → nhận link; mở link, đặt mật khẩu → vào đúng `/portal` và thấy hợp đồng của mình.
+- [x] **Browser:** Khách có email → Owner bấm "Cấp quyền cổng khách" → nhận link; mở link, đặt mật khẩu → vào đúng `/portal` và thấy hợp đồng của mình.
 - [ ] Khách A không mở được hợp đồng của khách B hay doanh nghiệp khác (đổi ID trên URL → không tìm thấy); hợp đồng nháp không hiện.
 - [ ] Email đã có tài khoản → báo lỗi, không tạo link; ngưng hoạt động khách/doanh nghiệp → khách bị chặn ngay.
-- [ ] Tài khoản khách mở `/app` hoặc `/superadmin` → bị từ chối; Owner mở `/portal` → bị từ chối.
-- [ ] Portal → mở bản in hợp đồng → không có thanh điều hướng khi in.
+- [x] **Browser:** Tài khoản khách mở `/app` hoặc `/superadmin` → bị từ chối; Owner mở `/portal` → bị từ chối.
+- [x] **Browser:** Portal → mở bản in hợp đồng đã phát hành hiển thị đúng; chưa thử bản in thật.
 

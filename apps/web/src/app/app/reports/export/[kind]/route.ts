@@ -15,12 +15,11 @@ export async function GET(
   const auth = await verifiedServerAuth();
   if (!auth) return NextResponse.redirect(new URL("/login", request.url));
   const search = request.nextUrl.searchParams;
-  const range = apiRange(
-    reportFilters({
-      from: search.get("from") ?? undefined,
-      until: search.get("until") ?? undefined,
-    }),
-  );
+  const filters = reportFilters({
+    from: search.get("from") ?? undefined,
+    until: search.get("until") ?? undefined,
+  });
+  const range = apiRange(filters);
   const business = (await cookies()).get("current-business")?.value;
   const response = await fetch(
     `${process.env.API_INTERNAL_URL ?? publicEnv().api}/api/v1/reports/export/${kind}?from=${encodeURIComponent(range.from)}&until=${encodeURIComponent(range.until)}`,
@@ -40,7 +39,7 @@ export async function GET(
   return new NextResponse(response.body, {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="${kind}-${range.from.slice(0, 10)}.csv"`,
+      "Content-Disposition": `attachment; filename="${kind}-${filters.from}_${filters.until}.csv"`,
       "Cache-Control": "no-store",
     },
   });
