@@ -104,7 +104,7 @@ beforeAll(async () => {
   await db.exec(`create table businesses(id uuid primary key,status text);
   create table user_profiles(user_id uuid primary key,status text);
   create table business_memberships(id uuid primary key,business_id uuid,user_id uuid,role_key text,status text);
-  create table vehicles(id uuid primary key,business_id uuid,license_plate text,status text);
+  create table vehicles(id uuid primary key,business_id uuid,license_plate text,status text,registration_expires_on date,insurance_expires_on date,next_maintenance_on date);
   create table gps_devices(id uuid primary key,business_id uuid,status text);
   create table device_assignments(id uuid primary key,business_id uuid,vehicle_id uuid,device_id uuid,assigned_at timestamptz,unassigned_at timestamptz);
   create table gps_positions(id uuid primary key,business_id uuid,vehicle_id uuid,assignment_id uuid,device_id uuid,recorded_at timestamptz,received_at timestamptz,source_mode text);
@@ -318,3 +318,46 @@ it.each(['business', 'profile', 'membership'])(
     });
   },
 );
+it('derives registration, insurance and maintenance due alerts in Vietnam days for active vehicles only', async () => {
+  const day = (offset: number) =>
+    new Date(Date.now() + 7 * 3600_000 + offset * 86400_000)
+      .toISOString()
+      .slice(0, 10);
+  const add = async (
+    c: TenantContext,
+    plate: string,
+    status: string,
+    reg: string | null,
+    ins: string | null,
+    maint: string | null,
+  ) => {
+    const id = randomUUID();
+    await db.query(
+      'insert into vehicles(id,business_id,license_plate,status,registration_expires_on,insurance_expires_on,next_maintenance_on) values($1,$2,$3,$4,$5,$6,$7)',
+      [id, c.businessId, plate, status, reg, ins, maint],
+    );
+    return id;
+  };
+  const expired = await add(a, 'EXP001', 'ACTIVE', day(-1), day(31), day(30));
+  await add(a, 'OK0001', 'ACTIVE', day(31), null, null);
+  await add(a, 'OFF001', 'INACTIVE', day(-5), day(-5), day(-5));
+  await add(b, 'FOREIGN', 'ACTIVE', day(-5), null, null);
+  const page = await service.list(a, query());
+  expect(page.data.map((r) => [r.kind, r.severity, r.vehicleId])).toEqual([
+    ['VEHICLE_REGISTRATION_DUE', 'CRITICAL', expired],
+    ['VEHICLE_MAINTENANCE_DUE', 'WARNING', expired],
+  ]);
+  expect(page.stats).toMatchObject({
+    total: 2,
+    critical: 1,
+    warning: 1,
+    vehicleCompliance: 2,
+  });
+  expect(page.rules.complianceWarningDays).toBe(30);
+  expect(
+    (await service.list(a, query({ kind: 'VEHICLE_INSURANCE_DUE' }))).total,
+  ).toBe(0);
+  expect(
+    (await service.list(a, query({ vehicleId: expired }))).total,
+  ).toBe(2);
+});

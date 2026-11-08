@@ -12,3 +12,6 @@ export type VehicleUpdate = Schemas["VehicleUpdate"];
 export type GpsDeviceCreate = Schemas["GpsDeviceCreate"];
 export type GpsDeviceUpdate = Schemas["GpsDeviceUpdate"];
 export type DeviceAssignmentCreate = Schemas["DeviceAssignmentCreate"];
+export type ServiceRecord = Schemas["ServiceRecordResponse"];
+export type ServiceRecordPage = Schemas["ServiceRecordPage"];
+export type ServiceRecordCreate = Schemas["ServiceRecordCreate"];

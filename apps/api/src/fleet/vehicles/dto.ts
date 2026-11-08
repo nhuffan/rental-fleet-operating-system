@@ -1,12 +1,17 @@
-import { Transform } from 'class-transformer';
+import { applyDecorators } from '@nestjs/common';
+import { Transform, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsBoolean,
   IsIn,
+  IsInt,
+  IsISO8601,
   IsString,
   IsUUID,
   Length,
   Matches,
+  Max,
+  Min,
   ValidateIf,
 } from 'class-validator';
 import { PageQuery } from '../../core/dto.js';
@@ -20,6 +25,28 @@ export const normalizePlate = (value: unknown) =>
     : value;
 export const normalizeProvider = (value: unknown) =>
   typeof value === 'string' ? value.trim().toLowerCase() : value;
+// Calendar dates (no time), years 2000–2099 to match the database checks. null clears.
+const nullableDate = () =>
+  applyDecorators(
+    ApiPropertyOptional({
+      type: String,
+      format: 'date',
+      nullable: true,
+      example: '2027-03-31',
+    }),
+    ValidateIf((_o, value) => value !== undefined && value !== null),
+    IsISO8601({ strict: true, strictSeparator: true }),
+    Matches(/^20\d{2}-\d{2}-\d{2}$/),
+  );
+const nullableOdometer = () =>
+  applyDecorators(
+    ApiPropertyOptional({ type: Number, nullable: true, minimum: 0 }),
+    ValidateIf((_o, value) => value !== undefined && value !== null),
+    Type(() => Number),
+    IsInt(),
+    Min(0),
+    Max(2147483647),
+  );
 const plate = ({ value }: { value: unknown }) => normalizePlate(value);
 const provider = ({ value }: { value: unknown }) => normalizeProvider(value);
 const booleanQuery = ({ value }: { value: unknown }) =>
@@ -40,6 +67,10 @@ export class VehicleCreate {
   @ValidateIf(optional)
   @IsIn(['ACTIVE', 'INACTIVE'])
   status?: string;
+  @nullableDate() registrationExpiresOn?: string | null;
+  @nullableDate() insuranceExpiresOn?: string | null;
+  @nullableDate() nextMaintenanceOn?: string | null;
+  @nullableOdometer() nextMaintenanceOdometer?: number | null;
 }
 export class VehicleUpdate {
   @ApiPropertyOptional({ pattern: '^[A-Z0-9]{4,16}$' })
@@ -67,6 +98,10 @@ export class VehicleUpdate {
   @ValidateIf(optional)
   @IsIn(['ACTIVE', 'INACTIVE'])
   status?: string;
+  @nullableDate() registrationExpiresOn?: string | null;
+  @nullableDate() insuranceExpiresOn?: string | null;
+  @nullableDate() nextMaintenanceOn?: string | null;
+  @nullableOdometer() nextMaintenanceOdometer?: number | null;
 }
 export class VehicleQuery extends PageQuery {
   @ApiPropertyOptional()
@@ -161,4 +196,61 @@ export class GpsDeviceQuery extends PageQuery {
 }
 export class DeviceAssignmentCreate {
   @ApiProperty({ format: 'uuid' }) @IsUUID() deviceId!: string;
+}
+export const SERVICE_KINDS = ['MAINTENANCE', 'REGISTRATION', 'INSURANCE'] as const;
+export type ServiceKind = (typeof SERVICE_KINDS)[number];
+export class ServiceRecordCreate {
+  @ApiProperty({ enum: SERVICE_KINDS })
+  @IsIn(SERVICE_KINDS)
+  kind!: ServiceKind;
+  @ApiProperty({
+    type: String,
+    format: 'date',
+    description: 'Vietnam calendar date; cannot be in the future.',
+  })
+  @IsISO8601({ strict: true, strictSeparator: true })
+  @Matches(/^20\d{2}-\d{2}-\d{2}$/)
+  performedOn!: string;
+  @ApiPropertyOptional({ minimum: 0 })
+  @ValidateIf(optional)
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @Max(2147483647)
+  odometer?: number;
+  @ApiPropertyOptional({
+    type: String,
+    pattern: '^(0|[1-9][0-9]{0,14})$',
+    description: 'Exact whole VND. Recorded fact only; creates no movement.',
+  })
+  @ValidateIf(optional)
+  @IsString()
+  @Matches(/^(0|[1-9][0-9]{0,14})$/)
+  costVnd?: string;
+  @ApiPropertyOptional({ maxLength: 2000 })
+  @ValidateIf(optional)
+  @Transform(trim)
+  @IsString()
+  @Length(0, 2000)
+  notes?: string;
+  @ApiPropertyOptional({
+    type: String,
+    format: 'date',
+    description:
+      'Updates the matching vehicle date: next maintenance, or the new registration/insurance expiry.',
+  })
+  @ValidateIf(optional)
+  @IsISO8601({ strict: true, strictSeparator: true })
+  @Matches(/^20\d{2}-\d{2}-\d{2}$/)
+  nextDueOn?: string;
+  @ApiPropertyOptional({
+    minimum: 0,
+    description: 'MAINTENANCE only: next maintenance odometer.',
+  })
+  @ValidateIf(optional)
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @Max(2147483647)
+  nextDueOdometer?: number;
 }

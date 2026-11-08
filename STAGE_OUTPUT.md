@@ -301,3 +301,18 @@ Cập nhật: 08/11/2026. Mỗi stage chỉ gồm phần bàn giao và checklist
 - [ ] Xe có hợp đồng hoàn tất trong kỳ → giờ thuê và công suất hợp lý; xe không có hợp đồng hiện 0%.
 - [ ] Xuất 4 loại CSV → mở bằng Excel đúng tiếng Việt; ô bắt đầu `=` không chạy công thức; không có số CCCD/GPLX.
 - [ ] Đổi doanh nghiệp → báo cáo và CSV chỉ chứa dữ liệu doanh nghiệp đó.
+
+## Stage 22 output
+
+### Delivery
+
+- Hồ sơ xe có hạn đăng kiểm, bảo hiểm, mốc bảo dưỡng; ghi nhận lịch sử dịch vụ không sửa/xóa và cập nhật hạn mới cùng lúc.
+- Cảnh báo vận hành thêm xe quá hạn hoặc còn tối đa 30 ngày. Chi phí dịch vụ chỉ để tham khảo, không tự tạo thu chi. Migration chưa áp dụng lên project development.
+
+### Cases to test
+
+- [ ] Sửa xe → nhập hạn đăng kiểm/bảo hiểm/bảo dưỡng → Chi tiết xe hiện đúng ngày và nhãn "Còn N ngày"/"Đã quá hạn".
+- [ ] Chi tiết xe → Ghi nhận dịch vụ → chọn ngày hạn mới → lịch sử có bản ghi, hạn xe được cập nhật; ngày tương lai bị chặn.
+- [ ] Cảnh báo → xe quá hạn hiện "Cần xử lý", xe còn ≤30 ngày hiện "Cần theo dõi"; xe ngưng hoạt động không báo.
+- [ ] Thương mại → không có giao dịch tự tạo sau khi ghi nhận chi phí dịch vụ.
+

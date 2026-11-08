@@ -4,6 +4,7 @@ import {
   uuid,
   text,
   timestamp,
+  date,
   jsonb,
   integer,
   numeric,
@@ -121,6 +122,10 @@ export const vehicles = pgTable(
     make: text().notNull(),
     model: text().notNull(),
     status: text().notNull().default('ACTIVE'),
+    registrationExpiresOn: date('registration_expires_on'),
+    insuranceExpiresOn: date('insurance_expires_on'),
+    nextMaintenanceOn: date('next_maintenance_on'),
+    nextMaintenanceOdometer: integer('next_maintenance_odometer'),
     ...times(),
   },
   (table) => [
@@ -1387,6 +1392,40 @@ export const rentalContractDocuments = pgTable(
       t.businessId,
       t.rentalId,
       t.version.desc(),
+    ),
+  ],
+);
+
+export const vehicleServiceRecords = pgTable(
+  'vehicle_service_records',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    businessId: uuid('business_id')
+      .notNull()
+      .references(() => businesses.id, { onDelete: 'restrict' }),
+    vehicleId: uuid('vehicle_id').notNull(),
+    kind: text().notNull().$type<'MAINTENANCE' | 'REGISTRATION' | 'INSURANCE'>(),
+    performedOn: date('performed_on').notNull(),
+    odometer: integer(),
+    costVnd: numeric('cost_vnd', { precision: 18, scale: 0 }),
+    notes: text().notNull().default(''),
+    // No actor/profile FK: historical attribution survives identity removal.
+    createdBy: uuid('created_by').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    foreignKey({
+      name: 'vehicle_service_records_vehicle_tenant_fk',
+      columns: [table.businessId, table.vehicleId],
+      foreignColumns: [vehicles.businessId, vehicles.id],
+    }).onDelete('restrict'),
+    index('vehicle_service_records_vehicle_history').on(
+      table.businessId,
+      table.vehicleId,
+      table.performedOn.desc(),
+      table.id.desc(),
     ),
   ],
 );

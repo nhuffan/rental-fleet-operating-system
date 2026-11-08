@@ -3,6 +3,9 @@ export const kindLabels = {
   RENTAL_OVERDUE: "Quá hạn trả xe",
   RENTAL_DUE_SOON: "Sắp đến hạn trả xe",
   GPS_STALE: "Bản tin GPS TEST bị trễ",
+  VEHICLE_REGISTRATION_DUE: "Đăng kiểm đến hạn",
+  VEHICLE_INSURANCE_DUE: "Bảo hiểm đến hạn",
+  VEHICLE_MAINTENANCE_DUE: "Bảo dưỡng đến hạn",
 };
 export const severityLabels = {
   CRITICAL: "Cần xử lý",

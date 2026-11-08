@@ -30,6 +30,7 @@ import {
   profiles,
   rentals,
   vehicles,
+  vehicleServiceRecords,
 } from '../../database/schema.js';
 import { denied, type TenantContext } from '../../auth/guards.js';
 import { permissionsFor, type Permission } from '../../auth/permissions.js';
@@ -42,6 +43,7 @@ import {
   VehicleCreate,
   VehicleQuery,
   VehicleUpdate,
+  ServiceRecordCreate,
 } from './dto.js';
 type Tx = Parameters<Parameters<Database['db']['transaction']>[0]>[0];
 type Reader = Database['db'] | Tx;
@@ -270,6 +272,10 @@ export class FleetService {
             make: body.make,
             model: body.model,
             status: body.status,
+            registrationExpiresOn: body.registrationExpiresOn,
+            insuranceExpiresOn: body.insuranceExpiresOn,
+            nextMaintenanceOn: body.nextMaintenanceOn,
+            nextMaintenanceOdometer: body.nextMaintenanceOdometer,
           })
           .returning();
         return {
@@ -327,6 +333,10 @@ export class FleetService {
             model: body.model,
             branchId: body.branchId,
             status: body.status,
+            registrationExpiresOn: body.registrationExpiresOn,
+            insuranceExpiresOn: body.insuranceExpiresOn,
+            nextMaintenanceOn: body.nextMaintenanceOn,
+            nextMaintenanceOdometer: body.nextMaintenanceOdometer,
             updatedAt: new Date(),
           })
           .where(
@@ -337,6 +347,90 @@ export class FleetService {
           id,
           fields: changedFields(body),
         };
+      },
+    );
+  }
+  async listServiceRecords(c: TenantContext, id: string, q: PageQuery) {
+    await this.getVehicle(this.database.db, c, id);
+    const where = and(
+      eq(vehicleServiceRecords.businessId, c.businessId),
+      eq(vehicleServiceRecords.vehicleId, id),
+    );
+    const [data, [totals]] = await Promise.all([
+      this.database.db
+        .select()
+        .from(vehicleServiceRecords)
+        .where(where)
+        .orderBy(
+          desc(vehicleServiceRecords.performedOn),
+          desc(vehicleServiceRecords.id),
+        )
+        .limit(q.limit)
+        .offset((q.page - 1) * q.limit),
+      this.database.db
+        .select({ total: count() })
+        .from(vehicleServiceRecords)
+        .where(where),
+    ]);
+    return { data, page: q.page, limit: q.limit, total: totals.total };
+  }
+  async createServiceRecord(
+    c: TenantContext,
+    id: string,
+    body: ServiceRecordCreate,
+    requestId: string,
+  ) {
+    if (body.nextDueOdometer !== undefined && body.kind !== 'MAINTENANCE')
+      throw new BadRequestException({
+        code: 'SERVICE_NEXT_ODOMETER_INVALID',
+        message: 'nextDueOdometer applies to maintenance only',
+      });
+    return this.mutate(
+      c,
+      'vehicle.manage',
+      requestId,
+      'vehicle_service.create',
+      'vehicle_service_record',
+      async (tx) => {
+        await this.getVehicle(tx, c, id);
+        const today = await tx.execute<{ today: string }>(
+          sql`select (now() at time zone 'Asia/Ho_Chi_Minh')::date::text as today`,
+        );
+        if (body.performedOn > today.rows[0].today)
+          throw new BadRequestException({
+            code: 'SERVICE_DATE_FUTURE',
+            message: 'performedOn cannot be in the future',
+          });
+        const [value] = await tx
+          .insert(vehicleServiceRecords)
+          .values({
+            businessId: c.businessId,
+            vehicleId: id,
+            kind: body.kind,
+            performedOn: body.performedOn,
+            odometer: body.odometer,
+            costVnd: body.costVnd,
+            notes: body.notes ?? '',
+            createdBy: c.userId,
+          })
+          .returning();
+        const next =
+          body.kind === 'MAINTENANCE'
+            ? {
+                nextMaintenanceOn: body.nextDueOn,
+                nextMaintenanceOdometer: body.nextDueOdometer,
+              }
+            : body.kind === 'REGISTRATION'
+              ? { registrationExpiresOn: body.nextDueOn }
+              : { insuranceExpiresOn: body.nextDueOn };
+        if (Object.values(next).some((v) => v !== undefined))
+          await tx
+            .update(vehicles)
+            .set({ ...next, updatedAt: new Date() })
+            .where(
+              and(eq(vehicles.id, id), eq(vehicles.businessId, c.businessId)),
+            );
+        return { value, id: value.id, fields: changedFields(body) };
       },
     );
   }

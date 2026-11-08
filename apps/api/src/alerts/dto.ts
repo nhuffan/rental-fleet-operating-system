@@ -6,6 +6,9 @@ export const ALERT_KINDS = [
   'RENTAL_OVERDUE',
   'RENTAL_DUE_SOON',
   'GPS_STALE',
+  'VEHICLE_REGISTRATION_DUE',
+  'VEHICLE_INSURANCE_DUE',
+  'VEHICLE_MAINTENANCE_DUE',
 ] as const;
 export const ALERT_SEVERITIES = ['CRITICAL', 'WARNING'] as const;
 export type AlertKind = (typeof ALERT_KINDS)[number];
@@ -61,9 +64,11 @@ export class AlertStatsResponse {
   @ApiProperty() rentalOverdue!: number;
   @ApiProperty() rentalDueSoon!: number;
   @ApiProperty() gpsStale!: number;
+  @ApiProperty() vehicleCompliance!: number;
 }
 export class AlertRulesResponse {
   @ApiProperty({ enum: [86400] }) dueSoonSeconds!: number;
+  @ApiProperty({ enum: [30] }) complianceWarningDays!: number;
   @ApiProperty({ enum: [120] }) gpsStaleAfterSeconds!: number;
   @ApiProperty({ enum: [600] }) gpsOfflineAfterSeconds!: number;
 }

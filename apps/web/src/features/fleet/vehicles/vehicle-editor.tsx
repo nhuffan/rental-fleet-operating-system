@@ -50,6 +50,12 @@ export function VehicleEditor({
               make: String(form.get("make")).trim(),
               model: String(form.get("model")).trim(),
               status: form.get("status") as "ACTIVE" | "INACTIVE",
+              registrationExpiresOn: String(form.get("registrationExpiresOn")) || null,
+              insuranceExpiresOn: String(form.get("insuranceExpiresOn")) || null,
+              nextMaintenanceOn: String(form.get("nextMaintenanceOn")) || null,
+              nextMaintenanceOdometer: String(form.get("nextMaintenanceOdometer"))
+                ? Number(form.get("nextMaintenanceOdometer"))
+                : null,
             };
             let ok;
             if (vehicle) {
@@ -158,6 +164,44 @@ export function VehicleEditor({
                 </small>
               )}
             </label>
+            <div className="form-grid">
+              <label className="form-field">
+                Hạn đăng kiểm
+                <Input
+                  name="registrationExpiresOn"
+                  type="date"
+                  defaultValue={vehicle?.registrationExpiresOn ?? ""}
+                />
+              </label>
+              <label className="form-field">
+                Hạn bảo hiểm
+                <Input
+                  name="insuranceExpiresOn"
+                  type="date"
+                  defaultValue={vehicle?.insuranceExpiresOn ?? ""}
+                />
+              </label>
+              <label className="form-field">
+                Bảo dưỡng tiếp theo (ngày)
+                <Input
+                  name="nextMaintenanceOn"
+                  type="date"
+                  defaultValue={vehicle?.nextMaintenanceOn ?? ""}
+                />
+              </label>
+              <label className="form-field">
+                Bảo dưỡng tiếp theo (km)
+                <Input
+                  name="nextMaintenanceOdometer"
+                  type="number"
+                  min={0}
+                  max={2147483647}
+                  step={1}
+                  defaultValue={vehicle?.nextMaintenanceOdometer ?? ""}
+                />
+              </label>
+            </div>
+            <small>Để trống để xóa hạn. Hệ thống cảnh báo trước 30 ngày.</small>
           </fieldset>
         </form>
       </div>

@@ -13,6 +13,7 @@ import type {
 } from "@/features/rentals/types";
 import type {
   DeviceAssignmentPage,
+  ServiceRecordPage,
   Vehicle,
 } from "@/features/fleet/vehicles/types";
 export default async function VehiclePage({
@@ -26,13 +27,23 @@ export default async function VehiclePage({
   const { id } = await params;
   if (!validId(id)) notFound();
   const page = pageNumber((await searchParams).page);
-  const [vehicle, history, branches, location, rentalState, latestInspection] =
-    await Promise.all([
+  const [
+    vehicle,
+    history,
+    serviceRecords,
+    branches,
+    location,
+    rentalState,
+    latestInspection,
+  ] = await Promise.all([
       api<Vehicle>(`/vehicles/${id}`, { notFoundOn404: true }),
       api<DeviceAssignmentPage>(
         `/vehicles/${id}/device-assignments?page=${page}&limit=20`,
         { notFoundOn404: true },
       ),
+      api<ServiceRecordPage>(`/vehicles/${id}/service-records?page=1&limit=20`, {
+        notFoundOn404: true,
+      }),
       tenantBranches(),
       context.permissions.includes("gps.read")
         ? api<VehicleLocation>(`/vehicles/${id}/location`, {
@@ -64,6 +75,7 @@ export default async function VehiclePage({
         key={`${context.business.id}:${vehicle.id}`}
         vehicle={vehicle}
         history={history}
+        serviceRecords={serviceRecords}
         branches={branches}
         context={context}
         rentalState={rentalState}

@@ -833,6 +833,22 @@ export interface paths {
         patch: operations["FleetController_updateVehicle"];
         trace?: never;
     };
+    "/api/v1/vehicles/{id}/service-records": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["FleetController_serviceRecords"];
+        put?: never;
+        post: operations["FleetController_createServiceRecord"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/gps-devices": {
         parameters: {
             query?: never;
@@ -1353,7 +1369,7 @@ export interface components {
             /** @description Stable derived identity; not a persisted event or authorization credential. */
             id: string;
             /** @enum {string} */
-            kind: "RENTAL_OVERDUE" | "RENTAL_DUE_SOON" | "GPS_STALE";
+            kind: "RENTAL_OVERDUE" | "RENTAL_DUE_SOON" | "GPS_STALE" | "VEHICLE_REGISTRATION_DUE" | "VEHICLE_INSURANCE_DUE" | "VEHICLE_MAINTENANCE_DUE";
             /** @enum {string} */
             severity: "CRITICAL" | "WARNING";
             /** Format: uuid */
@@ -1379,10 +1395,13 @@ export interface components {
             rentalOverdue: number;
             rentalDueSoon: number;
             gpsStale: number;
+            vehicleCompliance: number;
         };
         AlertRulesResponse: {
             /** @enum {number} */
             dueSoonSeconds: 86400;
+            /** @enum {number} */
+            complianceWarningDays: 30;
             /** @enum {number} */
             gpsStaleAfterSeconds: 120;
             /** @enum {number} */
@@ -2400,6 +2419,13 @@ export interface components {
             model: string;
             /** @enum {string} */
             status: "ACTIVE" | "INACTIVE";
+            /** Format: date */
+            registrationExpiresOn: string | null;
+            /** Format: date */
+            insuranceExpiresOn: string | null;
+            /** Format: date */
+            nextMaintenanceOn: string | null;
+            nextMaintenanceOdometer: number | null;
             /** Format: date-time */
             createdAt: string;
             /** Format: date-time */
@@ -2424,6 +2450,22 @@ export interface components {
              * @enum {string}
              */
             status: "ACTIVE" | "INACTIVE";
+            /**
+             * Format: date
+             * @example 2027-03-31
+             */
+            registrationExpiresOn?: string | null;
+            /**
+             * Format: date
+             * @example 2027-03-31
+             */
+            insuranceExpiresOn?: string | null;
+            /**
+             * Format: date
+             * @example 2027-03-31
+             */
+            nextMaintenanceOn?: string | null;
+            nextMaintenanceOdometer?: number | null;
         };
         VehicleUpdate: {
             licensePlate?: string;
@@ -2433,6 +2475,67 @@ export interface components {
             branchId?: string | null;
             /** @enum {string} */
             status?: "ACTIVE" | "INACTIVE";
+            /**
+             * Format: date
+             * @example 2027-03-31
+             */
+            registrationExpiresOn?: string | null;
+            /**
+             * Format: date
+             * @example 2027-03-31
+             */
+            insuranceExpiresOn?: string | null;
+            /**
+             * Format: date
+             * @example 2027-03-31
+             */
+            nextMaintenanceOn?: string | null;
+            nextMaintenanceOdometer?: number | null;
+        };
+        ServiceRecordResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            businessId: string;
+            /** Format: uuid */
+            vehicleId: string;
+            /** @enum {string} */
+            kind: "MAINTENANCE" | "REGISTRATION" | "INSURANCE";
+            /** Format: date */
+            performedOn: string;
+            odometer: number | null;
+            costVnd: string | null;
+            notes: string;
+            /** Format: uuid */
+            createdBy: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        ServiceRecordPage: {
+            page: number;
+            limit: number;
+            total: number;
+            data: components["schemas"]["ServiceRecordResponse"][];
+        };
+        ServiceRecordCreate: {
+            /** @enum {string} */
+            kind: "MAINTENANCE" | "REGISTRATION" | "INSURANCE";
+            /**
+             * Format: date
+             * @description Vietnam calendar date; cannot be in the future.
+             */
+            performedOn: string;
+            odometer?: number;
+            /** @description Exact whole VND. Recorded fact only; creates no movement. */
+            costVnd?: string;
+            notes?: string;
+            /**
+             * Format: date
+             * @description Updates the matching vehicle date: next maintenance, or the new registration/insurance expiry.
+             */
+            nextDueOn?: string;
+            /** @description MAINTENANCE only: next maintenance odometer. */
+            nextDueOdometer?: number;
         };
         GpsDevicePage: {
             page: number;
@@ -3520,7 +3623,7 @@ export interface operations {
             query?: {
                 page?: components["schemas"]["Object"];
                 limit?: components["schemas"]["Object"];
-                kind?: "RENTAL_OVERDUE" | "RENTAL_DUE_SOON" | "GPS_STALE";
+                kind?: "RENTAL_OVERDUE" | "RENTAL_DUE_SOON" | "GPS_STALE" | "VEHICLE_REGISTRATION_DUE" | "VEHICLE_INSURANCE_DUE" | "VEHICLE_MAINTENANCE_DUE";
                 severity?: "CRITICAL" | "WARNING";
                 vehicleId?: string;
                 rentalId?: string;
@@ -10715,6 +10818,241 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["VehicleResponse"];
+                };
+            };
+            /** @description Standard API error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    FleetController_serviceRecords: {
+        parameters: {
+            query?: {
+                page?: components["schemas"]["Object"];
+                limit?: components["schemas"]["Object"];
+            };
+            header?: {
+                /** @description Select an active business membership. Defaults to oldest active membership. */
+                "X-Business-Id"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServiceRecordPage"];
+                };
+            };
+            /** @description Standard API error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    FleetController_createServiceRecord: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Select an active business membership. Defaults to oldest active membership. */
+                "X-Business-Id"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ServiceRecordCreate"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServiceRecordResponse"];
                 };
             };
             /** @description Standard API error */

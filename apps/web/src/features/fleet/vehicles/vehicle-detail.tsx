@@ -22,12 +22,14 @@ import { DataTable, Pagination } from "@/components/data-display/table";
 import { FleetStatus } from "./fleet-status";
 import { MutationNotice } from "@/components/feedback/mutation-notice";
 import { VehicleEditor } from "./vehicle-editor";
+import { CompliancePanel } from "./compliance-panel";
 import { AssignmentEditor } from "./assignment-editor";
 import { formatDate } from "@/lib/query";
-import type { DeviceAssignmentPage, Vehicle } from "./types";
+import type { DeviceAssignmentPage, ServiceRecordPage, Vehicle } from "./types";
 export function VehicleDetail({
   vehicle,
   history,
+  serviceRecords,
   branches,
   context,
   rentalState,
@@ -35,6 +37,7 @@ export function VehicleDetail({
 }: {
   vehicle: Vehicle;
   history: DeviceAssignmentPage;
+  serviceRecords: ServiceRecordPage;
   branches: Branch[];
   context: Me;
   rentalState: VehicleRentalState | null;
@@ -213,6 +216,12 @@ export function VehicleDetail({
           </p>
         </Panel>
       </div>
+      <CompliancePanel
+        businessId={context.business.id}
+        vehicle={vehicle}
+        records={serviceRecords}
+        canEdit={canEdit}
+      />
       {rentalState && <VehicleRentalPanel rentalState={rentalState} />}
       {latestInspection && (
         <VehicleInspectionPanel

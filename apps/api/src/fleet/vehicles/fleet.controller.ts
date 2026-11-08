@@ -34,6 +34,7 @@ import {
   GpsDeviceCreate,
   GpsDeviceQuery,
   GpsDeviceUpdate,
+  ServiceRecordCreate,
   VehicleCreate,
   VehicleQuery,
   VehicleUpdate,
@@ -43,6 +44,8 @@ import {
   DeviceAssignmentResponse,
   GpsDevicePage,
   GpsDeviceResponse,
+  ServiceRecordPage,
+  ServiceRecordResponse,
   VehiclePage,
   VehicleResponse,
 } from './responses.js';
@@ -102,6 +105,26 @@ export class FleetController {
     @Body() b: VehicleUpdate,
   ) {
     return this.fleet.updateVehicle(r.tenant, id, b, r.requestId);
+  }
+  @Get('vehicles/:id/service-records')
+  @RequirePermission('vehicle.read')
+  @ApiOkResponse({ type: ServiceRecordPage })
+  serviceRecords(
+    @Req() r: AuthRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query() q: PageQuery,
+  ) {
+    return this.fleet.listServiceRecords(r.tenant, id, q);
+  }
+  @Post('vehicles/:id/service-records')
+  @RequirePermission('vehicle.manage')
+  @ApiCreatedResponse({ type: ServiceRecordResponse })
+  createServiceRecord(
+    @Req() r: AuthRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() b: ServiceRecordCreate,
+  ) {
+    return this.fleet.createServiceRecord(r.tenant, id, b, r.requestId);
   }
   @Get('gps-devices')
   @RequirePermission('gps.read')

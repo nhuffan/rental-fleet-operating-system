@@ -16,6 +16,7 @@ type VehicleUpdate = Schemas["VehicleUpdate"];
 type GpsDeviceCreate = Schemas["GpsDeviceCreate"];
 type GpsDeviceUpdate = Schemas["GpsDeviceUpdate"];
 type DeviceAssignmentCreate = Schemas["DeviceAssignmentCreate"];
+type ServiceRecordCreate = Schemas["ServiceRecordCreate"];
 type CustomerCreate = Schemas["CustomerCreate"];
 type CustomerUpdate = Schemas["CustomerUpdate"];
 type RentalCreate = Schemas["RentalCreate"];
@@ -59,6 +60,11 @@ type Mutation =
   | { path: `/branches/${string}`; body: BranchUpdate; method?: "PATCH" }
   | { path: "/vehicles"; body: VehicleCreate; method: "POST" }
   | { path: `/vehicles/${string}`; body: VehicleUpdate; method?: "PATCH" }
+  | {
+      path: `/vehicles/${string}/service-records`;
+      body: ServiceRecordCreate;
+      method: "POST";
+    }
   | { path: "/gps-devices"; body: GpsDeviceCreate; method: "POST" }
   | { path: `/gps-devices/${string}`; body: GpsDeviceUpdate; method?: "PATCH" }
   | {
@@ -108,6 +114,10 @@ export function useMutation(businessId: string) {
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
         const messages: Record<string, string> = {
+          SERVICE_DATE_FUTURE:
+            "Ngày thực hiện không được ở tương lai.",
+          SERVICE_NEXT_ODOMETER_INVALID:
+            "Mốc km tiếp theo chỉ áp dụng cho bảo dưỡng.",
           CONTRACT_NOT_READY:
             "Xác nhận đặt xe trước khi phát hành. Hợp đồng đã hủy không thể phát hành thêm.",
           CONTRACT_SEQUENCE_EXHAUSTED:

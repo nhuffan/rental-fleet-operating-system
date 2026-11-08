@@ -1,4 +1,5 @@
 "use client";
+import { formatDay, vietnamToday } from "@/features/fleet/vehicles/compliance";
 import Link from "next/link";
 import { useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -48,6 +49,10 @@ export function AlertsPanel({
     );
   }
   function timing(alert: OperationalAlert) {
+    if (alert.kind.startsWith("VEHICLE_") && alert.dueAt)
+      return alert.severity === "CRITICAL"
+        ? "Đã quá hạn — cập nhật hồ sơ xe sau khi gia hạn"
+        : "Đến hạn trong 30 ngày tới";
     if (alert.kind === "RENTAL_DUE_SOON" && alert.dueAt) {
       return `Còn ${elapsed((new Date(alert.dueAt).getTime() - new Date(initial.asOf).getTime()) / 1000)}`;
     }
@@ -72,6 +77,12 @@ export function AlertsPanel({
       "Thiết bị đang gắn có bản tin thực tế cũ hơn 2 phút.",
       "info",
     ],
+    [
+      "Hồ sơ xe đến hạn",
+      initial.stats.vehicleCompliance,
+      "Đăng kiểm, bảo hiểm hoặc bảo dưỡng đã quá hạn/còn tối đa 30 ngày.",
+      "warning",
+    ],
   ] as const;
   return (
     <>
@@ -83,7 +94,15 @@ export function AlertsPanel({
             value={value}
             description={description}
             tone={tone}
-            icon={index === 2 ? "signal" : index === 1 ? "calendar" : "clock"}
+            icon={
+              index === 3
+                ? "shield"
+                : index === 2
+                  ? "signal"
+                  : index === 1
+                    ? "calendar"
+                    : "clock"
+            }
           />
         ))}
       </div>
@@ -259,7 +278,9 @@ export function AlertsPanel({
                   label: "Mốc thời gian (VN)",
                   render: (item) => (
                     <>
-                      {item.dueAt
+                      {item.dueAt && item.kind.startsWith("VEHICLE_")
+                        ? `Hạn: ${formatDay(vietnamToday(new Date(item.dueAt)))}`
+                        : item.dueAt
                         ? `Hạn trả: ${formatDate(item.dueAt)}`
                         : item.lastSeenAt
                           ? `Bản tin: ${formatDate(item.lastSeenAt)}`

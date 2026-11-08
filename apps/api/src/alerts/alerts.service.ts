@@ -60,7 +60,26 @@ gps_alerts as (
  and ($4::uuid is null or v.id=$4) and ($5::uuid is null or r.id=$5)
  and (select authorized and valid from scope)
 ),
-alerts as (select * from rental_alerts union all select * from gps_alerts),
+compliance_alerts as (
+ select c.kind||':'||v.id::text as id,c.kind,
+ case when c.due<(s.at at time zone 'Asia/Ho_Chi_Minh')::date then 'CRITICAL' else 'WARNING' end as severity,
+ v.id as "vehicleId",v.license_plate as "licensePlate",null::uuid as "rentalId",
+ (c.due::timestamp at time zone 'Asia/Ho_Chi_Minh') as "dueAt",
+ null::timestamptz as "lastSeenAt",null::text as "gpsState",null::text as "sourceMode",
+ greatest(0,floor(extract(epoch from s.at-(c.due::timestamp at time zone 'Asia/Ho_Chi_Minh'))))::bigint as "ageSeconds",
+ (c.due::timestamp at time zone 'Asia/Ho_Chi_Minh') as reference_at
+ from public.vehicles v cross join snapshot s
+ cross join lateral (values
+  ('VEHICLE_REGISTRATION_DUE',v.registration_expires_on),
+  ('VEHICLE_INSURANCE_DUE',v.insurance_expires_on),
+  ('VEHICLE_MAINTENANCE_DUE',v.next_maintenance_on)
+ ) as c(kind,due)
+ where v.business_id=$1 and v.status='ACTIVE' and c.due is not null
+ and c.due<=(s.at at time zone 'Asia/Ho_Chi_Minh')::date+30
+ and ($4::uuid is null or v.id=$4) and $5::uuid is null
+ and (select authorized and valid from scope)
+),
+alerts as (select * from rental_alerts union all select * from gps_alerts union all select * from compliance_alerts),
 filtered as (select * from alerts where ($6::text is null or kind=$6) and ($7::text is null or severity=$7)),
 page as (
  select id,kind,severity,"vehicleId","licensePlate","rentalId","dueAt","lastSeenAt","gpsState","sourceMode","ageSeconds"
@@ -69,7 +88,7 @@ page as (
 select (select authorized from scope) as authorized,(select valid from scope) as valid,
  coalesce((select jsonb_agg(page order by case when severity='CRITICAL' then 0 else 1 end,coalesce("dueAt","lastSeenAt"),id) from page),'[]'::jsonb) as data,(select count(*)::int from filtered) as total,
  (select jsonb_build_object('total',count(*)::int,'critical',count(*) filter(where severity='CRITICAL')::int,'warning',count(*) filter(where severity='WARNING')::int,
- 'rentalOverdue',count(*) filter(where kind='RENTAL_OVERDUE')::int,'rentalDueSoon',count(*) filter(where kind='RENTAL_DUE_SOON')::int,'gpsStale',count(*) filter(where kind='GPS_STALE')::int) from alerts) as stats,
+ 'rentalOverdue',count(*) filter(where kind='RENTAL_OVERDUE')::int,'rentalDueSoon',count(*) filter(where kind='RENTAL_DUE_SOON')::int,'gpsStale',count(*) filter(where kind='GPS_STALE')::int,'vehicleCompliance',count(*) filter(where kind like 'VEHICLE_%')::int) from alerts) as stats,
  (select at from snapshot) as "asOf"`;
 @Injectable()
 export class AlertsService {
@@ -113,6 +132,7 @@ export class AlertsService {
       limit: q.limit,
       rules: {
         dueSoonSeconds: 86400,
+        complianceWarningDays: 30,
         gpsStaleAfterSeconds: 120,
         gpsOfflineAfterSeconds: 600,
       },

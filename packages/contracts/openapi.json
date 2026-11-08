@@ -967,7 +967,10 @@
               "enum": [
                 "RENTAL_OVERDUE",
                 "RENTAL_DUE_SOON",
-                "GPS_STALE"
+                "GPS_STALE",
+                "VEHICLE_REGISTRATION_DUE",
+                "VEHICLE_INSURANCE_DUE",
+                "VEHICLE_MAINTENANCE_DUE"
               ]
             }
           },
@@ -16343,6 +16346,503 @@
         ]
       }
     },
+    "/api/v1/vehicles/{id}/service-records": {
+      "get": {
+        "operationId": "FleetController_serviceRecords",
+        "parameters": [
+          {
+            "name": "X-Business-Id",
+            "in": "header",
+            "description": "Select an active business membership. Defaults to oldest active membership.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/Object"
+                }
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/Object"
+                }
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceRecordPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Fleet Core"
+        ]
+      },
+      "post": {
+        "operationId": "FleetController_createServiceRecord",
+        "parameters": [
+          {
+            "name": "X-Business-Id",
+            "in": "header",
+            "description": "Select an active business membership. Defaults to oldest active membership.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ServiceRecordCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceRecordResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Fleet Core"
+        ]
+      }
+    },
     "/api/v1/gps-devices": {
       "get": {
         "operationId": "FleetController_devices",
@@ -23743,7 +24243,10 @@
             "enum": [
               "RENTAL_OVERDUE",
               "RENTAL_DUE_SOON",
-              "GPS_STALE"
+              "GPS_STALE",
+              "VEHICLE_REGISTRATION_DUE",
+              "VEHICLE_INSURANCE_DUE",
+              "VEHICLE_MAINTENANCE_DUE"
             ]
           },
           "severity": {
@@ -23830,6 +24333,9 @@
           },
           "gpsStale": {
             "type": "number"
+          },
+          "vehicleCompliance": {
+            "type": "number"
           }
         },
         "required": [
@@ -23838,7 +24344,8 @@
           "warning",
           "rentalOverdue",
           "rentalDueSoon",
-          "gpsStale"
+          "gpsStale",
+          "vehicleCompliance"
         ]
       },
       "AlertRulesResponse": {
@@ -23848,6 +24355,12 @@
             "type": "number",
             "enum": [
               86400
+            ]
+          },
+          "complianceWarningDays": {
+            "type": "number",
+            "enum": [
+              30
             ]
           },
           "gpsStaleAfterSeconds": {
@@ -23865,6 +24378,7 @@
         },
         "required": [
           "dueSoonSeconds",
+          "complianceWarningDays",
           "gpsStaleAfterSeconds",
           "gpsOfflineAfterSeconds"
         ]
@@ -27333,6 +27847,25 @@
               "INACTIVE"
             ]
           },
+          "registrationExpiresOn": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "insuranceExpiresOn": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "nextMaintenanceOn": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "nextMaintenanceOdometer": {
+            "type": "number",
+            "nullable": true
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -27359,6 +27892,10 @@
           "make",
           "model",
           "status",
+          "registrationExpiresOn",
+          "insuranceExpiresOn",
+          "nextMaintenanceOn",
+          "nextMaintenanceOdometer",
           "createdAt",
           "updatedAt",
           "currentAssignment"
@@ -27416,6 +27953,29 @@
               "INACTIVE"
             ],
             "default": "ACTIVE"
+          },
+          "registrationExpiresOn": {
+            "type": "string",
+            "format": "date",
+            "nullable": true,
+            "example": "2027-03-31"
+          },
+          "insuranceExpiresOn": {
+            "type": "string",
+            "format": "date",
+            "nullable": true,
+            "example": "2027-03-31"
+          },
+          "nextMaintenanceOn": {
+            "type": "string",
+            "format": "date",
+            "nullable": true,
+            "example": "2027-03-31"
+          },
+          "nextMaintenanceOdometer": {
+            "type": "number",
+            "nullable": true,
+            "minimum": 0
           }
         },
         "required": [
@@ -27448,8 +28008,162 @@
               "ACTIVE",
               "INACTIVE"
             ]
+          },
+          "registrationExpiresOn": {
+            "type": "string",
+            "format": "date",
+            "nullable": true,
+            "example": "2027-03-31"
+          },
+          "insuranceExpiresOn": {
+            "type": "string",
+            "format": "date",
+            "nullable": true,
+            "example": "2027-03-31"
+          },
+          "nextMaintenanceOn": {
+            "type": "string",
+            "format": "date",
+            "nullable": true,
+            "example": "2027-03-31"
+          },
+          "nextMaintenanceOdometer": {
+            "type": "number",
+            "nullable": true,
+            "minimum": 0
           }
         }
+      },
+      "ServiceRecordResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "businessId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "vehicleId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "MAINTENANCE",
+              "REGISTRATION",
+              "INSURANCE"
+            ]
+          },
+          "performedOn": {
+            "type": "string",
+            "format": "date"
+          },
+          "odometer": {
+            "type": "number",
+            "nullable": true
+          },
+          "costVnd": {
+            "type": "string",
+            "nullable": true
+          },
+          "notes": {
+            "type": "string"
+          },
+          "createdBy": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "businessId",
+          "vehicleId",
+          "kind",
+          "performedOn",
+          "odometer",
+          "costVnd",
+          "notes",
+          "createdBy",
+          "createdAt"
+        ]
+      },
+      "ServiceRecordPage": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ServiceRecordResponse"
+            }
+          }
+        },
+        "required": [
+          "page",
+          "limit",
+          "total",
+          "data"
+        ]
+      },
+      "ServiceRecordCreate": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "MAINTENANCE",
+              "REGISTRATION",
+              "INSURANCE"
+            ]
+          },
+          "performedOn": {
+            "type": "string",
+            "format": "date",
+            "description": "Vietnam calendar date; cannot be in the future."
+          },
+          "odometer": {
+            "type": "number",
+            "minimum": 0
+          },
+          "costVnd": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,14})$",
+            "description": "Exact whole VND. Recorded fact only; creates no movement."
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "nextDueOn": {
+            "type": "string",
+            "format": "date",
+            "description": "Updates the matching vehicle date: next maintenance, or the new registration/insurance expiry."
+          },
+          "nextDueOdometer": {
+            "type": "number",
+            "minimum": 0,
+            "description": "MAINTENANCE only: next maintenance odometer."
+          }
+        },
+        "required": [
+          "kind",
+          "performedOn"
+        ]
       },
       "GpsDevicePage": {
         "type": "object",

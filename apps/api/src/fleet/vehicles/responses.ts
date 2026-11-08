@@ -29,6 +29,14 @@ export class VehicleResponse {
   @ApiProperty() make!: string;
   @ApiProperty() model!: string;
   @ApiProperty({ enum: ['ACTIVE', 'INACTIVE'] }) status!: string;
+  @ApiProperty({ type: String, format: 'date', nullable: true })
+  registrationExpiresOn!: string | null;
+  @ApiProperty({ type: String, format: 'date', nullable: true })
+  insuranceExpiresOn!: string | null;
+  @ApiProperty({ type: String, format: 'date', nullable: true })
+  nextMaintenanceOn!: string | null;
+  @ApiProperty({ type: Number, nullable: true })
+  nextMaintenanceOdometer!: number | null;
   @ApiProperty({ format: 'date-time' }) createdAt!: string;
   @ApiProperty({ format: 'date-time' }) updatedAt!: string;
   @ApiProperty({ type: DeviceAssignmentResponse, nullable: true })
@@ -43,4 +51,21 @@ export class GpsDevicePage extends PageMeta {
 export class DeviceAssignmentPage extends PageMeta {
   @ApiProperty({ type: [DeviceAssignmentResponse] })
   data!: DeviceAssignmentResponse[];
+}
+export class ServiceRecordResponse {
+  @ApiProperty({ format: 'uuid' }) id!: string;
+  @ApiProperty({ format: 'uuid' }) businessId!: string;
+  @ApiProperty({ format: 'uuid' }) vehicleId!: string;
+  @ApiProperty({ enum: ['MAINTENANCE', 'REGISTRATION', 'INSURANCE'] })
+  kind!: string;
+  @ApiProperty({ type: String, format: 'date' }) performedOn!: string;
+  @ApiProperty({ type: Number, nullable: true }) odometer!: number | null;
+  @ApiProperty({ type: String, nullable: true }) costVnd!: string | null;
+  @ApiProperty() notes!: string;
+  @ApiProperty({ format: 'uuid' }) createdBy!: string;
+  @ApiProperty({ format: 'date-time' }) createdAt!: string;
+}
+export class ServiceRecordPage extends PageMeta {
+  @ApiProperty({ type: [ServiceRecordResponse] })
+  data!: ServiceRecordResponse[];
 }
