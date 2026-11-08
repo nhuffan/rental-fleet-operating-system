@@ -15,7 +15,12 @@ import { GpsService } from './gps.service.js';
 import { GpsIngress, GPS_INGRESS_LIMITS } from './ingress.js';
 import type { NormalizedTelemetry } from './traccar.adapter.js';
 vi.mock('../../config.js', () => ({
-  loadConfig: () => ({ environment: 'test', origin: 'http://localhost:4000' }),
+  loadConfig: () => ({
+    environment: 'test',
+    origin: 'http://localhost:4000',
+    rateLimitPerMinute: 300,
+    trustProxy: false,
+  }),
 }));
 const ingest = vi.fn(async (_event: NormalizedTelemetry) => ({
   positionId: randomUUID(),

@@ -13,7 +13,7 @@
     "build": "pnpm -r --if-present build",
     "lint": "pnpm -r --if-present lint",
     "typecheck": "pnpm -r --if-present typecheck",
-    "test": "pnpm --filter api test",
+    "test": "pnpm --filter api test && pnpm --filter web test",
     "test:e2e": "pnpm --filter api build && pnpm --filter api test:e2e",
     "db:migrate": "pnpm --filter api db:migrate",
     "db:seed": "pnpm --filter api db:seed",

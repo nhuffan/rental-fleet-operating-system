@@ -9,6 +9,7 @@ RUN pnpm --filter api build
 ENV NODE_ENV=production HOST=0.0.0.0
 USER node
 EXPOSE 9000
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 CMD node -e "fetch('http://127.0.0.1:9000/api/v1/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 CMD ["pnpm", "--filter", "api", "start:prod"]
 
 FROM base AS web-build
@@ -23,4 +24,5 @@ ENV NODE_ENV=production
 RUN chown -R node:node /app/apps/web/.next
 USER node
 EXPOSE 4000
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 CMD node -e "fetch('http://127.0.0.1:4000/login').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 CMD ["pnpm", "--filter", "web", "start", "--hostname", "0.0.0.0"]

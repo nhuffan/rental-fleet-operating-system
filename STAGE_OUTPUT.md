@@ -345,3 +345,17 @@ Cập nhật: 08/11/2026. Mỗi stage chỉ gồm phần bàn giao và checklist
 - [x] **Browser:** Tài khoản khách mở `/app` hoặc `/superadmin` → bị từ chối; Owner mở `/portal` → bị từ chối.
 - [x] **Browser:** Portal → mở bản in hợp đồng đã phát hành hiển thị đúng; chưa thử bản in thật.
 
+## Stage 25 output
+
+### Delivery
+
+- API có security headers, giới hạn yêu cầu theo IP (429 kèm Retry-After), endpoint sẵn sàng `/health/ready`, và từ chối cấu hình staging/production nguy hiểm. Web có header chống nhúng khung và HSTS bản production.
+- Thêm CI GitHub Actions (typecheck, lint, test, build, kiểm tra contracts, build Docker) và HEALTHCHECK cho container. Chưa chạy workflow trên GitHub; CSP đầy đủ để sau.
+
+### Cases to test
+
+- [ ] Push lên GitHub → workflow CI chạy xanh (verify, docker).
+- [ ] Gọi API > giới hạn/phút từ một IP → trả 429 `RATE_LIMITED` có `Retry-After`; `/health` không bị chặn.
+- [ ] Tắt database → `/health/ready` trả 503 không lộ chi tiết; `/health` vẫn 200.
+- [ ] Mở bất kỳ trang → header `X-Frame-Options: DENY`; nhúng trang trong iframe bị chặn.
+

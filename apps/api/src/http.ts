@@ -15,6 +15,8 @@ import type { Request, Response, NextFunction } from 'express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { loadConfig } from './config.js';
 import { GpsIngress } from './telematics/gps/ingress.js';
+import { rateLimitMiddleware } from './security/rate-limit.js';
+import { securityHeaders } from './security/headers.js';
 @Catch()
 class Errors implements ExceptionFilter {
   catch(error: unknown, host: ArgumentsHost) {
@@ -91,7 +93,10 @@ export function configureApp(app: INestApplication) {
       req.requestId = randomUUID();
       res.setHeader('X-Request-Id', req.requestId);
       res.setHeader('Cache-Control', 'no-store');
-      res.setHeader('X-Content-Type-Options', 'nosniff');
+      for (const [name, value] of Object.entries(
+        securityHeaders(config.environment),
+      ))
+        res.setHeader(name, value);
       const start = performance.now();
       res.on('finish', () => {
         if (process.env.LOG_REQUESTS !== 'false')
@@ -107,6 +112,12 @@ export function configureApp(app: INestApplication) {
       });
       next();
     },
+  );
+  app.use(
+    rateLimitMiddleware({
+      perMinute: config.rateLimitPerMinute ?? 300,
+      trustProxy: config.trustProxy,
+    }),
   );
   // Installed before Nest's default JSON parser; other routes retain their defaults.
   app.use(

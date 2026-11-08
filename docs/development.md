@@ -14,7 +14,7 @@ pnpm dev:api             # API only :9000
 pnpm build
 pnpm lint
 pnpm typecheck
-pnpm test                # domain/security tests and clean-database migration replay
+pnpm test                # API domain/security + migration replay and web node tests
 pnpm test:e2e            # full real dev suite; reserved for Final Validation or a concrete regression
 pnpm openapi             # after API build; exports spec and generated types
 ```
@@ -413,6 +413,14 @@ docker compose --env-file .env.staging.web -f compose.staging.yaml down
 ```
 
 Docker has separate api/web targets: Web 4000, API 9000. `NEXT_PUBLIC_*` are public build arguments; secrets stay runtime-only and excluded from the build context. Use an HTTPS reverse proxy over loopback-bound ports and configure Supabase Auth Site URL/redirect allowlist for that Web origin. No staging project/deployment is created automatically. [Leaked-password protection](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection) requires a paid plan and is unavailable on the current Free project.
+
+## Production hardening and CI
+
+The API adds `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, a restrictive `Permissions-Policy`, `Cross-Origin-Resource-Policy: same-site` and, in staging/production, HSTS to every response. A process-local fixed-window limiter allows `RATE_LIMIT_PER_MINUTE` (default 300, 10–100000) requests per client IP per minute and returns `429 RATE_LIMITED` with `Retry-After`. Health checks, CORS preflight and the authenticated GPS webhook (own limits) are exempt. `X-Forwarded-For` is ignored unless `TRUST_PROXY=true`; enable it only behind a reverse proxy that appends the client address. Counts are per process, so gateway limits remain required in production. The web app sets framing/referrer/permissions headers (and HSTS in production builds); a nonce-based CSP is deferred because the theme initializer and Leaflet tiles need it.
+
+`GET /api/v1/health` is liveness. `GET /api/v1/health/ready` runs `select 1` with a 3-second timeout and returns `503 NOT_READY` without failure details; Docker `HEALTHCHECK` uses it for the API and `/login` for the web. In staging/production `loadConfig` refuses `ALLOW_DEMO_SEED=true` and a missing `SUPABASE_SECRET_KEY`.
+
+GitHub Actions (`.github/workflows/ci.yml`) runs on push to `main` and pull requests with Node 24.21.0/pnpm 11.19.0: frozen install, typecheck, lint, `pnpm test` (API vitest + web `node --test`), build, a contracts-drift check (`pnpm openapi` then `git diff --exit-code packages/contracts`, using dummy non-secret env) and API/web Docker builds without pushing. CI never uses a real Supabase project or secret.
 
 ## Stage output and historical records
 

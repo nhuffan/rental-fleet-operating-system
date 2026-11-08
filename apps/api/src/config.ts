@@ -42,6 +42,21 @@ export function loadConfig() {
     (url.protocol !== 'https:' || !origin.startsWith('https://'))
   )
     throw new Error('Staging/production requires HTTPS');
+  if (['staging', 'production'].includes(environment)) {
+    if (process.env.ALLOW_DEMO_SEED === 'true')
+      throw new Error('ALLOW_DEMO_SEED must not be enabled in staging/production');
+    if (!process.env.SUPABASE_SECRET_KEY)
+      throw new Error(
+        'SUPABASE_SECRET_KEY is required in staging/production',
+      );
+  }
+  const rateLimitPerMinute = Number(process.env.RATE_LIMIT_PER_MINUTE ?? 300);
+  if (
+    !Number.isInteger(rateLimitPerMinute) ||
+    rateLimitPerMinute < 10 ||
+    rateLimitPerMinute > 100_000
+  )
+    throw new Error('Invalid RATE_LIMIT_PER_MINUTE');
   const caPath = process.env.DATABASE_CA_PATH
     ? resolve(process.env.DATABASE_CA_PATH)
     : fileURLToPath(
@@ -52,6 +67,8 @@ export function loadConfig() {
     environment,
     host: process.env.HOST ?? '127.0.0.1',
     origin,
+    rateLimitPerMinute,
+    trustProxy: process.env.TRUST_PROXY === 'true',
     supabaseUrl: url.toString().replace(/\/$/, ''),
     publishableKey: required('SUPABASE_PUBLISHABLE_KEY'),
     databaseUrl: db.toString(),

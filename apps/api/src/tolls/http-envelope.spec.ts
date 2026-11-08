@@ -12,7 +12,12 @@ import { gzipSync } from 'node:zlib';
 import { configureApp } from '../http.js';
 import { GpsIngress } from '../telematics/gps/ingress.js';
 vi.mock('../config.js', () => ({
-  loadConfig: () => ({ origin: 'http://localhost:4000', environment: 'test' }),
+  loadConfig: () => ({
+    origin: 'http://localhost:4000',
+    environment: 'test',
+    rateLimitPerMinute: 300,
+    trustProxy: false,
+  }),
 }));
 @Controller('tolls/imports')
 class ProbeController {
