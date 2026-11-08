@@ -37,7 +37,21 @@ jobs:
         with:
           node-version: 24.21.0
           cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      # ffmpeg-static downloads its binary from GitHub Releases during postinstall, which
+      # intermittently answers 504. Cache the download and retry the install a few times.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ffmpeg-static
+          key: ffmpeg-static-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: ffmpeg-static-${{ runner.os }}-
+      - name: Install dependencies
+        run: |
+          for attempt in 1 2 3 4; do
+            pnpm install --frozen-lockfile && exit 0
+            echo "install attempt $attempt failed; retrying in $((attempt * 20))s"
+            sleep $((attempt * 20))
+          done
+          exit 1
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm test
