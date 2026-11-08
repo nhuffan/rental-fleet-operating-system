@@ -46,10 +46,10 @@ export function LoginForm({
     <main className="login">
       <section className="login-story">
         <div className="login-brand">
-          <BrandLockup />
+          <BrandLockup tagline />
         </div>
         <div className="login-story-copy">
-          <span className="eyebrow">RENTAL FLEET OS</span>
+          <span className="eyebrow">CARBASE</span>
           <h1>All Your Fleet Operations. One Platform.</h1>
           <p>
             Manage vehicles, rentals, customers, and GPS tracking from one

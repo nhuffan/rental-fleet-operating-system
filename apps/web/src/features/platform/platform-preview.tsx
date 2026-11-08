@@ -507,7 +507,7 @@ export function PlatformPreview({
           <div className="form-section">
             <label className="form-field">
               Tên nền tảng
-              <input disabled value="Rental Fleet OS" />
+              <input disabled value="carBase" />
             </label>
             <label className="form-field">
               Ngôn ngữ mặc định

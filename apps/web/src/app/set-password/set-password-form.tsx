@@ -12,10 +12,10 @@ export function SetPasswordForm() {
     <main className="login">
       <section className="login-story">
         <div className="login-brand">
-          <BrandLockup />
+          <BrandLockup tagline />
         </div>
         <div className="login-story-copy">
-          <span className="eyebrow">RENTAL FLEET OS</span>
+          <span className="eyebrow">CARBASE</span>
           <h1>Không gian làm việc của bạn đã sẵn sàng.</h1>
           <p>Đặt mật khẩu riêng để bắt đầu quản lý hoạt động cho thuê xe.</p>
         </div>

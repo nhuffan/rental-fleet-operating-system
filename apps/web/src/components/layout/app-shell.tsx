@@ -432,7 +432,7 @@ export function AppShell({
             <div className="workspace-route-content">{children}</div>
           </main>
           <footer className="workspace-footer">
-            <span>Rental Fleet OS</span>
+            <span>carBase</span>
             <span>
               {platform
                 ? "Quản trị nền tảng"

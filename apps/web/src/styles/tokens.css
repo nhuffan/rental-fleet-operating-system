@@ -5,8 +5,8 @@
   --color-foreground: var(--text-primary);
   --color-border: var(--border);
 }
-/* Approved Canva DAHY0Bey5gc page 5: #E9702E, #AD4511, #2E3540,
-   #F4F4F3, #FFFFFF. Other tones are derived UI roles, not Canva swatches. */
+/* carBase palette (design/brand-identity.html): #E9702E, #AD4511, #2E3540,
+   #F4F4F3, #FFFFFF. Other tones are derived UI roles, not brand swatches. */
 :root {
   color-scheme: light;
   --canvas: #f4f4f3;

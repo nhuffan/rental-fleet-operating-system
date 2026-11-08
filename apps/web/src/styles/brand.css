@@ -1,65 +1,73 @@
-/* Approved Canva Rental Fleet OS (DAHY0Bey5gc), primary lockup:
-   original mark MAHY0DdEe94 + Rental Fleet / Operating System. */
+/* carBase identity: navy "car" + orange "Base" wordmark and the joined C+B mark.
+   Sizes follow font-size, so a lockup scales by setting font-size on it or an ancestor. */
 .brand-lockup {
+  --brand-c: var(--text-primary);
+  --brand-b: var(--brand-solid);
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
+  font-size: 26px;
+  color: var(--brand-c);
+}
+:root[data-theme="dark"] .brand-lockup[data-tone="auto"],
+.brand-lockup[data-tone="dark"] {
+  --brand-c: #fff;
+  --brand-b: #f0914f;
+}
+/* Always-light surfaces (marketing page) ignore the app theme. */
+.brand-lockup[data-tone="light"] {
+  --brand-c: #2e3540;
+  --brand-b: #ad4511;
+}
+.brand-lockup[data-tone="light"] .brand-tagline {
+  color: #606973;
+}
+.brand-line {
   display: inline-flex;
   align-items: center;
-  gap: 12px;
+  gap: 0.34em;
   min-width: 0;
-  color: var(--text-primary);
 }
-.brand-lockup .brand-logo {
-  width: 48px;
-  height: auto;
+.brand-mark {
+  width: 1.25em;
+  height: 1.25em;
   flex: 0 0 auto;
-  object-fit: contain;
 }
 .brand-wordmark {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  min-width: 0;
+  display: inline-flex;
   font-family: var(--font-sans);
-  letter-spacing: normal;
-  line-height: 1.15;
-}
-.brand-wordmark strong {
-  font-size: 24px;
-  font-weight: 750;
-  letter-spacing: -0.8px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
   white-space: nowrap;
 }
-.brand-wordmark > span {
+.brand-c {
+  color: var(--brand-c);
+}
+.brand-b {
+  color: var(--brand-b);
+}
+.brand-tagline {
   color: var(--text-secondary);
-  font-size: 11px;
+  font-family: var(--font-sans);
+  font-size: 0.42em;
   font-weight: 500;
-  letter-spacing: 1.8px;
-  white-space: nowrap;
+  letter-spacing: 0.04em;
 }
-.brand-lockup-compact .brand-logo {
+.brand-lockup[data-tone="dark"] .brand-tagline {
+  color: #ffffffb3;
+}
+.brand-lockup-compact .brand-mark {
   width: 24px;
+  height: 24px;
 }
 .login-brand .brand-lockup {
-  gap: 14px;
-}
-.login-brand .brand-logo {
-  width: 56px;
-}
-.login-brand .brand-wordmark strong {
-  font-size: 28px;
-}
-.login-brand .brand-wordmark > span {
-  font-size: 12px;
-  letter-spacing: 2.2px;
+  font-size: 34px;
 }
 @media (max-width: 767px) {
-  .login-brand .brand-logo {
-    width: 48px;
-  }
-  .login-brand .brand-wordmark strong {
-    font-size: 24px;
-  }
-  .login-brand .brand-wordmark > span {
-    font-size: 11px;
-    letter-spacing: 1.8px;
+  .login-brand .brand-lockup {
+    font-size: 28px;
   }
 }

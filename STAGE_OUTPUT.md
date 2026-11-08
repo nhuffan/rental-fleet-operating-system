@@ -412,3 +412,18 @@ Cập nhật: 08/11/2026. Mỗi stage chỉ gồm phần bàn giao và checklist
 - [ ] Chạy với `--production` trên bản build production → Swagger và `/dev-preview` được báo đã tắt.
 - [ ] Làm theo checklist trên một dự án Supabase staging mới → đăng nhập, quên mật khẩu và báo cáo hoạt động.
 
+## Stage 30 output
+
+### Delivery
+
+- Trang giới thiệu carBase tại `/` (hero, tính năng, quy trình, vai trò, GPS thử nghiệm, FAQ, kêu gọi liên hệ) dựng từ file thiết kế; responsive và luôn nền sáng. Nút liên hệ dùng email khi đặt `NEXT_PUBLIC_CONTACT_EMAIL`, nếu không thì dẫn tới Đăng nhập.
+- Áp dụng logo và tên carBase (biểu tượng C+B dạng SVG, wordmark "car"+"Base", favicon) cho đăng nhập, sidebar, portal và metadata; bảng màu khớp tài liệu thương hiệu, có biến thể sáng/tối.
+
+### Cases to test
+
+- [x] **Browser:** Mở `/` trên desktop và mobile 375px → đúng bố cục thiết kế, không tràn ngang; chế độ tối của app không làm đổi màu trang giới thiệu.
+- [x] **Browser:** `/login` ở chế độ tối → logo chuyển trắng + cam, có tagline.
+- [ ] Đăng nhập → sidebar Owner/Superadmin và portal hiện logo carBase đúng cỡ, không bị cắt ở màn hình nhỏ.
+- [ ] Đặt `NEXT_PUBLIC_CONTACT_EMAIL` khi build → nút "Liên hệ dùng thử" mở email; bỏ trống → nút "Bắt đầu" dẫn tới `/login`.
+- [ ] Các tab trình duyệt hiện favicon carBase mới.
+

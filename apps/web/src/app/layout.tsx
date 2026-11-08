@@ -11,10 +11,10 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Rental Fleet OS",
+  title: "carBase — Nền tảng vận hành cho thuê xe và quản lý đội xe",
   description:
-    "Manage vehicles, rentals, customers, and GPS tracking from one connected workspace.",
-  applicationName: "Rental Fleet OS",
+    "Quản lý hợp đồng, bàn giao, GPS, thu chi và giấy tờ đội xe cho doanh nghiệp cho thuê xe. Dữ liệu tách biệt theo từng doanh nghiệp.",
+  applicationName: "carBase",
 };
 export default function RootLayout({
   children,

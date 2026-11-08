@@ -15,10 +15,10 @@ export function ForgotPasswordForm() {
     <main className="login">
       <section className="login-story">
         <div className="login-brand">
-          <BrandLockup />
+          <BrandLockup tagline />
         </div>
         <div className="login-story-copy">
-          <span className="eyebrow">RENTAL FLEET OS</span>
+          <span className="eyebrow">CARBASE</span>
           <h1>Lấy lại quyền truy cập.</h1>
           <p>Nhập email tài khoản để nhận link đặt lại mật khẩu một lần.</p>
         </div>
