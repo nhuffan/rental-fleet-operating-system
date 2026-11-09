@@ -1,5 +1,6 @@
 "use client";
 import { useActionState } from "react";
+import { AuthShowcase } from "@/components/ui/auth-showcase";
 import { BrandLockup } from "@/components/ui/brand-lockup";
 import { Button, Input } from "@/components/ui/primitives";
 import { Icon } from "@/components/ui/icon";
@@ -12,13 +13,14 @@ export function SetPasswordForm() {
     <main className="login">
       <section className="login-story">
         <div className="login-brand">
-          <BrandLockup tagline />
+          <BrandLockup tagline tone="dark" />
         </div>
         <div className="login-story-copy">
           <span className="eyebrow">CARBASE</span>
           <h1>Không gian làm việc của bạn đã sẵn sàng.</h1>
           <p>Đặt mật khẩu riêng để bắt đầu quản lý hoạt động cho thuê xe.</p>
         </div>
+        <AuthShowcase />
         <small>Giữ mật khẩu và link truy cập riêng cho bạn.</small>
       </section>
       <section className="login-form" aria-labelledby="password-title">

@@ -1,4 +1,5 @@
 "use client";
+import { AuthShowcase } from "@/components/ui/auth-showcase";
 import { BrandLockup } from "@/components/ui/brand-lockup";
 import { Button, Input } from "@/components/ui/primitives";
 import { Icon } from "@/components/ui/icon";
@@ -46,7 +47,7 @@ export function LoginForm({
     <main className="login">
       <section className="login-story">
         <div className="login-brand">
-          <BrandLockup tagline />
+          <BrandLockup tagline tone="dark" />
         </div>
         <div className="login-story-copy">
           <span className="eyebrow">CARBASE</span>
@@ -70,6 +71,7 @@ export function LoginForm({
             </span>
           </div>
         </div>
+        <AuthShowcase />
         <small>One connected workspace for smarter fleet operations.</small>
       </section>
       <section className="login-form" aria-labelledby="login-title">

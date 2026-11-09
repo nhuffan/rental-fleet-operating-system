@@ -67,6 +67,7 @@ export function NavigationLink({
       href={href}
       className={`nav-link ${active ? "is-active" : ""}`}
       aria-current={active ? "page" : undefined}
+      title={label}
       onNavigate={onNavigate}
     >
       <Icon name={icon} />
