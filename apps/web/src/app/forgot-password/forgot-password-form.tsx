@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useActionState } from "react";
+import { AuthShowcase } from "@/components/ui/auth-showcase";
 import { BrandLockup } from "@/components/ui/brand-lockup";
 import { Button, Input } from "@/components/ui/primitives";
 import { Icon } from "@/components/ui/icon";
@@ -15,13 +16,14 @@ export function ForgotPasswordForm() {
     <main className="login">
       <section className="login-story">
         <div className="login-brand">
-          <BrandLockup tagline />
+          <BrandLockup tagline tone="dark" />
         </div>
         <div className="login-story-copy">
           <span className="eyebrow">CARBASE</span>
           <h1>Lấy lại quyền truy cập.</h1>
           <p>Nhập email tài khoản để nhận link đặt lại mật khẩu một lần.</p>
         </div>
+        <AuthShowcase />
         <small>Không chia sẻ link đặt lại mật khẩu với bất kỳ ai.</small>
       </section>
       <section className="login-form" aria-labelledby="forgot-title">

@@ -2,7 +2,13 @@
 import Link from "next/link";
 import { BrandLockup } from "@/components/ui/brand-lockup";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from "react";
 import type { PlatformMe } from "@/features/platform/live/types";
 import type { Me } from "@rental-fleet/contracts";
 import { BusinessSwitcher } from "@/app/app/shell-controls";
@@ -11,6 +17,13 @@ import { NavigationLink, NavigationLoadingTarget } from "./navigation-link";
 import { WorkspaceContext } from "./workspace-context";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { Button } from "@/components/ui/primitives";
+// Presentation preference only; server render and hydration use the rail.
+const SIDEBAR_KEY = "carbase-sidebar";
+const SIDEBAR_EVENT = "carbase-sidebar-change";
+function subscribeSidebar(callback: () => void) {
+  window.addEventListener(SIDEBAR_EVENT, callback);
+  return () => window.removeEventListener(SIDEBAR_EVENT, callback);
+}
 type NavItem = {
   href: string;
   label: string;
@@ -52,6 +65,11 @@ export function AppShell({
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const rail = useSyncExternalStore(
+    subscribeSidebar,
+    () => window.localStorage.getItem(SIDEBAR_KEY) !== "expanded",
+    () => true,
+  );
   const [navigationTarget, setNavigationTarget] =
     useState<HTMLDivElement | null>(null);
   const sidebarRef = useRef<HTMLElement>(null);
@@ -59,6 +77,10 @@ export function AppShell({
   useEffect(() => {
     contentScrollRef.current?.scrollTo({ top: 0 });
   }, [pathname]);
+  function toggleRail() {
+    window.localStorage.setItem(SIDEBAR_KEY, rail ? "expanded" : "rail");
+    window.dispatchEvent(new Event(SIDEBAR_EVENT));
+  }
   useEffect(() => {
     const desktop = window.matchMedia("(min-width: 1024px)");
     const resetNavigation = () => {
@@ -289,7 +311,9 @@ export function AppShell({
     );
   }
   const workspace = (
-    <div className={`workspace ${open ? "nav-open" : ""}`}>
+    <div
+      className={`workspace ${rail ? "is-rail" : "is-expanded"} ${open ? "nav-open" : ""}`}
+    >
       <a className="skip-link" href="#main-content">
         Đến nội dung chính
       </a>
@@ -306,27 +330,14 @@ export function AppShell({
         id="workspace-navigation"
         aria-label="Điều hướng không gian làm việc"
       >
-        {/* Stable intrinsic sizing includes every approved navigation label. */}
-        <div className="sidebar-width-guide" aria-hidden="true">
-          {[
-            ...fleetItems,
-            ...platformItems,
-            ["alerts", "Cảnh báo vận hành", "alert"],
-            ["users", "Quyền truy cập Owner", "users"],
-            ["audit", "Nhật ký hoạt động", "audit"],
-          ].map(([path, label, icon], index) => (
-            <span className="sidebar-size-row" key={`${path}:${index}`}>
-              <Icon name={icon as IconName} />
-              <span>{label}</span>
-            </span>
-          ))}
-          <span className="sidebar-size-heading">
-            KHÔNG GIAN VẬN HÀNH <Icon name="chevron" size={14} />
-          </span>
-        </div>
         <div className="sidebar-brand-area">
-          <Link href={prefix} className="brand">
-            <BrandLockup />
+          <Link href={prefix} className="brand" aria-label="carBase">
+            <span className="brand-full">
+              <BrandLockup />
+            </span>
+            <span className="brand-rail" aria-hidden="true">
+              <BrandLockup compact />
+            </span>
           </Link>
           <Button
             className="sidebar-close"
@@ -353,6 +364,16 @@ export function AppShell({
             )}
         </div>
         <div className="sidebar-bottom">
+          <button
+            type="button"
+            className="rail-toggle"
+            onClick={toggleRail}
+            aria-pressed={!rail}
+            aria-label={rail ? "Mở rộng thanh điều hướng" : "Thu gọn thanh điều hướng"}
+          >
+            <Icon name="chevron" size={16} />
+            <span>{rail ? "Mở rộng" : "Thu gọn"}</span>
+          </button>
           {showPreviews && !preview && (
             <Link className="preview-entry" href="/dev-preview/business">
               Khám phá giao diện mới <Icon name="arrow" size={14} />

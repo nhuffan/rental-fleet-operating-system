@@ -427,3 +427,17 @@ Cập nhật: 08/11/2026. Mỗi stage chỉ gồm phần bàn giao và checklist
 - [ ] Đặt `NEXT_PUBLIC_CONTACT_EMAIL` khi build → nút "Liên hệ dùng thử" mở email; bỏ trống → nút "Bắt đầu" dẫn tới `/login`.
 - [ ] Các tab trình duyệt hiện favicon carBase mới.
 
+
+## Stage 31 output
+
+### Delivery
+
+- Giao diện Owner/Superadmin làm mới theo mẫu dashboard: sidebar icon thu gọn (nhớ lựa chọn mở rộng/thu gọn), thẻ KPI pastel, panel và nút bo tròn mềm hơn; giữ bảng màu carBase, sáng/tối.
+- Đăng nhập, quên mật khẩu và đặt mật khẩu có panel xem trước workspace (dữ liệu minh họa, chỉ để trang trí) và thẻ form bo tròn.
+
+### Cases to test
+
+- [x] **Browser:** `/dev-preview/business` và `/dev-preview/platform` → sidebar hiện icon, nút cuối sidebar mở rộng/thu gọn và giữ lựa chọn sau khi tải lại.
+- [x] **Browser:** `/login` ở desktop → hiện bản xem trước workspace, không cuộn dọc; màn hình hẹp hoặc thấp thì ẩn.
+- [ ] Đăng nhập Owner và Superadmin → rê chuột vào icon hiện tên mục; mục đang chọn nổi bật.
+- [ ] Mobile 375px → menu trượt vẫn đủ nhãn, login không tràn ngang.
