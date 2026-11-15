@@ -49,6 +49,7 @@ import { FleetService } from './fleet/vehicles/fleet.service.js';
 import { RentalController } from './rentals/rental.controller.js';
 import { RentalService } from './rentals/rental.service.js';
 import { AuthGuard, TenantGuard, PermissionGuard } from './auth/guards.js';
+import { AiTools } from './ai/ai-tools.js';
 @Module({
   controllers: [
     ContractController,
@@ -73,6 +74,7 @@ import { AuthGuard, TenantGuard, PermissionGuard } from './auth/guards.js';
   providers: [
     ContractService,
     Database,
+    AiTools,
     AlertsService,
     CommercialService,
     TollService,

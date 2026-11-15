@@ -453,3 +453,15 @@ Cập nhật: 08/11/2026. Mỗi stage chỉ gồm phần bàn giao và checklist
 
 - [ ] Chạy Supabase local với môi trường dùng riêng cho kiểm thử → CLI đọc được cấu hình.
 - [ ] Chuẩn bị doanh nghiệp thử và một người dùng ngoài doanh nghiệp → dùng hai danh tính để kiểm tra ranh giới tool ở stage tiếp theo.
+
+## Stage 33 output
+
+### Delivery
+
+- Sáu công cụ chỉ đọc dùng chung dịch vụ NestJS cho cảnh báo, danh sách và chi tiết xe, tổng quan thuê xe, xe trống và báo cáo kinh doanh.
+- Kiểm tra lại Owner của doanh nghiệp đã chọn theo từng lần gọi. Công cụ trả tập trường giới hạn, thời gian đọc và đường dẫn nguồn để Copilot và MCP dùng ở các stage sau.
+
+### Cases to test
+
+- [x] Gọi tool bằng bộ dữ liệu thử → giữ số tiền gốc, giờ dữ liệu, nhãn GPS TEST và loại trường khách/thiết bị.
+- [x] Gọi với quyền không hợp lệ, UUID xe ngoài phạm vi hoặc bộ lọc khách → từ chối, không trả dữ liệu nhạy cảm.
