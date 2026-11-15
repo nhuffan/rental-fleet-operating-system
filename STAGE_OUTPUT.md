@@ -441,3 +441,15 @@ Cập nhật: 08/11/2026. Mỗi stage chỉ gồm phần bàn giao và checklist
 - [x] **Browser:** `/login` ở desktop → hiện bản xem trước workspace, không cuộn dọc; màn hình hẹp hoặc thấp thì ẩn.
 - [ ] Đăng nhập Owner và Superadmin → rê chuột vào icon hiện tên mục; mục đang chọn nổi bật.
 - [ ] Mobile 375px → menu trượt vẫn đủ nhãn, login không tràn ngang.
+
+## Stage 32 output
+
+### Delivery
+
+- Chốt phạm vi Copilot chỉ đọc cho Owner, các trường dữ liệu được phép xuất và cách hiển thị nguồn, thời gian đọc, GPS TEST.
+- Gỡ khai báo mẫu email khôi phục trùng để Supabase CLI đọc được cấu hình local.
+
+### Cases to test
+
+- [ ] Chạy Supabase local với môi trường dùng riêng cho kiểm thử → CLI đọc được cấu hình.
+- [ ] Chuẩn bị doanh nghiệp thử và một người dùng ngoài doanh nghiệp → dùng hai danh tính để kiểm tra ranh giới tool ở stage tiếp theo.

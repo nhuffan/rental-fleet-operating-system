@@ -427,6 +427,14 @@ The API adds `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, a restrict
 
 GitHub Actions (`.github/workflows/ci.yml`) runs on push to `main` and pull requests with Node 24.21.0/pnpm 11.19.0: frozen install, typecheck, lint, `pnpm test` (API vitest + web `node --test`), build, a contracts-drift check (`pnpm openapi` then `git diff --exit-code packages/contracts`, using dummy non-secret env) and API/web Docker builds without pushing. CI never uses a real Supabase project or secret.
 
+## AI operations
+
+The initial Owner workflows cover operational alerts, report summaries and vehicle availability. Web and MCP use the same NestJS tools. Authentication resolves the Owner and selected business on the server, then each tool checks its own permission. Tool inputs accept only the query fields needed by the operation.
+
+Tool results are projected before reaching the model or MCP host. Customer contact and identity data, internal notes, device and location data, and signed media links are excluded. Reports preserve exact VND strings and the requested interval. Alerts retain their source snapshot and mark synthetic GPS as TEST. Other results identify when they were read. Source links come from verified records and point to Owner pages.
+
+Verify with a disposable business and a separate user who cannot access it. Exercise an empty result, a foreign entity, an invalid date range, a TEST alert, and a report with an amount that must remain exact.
+
 ## Background jobs
 
 `JobScheduler` (`apps/api/src/jobs`) is OFF unless `JOBS_ENABLED=true`; each job also needs its own mode: `JOB_GPS_RETENTION` and `JOB_EVIDENCE_RETENTION` accept `off` (default), `dry-run` (count only) or `apply` (deletes). `JOB_INTERVAL_MINUTES` (5–1440, default 60) and `JOB_MAX_TENANTS_PER_RUN` (default 200) bound each run. A run holds a session advisory lock so only one API replica executes at a time, never overlaps its predecessor and treats invalid configuration as disabled. GPS retention reuses `runRetention` per ACTIVE tenant (30-day rule, latest fix of each current assignment kept; apply deletes at most three batches of 1,000 per tenant). Evidence retention reuses `EvidenceRetentionWorker.runBatch` (50 candidates). Evidence `apply` is **skipped**, never downgraded, unless `retentionDeletionEnabled()` allows irreversible deletion: development keeps its exact-project rule; staging/production require `EVIDENCE_RETENTION_DELETE_ENABLED=true` and `EVIDENCE_RETENTION_DELETE_CONFIRM` equal to the Supabase project ref. Logs contain only job name, mode, outcome and counts. Superadmin → Cài đặt hệ thống shows mode and the per-process last run. Recommended rollout: `dry-run` for a week, review counts, then `apply` for one job at a time. The unchanged evidence janitor for expired uploads continues to run independently.
