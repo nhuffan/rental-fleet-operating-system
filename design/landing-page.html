@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>carBase — Nền tảng vận hành cho thuê xe và quản lý đội xe</title>
+<meta name="description" content="Quản lý hợp đồng, bàn giao, GPS, thu chi và giấy tờ đội xe cho doanh nghiệp cho thuê xe. Dữ liệu tách biệt theo từng doanh nghiệp.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --orange:#e9702e;--orange-strong:#ad4511;--orange-hover:#90380e;--orange-soft:#fff0e6;--orange-border:#f2c9aa;
+  --navy:#2e3540;--navy-deep:#111827;--canvas:#f4f4f3;--muted:#f8f8f7;--border:#dededb;--text2:#606973;
+  --ok:#24734e;--ok-bg:#eaf5ee;--warn:#885b12;--warn-bg:#fff5df;--info:#356482;--info-bg:#eaf2f8;
+}
+*{box-sizing:border-box;margin:0}
+html{scroll-behavior:smooth}
+body{font-family:Inter,system-ui,sans-serif;color:var(--navy);background:#fff;line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1160px;margin:0 auto;padding:0 24px}
+:focus-visible{outline:2px solid var(--orange-strong);outline-offset:3px;border-radius:6px}
+
+/* brand */
+.wm{font-weight:800;letter-spacing:-.04em;line-height:1;display:inline-flex}
+.wm .c{color:var(--navy)}.wm .b{color:var(--orange-strong)}
+.dark .wm .c{color:#fff}.dark .wm .b{color:#f0914f}
+.logo{display:inline-flex;align-items:center;gap:8px}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font:600 15px Inter;border-radius:10px;padding:12px 22px;border:1px solid transparent;cursor:pointer;transition:background .15s,border-color .15s}
+.btn-p{background:var(--orange-strong);color:#fff}.btn-p:hover{background:var(--orange-hover)}
+.btn-s{background:#fff;border-color:var(--border);color:var(--navy)}.btn-s:hover{border-color:#b6b9bc}
+.btn-sm{padding:9px 16px;font-size:14px}
+
+/* nav */
+.nav{position:sticky;top:0;z-index:10;background:#ffffffee;backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}
+.nav .wrap{display:flex;align-items:center;justify-content:space-between;height:68px}
+.nav ul{display:flex;gap:28px;list-style:none;padding:0;font-size:14px;font-weight:500;color:var(--text2)}
+.nav ul a:hover{color:var(--navy)}
+.nav .act{display:flex;gap:10px}
+
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--orange-strong)}
+h1{font-size:56px;line-height:1.05;font-weight:800;letter-spacing:-.035em}
+h1 em{font-style:normal;color:var(--orange-strong)}
+h2{font-size:36px;line-height:1.15;font-weight:800;letter-spacing:-.025em;margin-top:8px}
+.lead{font-size:18px;color:var(--text2)}
+section{padding:88px 0}
+.sec-head{max-width:640px;margin-bottom:44px}
+.sec-head .lead{margin-top:14px;font-size:17px}
+
+/* hero */
+.hero{background:linear-gradient(180deg,#fff 0%,var(--orange-soft) 100%);padding:72px 0 88px;overflow:hidden}
+.hero .wrap{display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:center}
+.pill{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--orange-strong);background:#fff;border:1px solid var(--orange-border);border-radius:999px;padding:5px 14px;margin-bottom:22px}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--orange)}
+.hero .lead{margin:22px 0 32px;max-width:520px}
+.hero .cta{display:flex;gap:12px;flex-wrap:wrap}
+.hero .note{margin-top:18px;font-size:13px;color:var(--text2)}
+
+/* product mock */
+.mock{background:var(--navy-deep);border-radius:20px;padding:16px;box-shadow:0 30px 60px -20px #11182740}
+.mock-bar{display:flex;gap:6px;padding:4px 4px 14px}
+.mock-bar i{width:10px;height:10px;border-radius:50%;background:#ffffff30}
+.mock-body{background:var(--canvas);border-radius:12px;padding:16px;color:var(--navy)}
+.mock-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+.mock-kpis div{background:#fff;border:1px solid var(--border);border-radius:10px;padding:10px 12px}
+.mock-kpis small{font-size:11px;color:var(--text2)}.mock-kpis b{display:block;font-size:20px;font-weight:800}
+.mock-row{display:flex;justify-content:space-between;align-items:center;background:#fff;border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-top:8px;font-size:13px}
+.mock-row span:first-child{font-weight:600}
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;border-radius:999px;padding:3px 10px}
+.badge::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.b-ok{background:var(--ok-bg);color:var(--ok)}.b-warn{background:var(--warn-bg);color:var(--warn)}
+.b-br{background:var(--orange-soft);color:var(--orange-strong)}.b-info{background:var(--info-bg);color:var(--info)}
+
+/* trust strip */
+.strip{border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:#fff;padding:28px 0}
+.strip .wrap{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;text-align:center}
+.strip b{display:block;font-size:15px}.strip span{font-size:13px;color:var(--text2)}
+
+/* features */
+.feat{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.card{background:#fff;border:1px solid var(--border);border-radius:16px;padding:26px;transition:border-color .15s,box-shadow .15s}
+.card:hover{border-color:var(--orange-border);box-shadow:0 10px 30px -18px #ad451140}
+.ic{width:44px;height:44px;border-radius:12px;background:var(--orange-soft);color:var(--orange-strong);display:grid;place-items:center;margin-bottom:16px}
+.ic svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.card h3{font-size:18px;font-weight:700;margin-bottom:6px}
+.card p{font-size:15px;color:var(--text2)}
+
+/* flow */
+.alt{background:var(--canvas)}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;counter-reset:s}
+.step{position:relative;padding-top:56px}
+.step::before{counter-increment:s;content:counter(s);position:absolute;top:0;left:0;width:40px;height:40px;border-radius:50%;background:var(--orange-strong);color:#fff;font-weight:800;display:grid;place-items:center}
+.step::after{content:"";position:absolute;top:19px;left:52px;right:-8px;height:2px;background:var(--orange-border)}
+.step:last-child::after{display:none}
+.step h3{font-size:17px;margin-bottom:6px}.step p{font-size:14px;color:var(--text2)}
+
+/* roles */
+.roles{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.role{border-radius:16px;padding:28px;border:1px solid var(--border);background:#fff}
+.role.hl{background:var(--navy-deep);color:#fff;border-color:var(--navy-deep)}
+.role .tag{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--orange-strong)}
+.role.hl .tag{color:#f0914f}
+.role h3{font-size:22px;margin:8px 0 12px}
+.role ul{list-style:none;padding:0;display:grid;gap:10px;font-size:15px;color:var(--text2)}
+.role.hl ul{color:#ffffffbf}
+.role li{display:flex;gap:10px}
+.role li::before{content:"";flex:none;width:18px;height:18px;margin-top:3px;border-radius:50%;background:var(--orange-soft) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'%3E%3Cpath d='M5 9.5l2.5 2.5L13 6.5' fill='none' stroke='%23ad4511' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat}
+
+/* split (gps) */
+.split{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center}
+.split .lead{margin:16px 0 22px;font-size:17px}
+.checks{list-style:none;padding:0;display:grid;gap:10px}
+.checks li{display:flex;gap:10px;font-size:15px}
+.checks li::before{content:"";flex:none;width:18px;height:18px;margin-top:3px;border-radius:50%;background:var(--orange-soft) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'%3E%3Cpath d='M5 9.5l2.5 2.5L13 6.5' fill='none' stroke='%23ad4511' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat}
+.map{position:relative;height:340px;border-radius:20px;background:
+  linear-gradient(#ffffff80 2px,transparent 2px) 0 0/48px 48px,
+  linear-gradient(90deg,#ffffff80 2px,transparent 2px) 0 0/48px 48px,#e9ecef;border:1px solid var(--border);overflow:hidden}
+.map svg{position:absolute;inset:0;width:100%;height:100%}
+.pin{position:absolute;display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--border);border-radius:999px;padding:6px 12px 6px 8px;font-size:12px;font-weight:600;box-shadow:0 6px 16px -8px #11182760}
+.pin i{width:12px;height:12px;border-radius:50%;background:var(--orange-strong);box-shadow:0 0 0 4px var(--orange-soft)}
+
+/* faq */
+.faq{max-width:760px;display:grid;gap:12px}
+details{background:#fff;border:1px solid var(--border);border-radius:12px;padding:18px 22px}
+summary{cursor:pointer;font-weight:600;list-style:none;display:flex;justify-content:space-between;gap:16px}
+summary::after{content:"+";color:var(--orange-strong);font-weight:700;font-size:20px;line-height:1}
+details[open] summary::after{content:"–"}
+details p{margin-top:10px;color:var(--text2);font-size:15px}
+
+/* cta */
+.cta-band{background:var(--navy-deep);color:#fff;border-radius:24px;padding:56px;display:flex;justify-content:space-between;align-items:center;gap:32px;flex-wrap:wrap}
+.cta-band h2{font-size:34px;margin:0}
+.cta-band p{color:#ffffffb3;margin-top:10px}
+.btn-o{background:var(--orange);color:#fff}.btn-o:hover{background:#f0914f}
+
+footer{border-top:1px solid var(--border);padding:40px 0;margin-top:88px;font-size:14px;color:var(--text2)}
+footer .wrap{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;align-items:center}
+footer nav{display:flex;gap:24px}
+
+@media(max-width:960px){
+  h1{font-size:42px}h2{font-size:30px}
+  .hero .wrap,.split{grid-template-columns:1fr}
+  .feat,.roles{grid-template-columns:1fr 1fr}
+  .steps{grid-template-columns:1fr 1fr}.step::after{display:none}
+  .strip .wrap{grid-template-columns:1fr 1fr}
+  .nav ul{display:none}
+}
+@media(max-width:600px){
+  h1{font-size:34px}section{padding:60px 0}
+  .feat,.roles,.steps{grid-template-columns:1fr}
+  .cta-band{padding:32px}.nav .act .btn-s{display:none}
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="mark" viewBox="0 0 64 64">
+      <path d="M30 14.5A19 19 0 1 0 30 49.5" fill="none" stroke="#2e3540" stroke-width="10"/>
+      <g fill="none" stroke="#ad4511" stroke-width="10" stroke-linejoin="round">
+        <path d="M33 11v42"/><path d="M33 16h9a8.5 8.5 0 0 1 0 17h-9"/><path d="M33 33h11a9 9 0 0 1 0 18h-11"/>
+      </g>
+      <rect x="29" y="30.4" width="30" height="3.2" fill="#fff"/>
+    </symbol>
+  </defs>
+</svg>
+
+<header class="nav">
+  <div class="wrap">
+    <a href="#" class="logo" aria-label="carBase"><svg width="30" height="30"><use href="#mark"/></svg><span class="wm" style="font-size:24px"><span class="c">car</span><span class="b">Base</span></span></a>
+    <ul>
+      <li><a href="#tinh-nang">Tính năng</a></li>
+      <li><a href="#quy-trinh">Quy trình</a></li>
+      <li><a href="#vai-tro">Vai trò</a></li>
+      <li><a href="#gps">GPS</a></li>
+      <li><a href="#faq">Câu hỏi</a></li>
+    </ul>
+    <div class="act"><a class="btn btn-s btn-sm" href="#">Đăng nhập</a><a class="btn btn-p btn-sm" href="#lien-he">Liên hệ dùng thử</a></div>
+  </div>
+</header>
+
+<main>
+<section class="hero" style="padding-top:72px">
+  <div class="wrap">
+    <div>
+      <span class="pill">Cho doanh nghiệp cho thuê xe</span>
+      <h1>Đặt nền móng cho <em>vận hành đội xe</em> của bạn</h1>
+      <p class="lead">Từ báo giá, hợp đồng, bàn giao xe đến thu chi và cảnh báo giấy tờ — gọn trong một hệ thống, dữ liệu của mỗi doanh nghiệp được tách biệt hoàn toàn.</p>
+      <div class="cta">
+        <a class="btn btn-p" href="#lien-he">Liên hệ dùng thử</a>
+        <a class="btn btn-s" href="#tinh-nang">Xem tính năng</a>
+      </div>
+      <p class="note">Hợp đồng và biên bản bàn giao in A4 để ký tay.</p>
+    </div>
+    <div class="mock" aria-hidden="true">
+      <div class="mock-bar"><i></i><i></i><i></i></div>
+      <div class="mock-body">
+        <div class="mock-kpis">
+          <div><small>Xe đang thuê</small><b>24 / 31</b></div>
+          <div><small>Doanh thu tháng</small><b style="color:var(--orange-strong)">186 tr</b></div>
+          <div><small>Cảnh báo</small><b>3</b></div>
+        </div>
+        <div class="mock-row"><span>51H-123.45</span><span>Nguyễn Văn A</span><span class="badge b-br">Đang thuê</span></div>
+        <div class="mock-row"><span>30K-678.90</span><span>Trả xe 09/11</span><span class="badge b-warn">Sắp đến hạn</span></div>
+        <div class="mock-row"><span>29A-246.80</span><span>Chi nhánh Q.1</span><span class="badge b-ok">Sẵn sàng</span></div>
+        <div class="mock-row"><span>51G-555.12</span><span>Bảo hiểm còn 12 ngày</span><span class="badge b-info">Nhắc gia hạn</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="strip">
+  <div class="wrap">
+    <div><b>Nhiều doanh nghiệp</b><span>Dữ liệu tách biệt theo từng doanh nghiệp</span></div>
+    <div><b>Nhiều chi nhánh</b><span>Quản lý xe theo từng điểm</span></div>
+    <div><b>Hợp đồng in A4</b><span>Kèm biên bản kiểm tra xe</span></div>
+    <div><b>Nhật ký thay đổi</b><span>Mọi thao tác quản trị đều được ghi lại</span></div>
+  </div>
+</div>
+
+<section id="tinh-nang">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Tính năng</span>
+      <h2>Mọi thứ để vận hành đội xe, trong một nơi</h2>
+      <p class="lead">Thay bảng tính rời rạc và giấy tờ thủ công bằng một quy trình xuyên suốt.</p>
+    </div>
+    <div class="feat">
+      <div class="card"><div class="ic"><svg viewBox="0 0 24 24"><path d="M5 17h14M6 17l1.5-6h9L18 17M7.5 11l1-3h7l1 3"/><circle cx="8" cy="17" r="1.5"/><circle cx="16" cy="17" r="1.5"/></svg></div><h3>Hồ sơ xe &amp; đội xe</h3><p>Quản lý xe theo chi nhánh, thiết bị GPS và lịch sử gắn thiết bị trên từng xe.</p></div>
+      <div class="card"><div class="ic"><svg viewBox="0 0 24 24"><path d="M7 3h8l4 4v14H7z"/><path d="M15 3v4h4M10 12h6M10 16h6"/></svg></div><h3>Báo giá &amp; hợp đồng</h3><p>Bảng giá theo xe, báo giá hợp đồng, phát hành và in hợp đồng A4 để ký tay.</p></div>
+      <div class="card"><div class="ic"><svg viewBox="0 0 24 24"><path d="M9 11l2 2 4-4"/><rect x="4" y="4" width="16" height="16" rx="3"/></svg></div><h3>Bàn giao &amp; nhận trả</h3><p>Lịch bàn giao, nhận trả xe kèm biên bản kiểm tra tình trạng xe.</p></div>
+      <div class="card"><div class="ic"><svg viewBox="0 0 24 24"><path d="M4 18V9M10 18V5M16 18v-7M21 18H3"/></svg></div><h3>Thu chi &amp; lợi nhuận</h3><p>Thu chi thực nhận, tiền cọc, phí đường bộ và lợi nhuận ước tính theo xe, theo hợp đồng.</p></div>
+      <div class="card"><div class="ic"><svg viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 1 6 6c0 4-6 12-6 12S6 13 6 9a6 6 0 0 1 6-6z"/><circle cx="12" cy="9" r="2"/></svg></div><h3>Theo dõi GPS</h3><p>Vị trí, lịch sử hành trình và cảnh báo mất tín hiệu qua Traccar (đang ở chế độ thử nghiệm).</p></div>
+      <div class="card"><div class="ic"><svg viewBox="0 0 24 24"><path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17h.01"/></svg></div><h3>Cảnh báo &amp; giấy tờ</h3><p>Theo dõi đăng kiểm, bảo hiểm, bảo dưỡng và cảnh báo xe sắp đến hạn trả.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="quy-trinh" class="alt">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Quy trình</span>
+      <h2>Từ báo giá đến đối soát, một mạch liền</h2>
+    </div>
+    <div class="steps">
+      <div class="step"><h3>Báo giá</h3><p>Chọn xe, áp bảng giá và gửi báo giá cho khách.</p></div>
+      <div class="step"><h3>Hợp đồng</h3><p>Phát hành hợp đồng, in A4 và ký tay.</p></div>
+      <div class="step"><h3>Bàn giao &amp; nhận trả</h3><p>Kiểm tra xe, lập biên bản và theo dõi hành trình.</p></div>
+      <div class="step"><h3>Thu chi &amp; báo cáo</h3><p>Ghi nhận thu chi, đối soát phí và xem lợi nhuận.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="vai-tro">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Vai trò</span>
+      <h2>Mỗi người một cổng, quyền được kiểm soát ở máy chủ</h2>
+      <p class="lead">Quyền truy cập được xác thực phía máy chủ — không dựa vào thông tin do người dùng tự khai.</p>
+    </div>
+    <div class="roles">
+      <div class="role hl"><span class="tag">Owner</span><h3>Chủ doanh nghiệp</h3>
+        <ul><li>Quản lý xe, khách hàng, hợp đồng</li><li>Thu chi, báo cáo, xuất CSV</li><li>Cài đặt và nhật ký thay đổi</li></ul></div>
+      <div class="role"><span class="tag">Customer</span><h3>Khách thuê xe</h3>
+        <ul><li>Cổng riêng chỉ để xem</li><li>Xem và in hợp đồng của chính mình</li><li>Không vào được màn hình quản trị</li></ul></div>
+      <div class="role"><span class="tag">Superadmin</span><h3>Quản trị nền tảng</h3>
+        <ul><li>Tạo doanh nghiệp và cấp Owner</li><li>Quản lý trạng thái doanh nghiệp</li><li>Nhật ký nền tảng tách biệt</li></ul></div>
+    </div>
+  </div>
+</section>
+
+<section id="gps" class="alt">
+  <div class="wrap split">
+    <div>
+      <span class="eyebrow">GPS · Thử nghiệm</span>
+      <h2>Biết xe đang ở đâu, đã đi những đâu</h2>
+      <p class="lead">Nhận vị trí qua Traccar, xem lại tuyến đường suy ra từ dữ liệu GPS và nhận cảnh báo khi bản tin bị trễ.</p>
+      <ul class="checks">
+        <li>Vị trí gần nhất của từng xe</li>
+        <li>Lịch sử hành trình và xem lại tuyến đường</li>
+        <li>Cảnh báo khi thiết bị ngừng gửi bản tin</li>
+      </ul>
+      <p style="margin-top:18px;font-size:13px;color:var(--text2)">Tính năng đang ở chế độ thử nghiệm; tích hợp thiết bị thực tế sẽ được bổ sung.</p>
+    </div>
+    <div class="map" aria-hidden="true">
+      <svg viewBox="0 0 500 340" preserveAspectRatio="none"><path d="M40 290C120 250 130 150 220 140S330 200 380 110 450 60 470 40" fill="none" stroke="#ad4511" stroke-width="4" stroke-dasharray="2 10" stroke-linecap="round"/></svg>
+      <div class="pin" style="left:6%;top:78%"><i></i>Chi nhánh</div>
+      <div class="pin" style="left:66%;top:28%"><i></i>51H-123.45</div>
+    </div>
+  </div>
+</section>
+
+<section id="faq">
+  <div class="wrap">
+    <div class="sec-head"><span class="eyebrow">Câu hỏi thường gặp</span><h2>Giải đáp nhanh</h2></div>
+    <div class="faq">
+      <details><summary>Dữ liệu của doanh nghiệp tôi có bị lẫn với doanh nghiệp khác không?</summary><p>Không. Dữ liệu được phân tách theo doanh nghiệp ở cả API và cơ sở dữ liệu.</p></details>
+      <details><summary>Khách thuê xe có vào được phần quản trị không?</summary><p>Không. Khách thuê dùng cổng riêng, chỉ xem và in hợp đồng của chính mình.</p></details>
+      <details><summary>Có in được hợp đồng để ký tay không?</summary><p>Có. Hợp đồng và biên bản bàn giao được tạo ở khổ A4 để in và ký tay.</p></details>
+      <details><summary>GPS đã dùng được với thiết bị thực chưa?</summary><p>GPS hiện ở chế độ thử nghiệm qua Traccar. Tích hợp thiết bị thực tế sẽ được phát triển tiếp.</p></details>
+    </div>
+  </div>
+</section>
+
+<section id="lien-he" style="padding-top:0">
+  <div class="wrap">
+    <div class="cta-band dark">
+      <div><h2>Sẵn sàng đặt nền móng cho đội xe?</h2><p>The Foundation of Fleet Management</p></div>
+      <a class="btn btn-o" href="mailto:">Liên hệ dùng thử</a>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span class="logo"><svg width="24" height="24"><use href="#mark"/></svg><span class="wm" style="font-size:20px"><span class="c">car</span><span class="b">Base</span></span></span>
+    <nav><a href="#tinh-nang">Tính năng</a><a href="#vai-tro">Vai trò</a><a href="#faq">Câu hỏi</a></nav>
+    <span>© 2026 carBase</span>
+  </div>
+</footer>
+</body>
+</html>

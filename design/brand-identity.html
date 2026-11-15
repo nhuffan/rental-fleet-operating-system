@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>carBase — Bộ nhận diện thương hiệu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --orange:#e9702e; --orange-strong:#ad4511; --orange-hover:#90380e; --orange-soft:#fff0e6; --orange-border:#f2c9aa;
+  --navy:#2e3540; --navy-deep:#111827;
+  --canvas:#f4f4f3; --surface:#fff; --muted:#f8f8f7; --border:#dededb;
+  --text2:#606973;
+  --success:#24734e; --success-bg:#eaf5ee; --warning:#885b12; --warning-bg:#fff5df;
+  --danger:#b63d42; --danger-bg:#fcecee; --info:#356482; --info-bg:#eaf2f8;
+  --r:12px;
+}
+*{box-sizing:border-box;margin:0}
+body{font-family:Inter,system-ui,sans-serif;background:var(--canvas);color:var(--navy);line-height:1.55}
+.wrap{max-width:1120px;margin:0 auto;padding:0 24px}
+header.top{padding:56px 0 24px}
+header.top .eyebrow,.eyebrow{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--orange-strong)}
+h1{font-size:40px;font-weight:800;letter-spacing:-.02em;margin:8px 0}
+h2{font-size:24px;font-weight:800;letter-spacing:-.01em;margin-bottom:6px}
+p.lead{color:var(--text2);max-width:640px}
+section{padding:40px 0;border-top:1px solid var(--border)}
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:800px){.g2,.g3,.g4{grid-template-columns:1fr 1fr}}
+@media(max-width:520px){.g2,.g3,.g4{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:24px}
+.logo-tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;border-radius:var(--r);padding:40px 16px;border:1px solid var(--border);min-height:200px}
+.logo-tile.dark{background:var(--navy-deep);border-color:var(--navy-deep)}
+.logo-tile.orange{background:var(--orange);border-color:var(--orange)}
+.cap{font-size:12px;color:var(--text2);margin-top:8px}
+.logo-tile.dark .cap,.logo-tile.orange .cap{color:#fff9}
+/* wordmark */
+.wm{font-weight:800;letter-spacing:-.04em;line-height:1;display:inline-flex;align-items:baseline}
+.wm .c{color:var(--navy)} .wm .b{color:var(--orange-strong)}
+.dark .wm .c{color:#fff}.dark .wm .b{color:#f0914f}
+.orange .wm .c,.orange .wm .b{color:#fff}
+.tag{font-size:12px;letter-spacing:.06em;color:var(--text2)}
+.dark .tag{color:#fffa}.orange .tag{color:#fffc}
+/* swatches */
+.sw{border-radius:var(--r);overflow:hidden;border:1px solid var(--border);background:#fff}
+.sw .chip{height:96px;display:flex;align-items:flex-end;padding:10px 12px;font-size:12px;font-weight:600}
+.sw .meta{padding:10px 12px;font-size:13px}
+.sw .meta b{display:block}.sw .meta span{color:var(--text2);font-size:12px}
+/* type */
+.type-row{display:flex;align-items:baseline;gap:24px;padding:14px 0;border-bottom:1px solid var(--border)}
+.type-row small{width:140px;flex:none;color:var(--text2);font-size:12px}
+/* ui */
+.btn{font:600 14px Inter;border:1px solid transparent;border-radius:8px;padding:10px 18px;cursor:pointer}
+.btn.p{background:var(--orange-strong);color:#fff}.btn.p:hover{background:var(--orange-hover)}
+.btn.s{background:#fff;border-color:var(--border);color:var(--navy)}
+.btn.g{background:var(--orange-soft);color:var(--orange-strong);border-color:var(--orange-border)}
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;border-radius:999px;padding:3px 10px}
+.badge::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.b-ok{background:var(--success-bg);color:var(--success)}.b-warn{background:var(--warning-bg);color:var(--warning)}
+.b-bad{background:var(--danger-bg);color:var(--danger)}.b-info{background:var(--info-bg);color:var(--info)}.b-brand{background:var(--orange-soft);color:var(--orange-strong)}
+input.f{font:14px Inter;border:1px solid var(--border);border-radius:8px;padding:10px 12px;width:100%}
+input.f:focus{outline:2px solid var(--orange-strong);outline-offset:1px}
+/* dashboard mock */
+.app{display:grid;grid-template-columns:200px 1fr;border:1px solid var(--border);border-radius:var(--r);overflow:hidden;background:var(--canvas);min-height:360px}
+.side{background:#f2f2f1;border-right:1px solid var(--border);padding:16px 12px}
+.side a{display:block;padding:8px 10px;border-radius:8px;font-size:14px;color:var(--navy);margin-top:2px}
+.side a.on{background:var(--orange-soft);color:var(--orange-strong);font-weight:600}
+.main{padding:20px}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:14px 0}
+.kpi{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:14px}
+.kpi small{color:var(--text2);font-size:12px}.kpi b{display:block;font-size:24px;font-weight:800}
+table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--border);border-radius:var(--r);font-size:13px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--border)}
+th{color:var(--text2);font-weight:600;font-size:12px;background:var(--muted)}
+@media(max-width:700px){.app{grid-template-columns:1fr}.side{display:none}}
+/* landing mock */
+.land{border:1px solid var(--border);border-radius:var(--r);overflow:hidden;background:#fff}
+.nav{display:flex;align-items:center;justify-content:space-between;padding:16px 28px;border-bottom:1px solid var(--border)}
+.nav ul{display:flex;gap:24px;list-style:none;padding:0;font-size:14px;color:var(--text2)}
+.hero{display:grid;grid-template-columns:1.1fr .9fr;gap:32px;padding:56px 28px;background:linear-gradient(180deg,#fff,var(--orange-soft))}
+.hero h3{font-size:44px;line-height:1.08;font-weight:800;letter-spacing:-.03em}
+.hero h3 em{font-style:normal;color:var(--orange-strong)}
+.hero p{color:var(--text2);margin:16px 0 24px;max-width:460px}
+.vis{background:var(--navy-deep);border-radius:16px;padding:20px;color:#fff;display:flex;flex-direction:column;gap:10px;justify-content:center}
+.vis .row{background:#ffffff12;border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;font-size:13px}
+.feat{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding:32px 28px}
+.feat div{border:1px solid var(--border);border-radius:var(--r);padding:18px}
+.feat .ic{width:36px;height:36px;border-radius:10px;background:var(--orange-soft);color:var(--orange-strong);display:grid;place-items:center;font-weight:800;margin-bottom:10px}
+.cta{background:var(--navy-deep);color:#fff;padding:36px 28px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+@media(max-width:760px){.hero,.feat{grid-template-columns:1fr}.hero h3{font-size:32px}.nav ul{display:none}}
+footer{padding:32px 0 56px;color:var(--text2);font-size:13px}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <!-- Biểu tượng: chữ C (navy) cắt/ghép với chữ B (cam) -->
+    <symbol id="mark" viewBox="0 0 64 64">
+      <path d="M30 14.5A19 19 0 1 0 30 49.5" fill="none" stroke="var(--mc,#2e3540)" stroke-width="10" stroke-linecap="butt"/>
+      <g fill="none" stroke="var(--mb,#ad4511)" stroke-width="10" stroke-linejoin="round">
+        <path d="M33 11v42"/>
+        <path d="M33 16h9a8.5 8.5 0 0 1 0 17h-9"/>
+        <path d="M33 33h11a9 9 0 0 1 0 18h-11"/>
+      </g>
+      <rect x="29" y="30.4" width="30" height="3.2" fill="var(--mgap,#fff)"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="wrap">
+<header class="top">
+  <div class="eyebrow">Bộ nhận diện thương hiệu · v1.0</div>
+  <h1>carBase</h1>
+  <p class="lead">The Foundation of Fleet Management — nền tảng vận hành cho thuê xe và quản lý đội xe. Bộ nhận diện dùng chung cho web app (<code>/app</code>, <code>/superadmin</code>, <code>/portal</code>) và landing page, dựa trên file Canva mẫu và token màu hiện có của project.</p>
+</header>
+
+<section>
+  <div class="eyebrow">01 · Logo</div><h2>Hệ logo</h2>
+  <p class="lead" style="margin-bottom:20px">Wordmark “car” đậm + “Base” màu cam; chữ C và B được cắt ghép thành biểu tượng riêng để dùng làm favicon, avatar và app icon.</p>
+  <div class="grid g3">
+    <div class="logo-tile" style="background:#fff">
+      <span class="wm" style="font-size:56px"><span class="c">car</span><span class="b">Base</span></span>
+      <span class="tag">The Foundation of Fleet Management</span><div class="cap">Chính — nền sáng</div>
+    </div>
+    <div class="logo-tile dark">
+      <span class="wm" style="font-size:56px"><span class="c">car</span><span class="b">Base</span></span>
+      <span class="tag">The Foundation of Fleet Management</span><div class="cap">Chế độ tối</div>
+    </div>
+    <div class="logo-tile orange">
+      <span class="wm" style="font-size:56px"><span class="c">car</span><span class="b">Base</span></span>
+      <span class="tag">The Foundation of Fleet Management</span><div class="cap">Đơn sắc trên nền cam</div>
+    </div>
+  </div>
+  <div class="grid g4" style="margin-top:16px">
+    <div class="logo-tile" style="background:#fff;min-height:160px"><svg width="72" height="72"><use href="#mark"/></svg><div class="cap">Biểu tượng C+B</div></div>
+    <div class="logo-tile dark" style="min-height:160px"><svg width="72" height="72" style="--mc:#fff;--mb:#f0914f;--mgap:#111827"><use href="#mark"/></svg><div class="cap">Biểu tượng — tối</div></div>
+    <div class="logo-tile" style="background:var(--orange-strong);min-height:160px"><div style="background:#fff;border-radius:20px;padding:14px;display:grid;place-items:center"><svg width="56" height="56"><use href="#mark"/></svg></div><div class="cap">App icon / avatar</div></div>
+    <div class="logo-tile" style="background:#fff;min-height:160px;flex-direction:row;gap:10px"><svg width="28" height="28"><use href="#mark"/></svg><span class="wm" style="font-size:22px"><span class="c">car</span><span class="b">Base</span></span><div class="cap" style="position:static;margin:0"></div></div>
+  </div>
+  <p class="cap" style="margin-top:12px">Vùng an toàn quanh logo ≥ chiều cao chữ “B”. Kích thước tối thiểu: wordmark 96px, biểu tượng 20px. Không kéo giãn, không đổi màu ngoài các biến thể trên.</p>
+</section>
+
+<section>
+  <div class="eyebrow">02 · Màu sắc</div><h2>Bảng màu</h2>
+  <p class="lead" style="margin-bottom:20px">Khớp với <code>apps/web/src/styles/tokens.css</code> — web app và landing page dùng cùng một bộ giá trị.</p>
+  <div class="grid g4">
+    <div class="sw"><div class="chip" style="background:#e9702e;color:#fff">Cam thương hiệu</div><div class="meta"><b>#E9702E</b><span>--brand · điểm nhấn, biểu đồ</span></div></div>
+    <div class="sw"><div class="chip" style="background:#ad4511;color:#fff">Cam đậm</div><div class="meta"><b>#AD4511</b><span>--brand-solid · nút chính, chữ “Base”</span></div></div>
+    <div class="sw"><div class="chip" style="background:#90380e;color:#fff">Cam hover</div><div class="meta"><b>#90380E</b><span>--brand-hover</span></div></div>
+    <div class="sw"><div class="chip" style="background:#fff0e6;color:#ad4511">Cam nhạt</div><div class="meta"><b>#FFF0E6</b><span>--brand-subtle · nền chọn</span></div></div>
+    <div class="sw"><div class="chip" style="background:#2e3540;color:#fff">Navy</div><div class="meta"><b>#2E3540</b><span>--text-primary · chữ “car”</span></div></div>
+    <div class="sw"><div class="chip" style="background:#111827;color:#fff">Navy đậm</div><div class="meta"><b>#111827</b><span>Nền chế độ tối, CTA</span></div></div>
+    <div class="sw"><div class="chip" style="background:#f4f4f3">Canvas</div><div class="meta"><b>#F4F4F3</b><span>--canvas · nền trang</span></div></div>
+    <div class="sw"><div class="chip" style="background:#fff">Surface</div><div class="meta"><b>#FFFFFF</b><span>--surface · thẻ, bảng</span></div></div>
+  </div>
+  <h2 style="font-size:16px;margin:28px 0 12px">Màu trạng thái</h2>
+  <div class="grid g4">
+    <div class="sw"><div class="chip" style="background:#eaf5ee;color:#24734e">Thành công</div><div class="meta"><b>#24734E</b><span>Xe sẵn sàng</span></div></div>
+    <div class="sw"><div class="chip" style="background:#fff5df;color:#885b12">Cảnh báo</div><div class="meta"><b>#885B12</b><span>Sắp hết hạn</span></div></div>
+    <div class="sw"><div class="chip" style="background:#fcecee;color:#b63d42">Lỗi</div><div class="meta"><b>#B63D42</b><span>Quá hạn / sự cố</span></div></div>
+    <div class="sw"><div class="chip" style="background:#eaf2f8;color:#356482">Thông tin</div><div class="meta"><b>#356482</b><span>Đang thuê / GPS</span></div></div>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">03 · Chữ</div><h2>Typography — Inter</h2>
+  <div class="card" style="margin-top:16px">
+    <div class="type-row"><small>Display · 800 · 44/48</small><span style="font-size:44px;font-weight:800;letter-spacing:-.03em;line-height:1.1">Quản lý đội xe</span></div>
+    <div class="type-row"><small>Title · 700 · 28</small><span style="font-size:28px;font-weight:700">Hợp đồng thuê xe</span></div>
+    <div class="type-row"><small>Section · 600 · 17</small><span style="font-size:17px;font-weight:600">Lịch bàn giao và nhận trả</span></div>
+    <div class="type-row"><small>Body · 400 · 15/1.55</small><span style="font-size:15px">Theo dõi vị trí, giấy tờ, bảo hiểm và doanh thu từng xe trong một nơi.</span></div>
+    <div class="type-row" style="border:0"><small>Caption · 500 · 12</small><span style="font-size:12px;font-weight:500;color:var(--text2)">Cập nhật 5 phút trước</span></div>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">04 · Thành phần</div><h2>Nút, nhãn trạng thái, biểu mẫu</h2>
+  <div class="grid g2" style="margin-top:16px">
+    <div class="card">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px">
+        <button class="btn p">Tạo hợp đồng</button><button class="btn s">Xuất CSV</button><button class="btn g">Xem chi tiết</button>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <span class="badge b-ok">Sẵn sàng</span><span class="badge b-brand">Đang thuê</span><span class="badge b-warn">Sắp đến hạn</span><span class="badge b-bad">Quá hạn</span><span class="badge b-info">GPS TEST</span>
+      </div>
+    </div>
+    <div class="card">
+      <label style="font-size:13px;font-weight:600">Biển số xe</label>
+      <input class="f" value="51H-123.45" style="margin:6px 0 12px">
+      <label style="font-size:13px;font-weight:600">Chi nhánh</label>
+      <input class="f" placeholder="Chọn chi nhánh" style="margin-top:6px">
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">05 · Web app</div><h2>Mẫu giao diện dashboard</h2>
+  <div class="app" style="margin-top:16px">
+    <aside class="side">
+      <div style="display:flex;align-items:center;gap:8px;padding:4px 6px 14px"><svg width="26" height="26"><use href="#mark"/></svg><span class="wm" style="font-size:20px"><span class="c">car</span><span class="b">Base</span></span></div>
+      <a class="on">Tổng quan</a><a>Đội xe</a><a>Hợp đồng</a><a>Khách hàng</a><a>Thu chi</a><a>GPS</a><a>Báo cáo</a>
+    </aside>
+    <div class="main">
+      <h3 style="font-size:22px;font-weight:700">Tổng quan</h3>
+      <div class="kpis">
+        <div class="kpi"><small>Xe đang thuê</small><b>24 / 31</b></div>
+        <div class="kpi"><small>Doanh thu tháng</small><b style="color:var(--orange-strong)">186 triệu</b></div>
+        <div class="kpi"><small>Cảnh báo</small><b>3</b></div>
+      </div>
+      <table>
+        <tr><th>Biển số</th><th>Khách thuê</th><th>Trả xe</th><th>Trạng thái</th></tr>
+        <tr><td>51H-123.45</td><td>Nguyễn Văn A</td><td>12/11</td><td><span class="badge b-brand">Đang thuê</span></td></tr>
+        <tr><td>30K-678.90</td><td>Trần Thị B</td><td>09/11</td><td><span class="badge b-warn">Sắp đến hạn</span></td></tr>
+        <tr style="border:0"><td>29A-246.80</td><td>—</td><td>—</td><td><span class="badge b-ok">Sẵn sàng</span></td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">06 · Landing page</div><h2>Mẫu landing page</h2>
+  <div class="land" style="margin-top:16px">
+    <div class="nav">
+      <span style="display:flex;align-items:center;gap:8px"><svg width="26" height="26"><use href="#mark"/></svg><span class="wm" style="font-size:22px"><span class="c">car</span><span class="b">Base</span></span></span>
+      <ul><li>Tính năng</li><li>Bảng giá</li><li>Liên hệ</li></ul>
+      <button class="btn p">Đăng nhập</button>
+    </div>
+    <div class="hero">
+      <div>
+        <span class="badge b-brand">Cho doanh nghiệp cho thuê xe</span>
+        <h3 style="margin-top:14px">Nền tảng cho <em>vận hành đội xe</em> của bạn</h3>
+        <p>Hợp đồng, bàn giao, GPS, thu chi và cảnh báo hạn giấy tờ — gọn trong một hệ thống, dữ liệu tách biệt theo từng doanh nghiệp.</p>
+        <div style="display:flex;gap:10px"><button class="btn p">Dùng thử</button><button class="btn s">Xem demo</button></div>
+      </div>
+      <div class="vis">
+        <div class="row"><span>51H-123.45</span><span style="color:#f0914f">Đang thuê</span></div>
+        <div class="row"><span>30K-678.90</span><span style="color:#ffd27a">Sắp đến hạn</span></div>
+        <div class="row"><span>29A-246.80</span><span style="color:#7fd1a6">Sẵn sàng</span></div>
+      </div>
+    </div>
+    <div class="feat">
+      <div><div class="ic">H</div><b>Hợp đồng &amp; in A4</b><p class="cap">Báo giá, hợp đồng, biên bản bàn giao.</p></div>
+      <div><div class="ic">G</div><b>Theo dõi GPS</b><p class="cap">Vị trí và lịch sử hành trình.</p></div>
+      <div><div class="ic">B</div><b>Báo cáo</b><p class="cap">Doanh thu, chi phí, lợi nhuận theo xe.</p></div>
+    </div>
+    <div class="cta"><div><b style="font-size:20px">Sẵn sàng đặt nền móng cho đội xe?</b><div class="cap" style="color:#fff9">The Foundation of Fleet Management</div></div><button class="btn p" style="background:var(--orange)">Bắt đầu</button></div>
+  </div>
+</section>
+
+<footer>carBase · Bộ nhận diện v1.0 · Tham khảo Canva “xeBase — Logo System” và token trong <code>apps/web/src/styles/tokens.css</code>.</footer>
+</div>
+</body>
+</html>
