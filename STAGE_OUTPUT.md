@@ -480,3 +480,17 @@ Cập nhật: 08/11/2026. Mỗi stage chỉ gồm phần bàn giao và checklist
 - [ ] Tắt cờ AI → hỏi một câu → thấy thông báo AI chưa bật; Cảnh báo và Báo cáo vẫn dùng bình thường.
 - [ ] Đăng nhập Superadmin hoặc Customer → không vào được `/app/ai`.
 
+## Stage 35 output
+
+### Delivery
+
+- Máy chủ MCP chạy cục bộ qua stdio cho Claude Desktop hoặc MCP Inspector, dùng cùng sáu công cụ chỉ đọc, gắn cờ chỉ-đọc và cố định một Owner/doanh nghiệp thử trong biến môi trường.
+- Mặc định tắt (`MCP_ENABLED=false`), từ chối chạy ở staging/production; chưa có MCP từ xa/HTTP.
+
+### Cases to test
+
+- [ ] Bật `MCP_ENABLED=true` với Owner và doanh nghiệp thử, mở MCP Inspector → liệt kê đúng sáu công cụ; gọi `get_business_report` → trả báo cáo của doanh nghiệp đó.
+- [ ] Gọi công cụ kèm `businessId` khác hoặc tên công cụ không có → bị từ chối, không có dữ liệu.
+- [ ] Vô hiệu hóa Owner rồi gọi lại → công cụ báo bị từ chối.
+- [ ] Không đặt `MCP_ENABLED` hoặc đặt `APP_ENV=production` → tiến trình thoát với thông báo rõ ràng.
+

@@ -13,6 +13,7 @@
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main.js",
+    "mcp:stdio": "node dist/ai/mcp/stdio.js",
     "lint": "oxlint --type-aware src/ test/",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -36,6 +37,7 @@
   },
   "dependencies": {
     "@ffprobe-installer/ffprobe": "2.1.2",
+    "@modelcontextprotocol/server": "2.4.0",
     "@nestjs/common": "^12.0.1",
     "@nestjs/core": "^12.0.1",
     "@nestjs/platform-express": "^12.0.1",
