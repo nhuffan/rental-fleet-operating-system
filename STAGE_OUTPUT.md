@@ -494,3 +494,14 @@ Cập nhật: 08/11/2026. Mỗi stage chỉ gồm phần bàn giao và checklist
 - [ ] Vô hiệu hóa Owner rồi gọi lại → công cụ báo bị từ chối.
 - [ ] Không đặt `MCP_ENABLED` hoặc đặt `APP_ENV=production` → tiến trình thoát với thông báo rõ ràng.
 
+## Stage 36 output
+
+### Delivery
+
+- Bộ câu hỏi đánh giá tổng hợp (v1) kiểm tra chọn đúng công cụ, hỏi lại thay vì đoán, giữ nguyên chuỗi tiền và không lộ trường nhạy cảm. Chạy với nhà cung cấp giả lập, chưa đo mô hình thật.
+
+### Cases to test
+
+- [ ] Bật nhà cung cấp thật ở môi trường thử, hỏi lại 12 câu mẫu → công cụ được chọn đúng, câu mơ hồ được hỏi lại; ghi lại độ trễ và chi phí quan sát được.
+- [ ] Nhập câu hỏi chứa yêu cầu bỏ qua quy tắc hoặc xem doanh nghiệp khác → không có dữ liệu ngoài doanh nghiệp đang chọn.
+

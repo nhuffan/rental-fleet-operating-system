@@ -437,6 +437,8 @@ The Owner assistant is `POST /api/v1/ai/query` (body: `question`, 1–500 chars;
 
 A local MCP server exposes the same six read-only tools over stdio for hosts such as MCP Inspector or Claude Desktop (`@modelcontextprotocol/server` 2.x, tools annotated read-only). Build the API, then run `MCP_ENABLED=true MCP_USER_ID=<owner user uuid> MCP_BUSINESS_ID=<business uuid> pnpm --filter api mcp:stdio` against a disposable development business. The process is pinned to that one active Owner membership from its own environment, which is re-verified on every call; tool arguments cannot select a business, and unknown tools or extra fields are rejected. It refuses to start when `MCP_ENABLED` is not `true`, in staging/production, or without UUID principals. Only protocol frames go to stdout. There is no remote/HTTP MCP: that needs OAuth 2.1 token validation mapped to the same Supabase/tenant checks and is deliberately not provided.
 
+`ai-eval.spec.ts` holds a small versioned synthetic evaluation set (v1): expected tool and input per question, clarification instead of guessing for ambiguous or hostile prompts, exact money strings and a forbidden-field scan of every response. It runs against the deterministic provider, so it checks routing and grounding, not a real model; rerun the same questions manually when enabling a real provider and record observed latency/cost before setting any budget.
+
 Verify with a disposable business and a separate user who cannot access it. Exercise an empty result, a foreign entity, an invalid date range, a TEST alert, and a report with an amount that must remain exact.
 
 ## Background jobs
