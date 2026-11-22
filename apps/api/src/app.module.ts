@@ -50,8 +50,13 @@ import { RentalController } from './rentals/rental.controller.js';
 import { RentalService } from './rentals/rental.service.js';
 import { AuthGuard, TenantGuard, PermissionGuard } from './auth/guards.js';
 import { AiTools } from './ai/ai-tools.js';
+import { AiController } from './ai/ai.controller.js';
+import { AiService, AI_CONFIG, AI_PROVIDER } from './ai/ai.service.js';
+import { aiConfig } from './ai/ai-config.js';
+import { createProvider } from './ai/model-provider.js';
 @Module({
   controllers: [
+    AiController,
     ContractController,
     AppController,
     AlertsController,
@@ -75,6 +80,13 @@ import { AiTools } from './ai/ai-tools.js';
     ContractService,
     Database,
     AiTools,
+    AiService,
+    { provide: AI_CONFIG, useFactory: () => aiConfig() },
+    {
+      provide: AI_PROVIDER,
+      inject: [AI_CONFIG],
+      useFactory: createProvider,
+    },
     AlertsService,
     CommercialService,
     TollService,

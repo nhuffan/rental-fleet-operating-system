@@ -4,6 +4,23 @@
  */
 
 export interface paths {
+    "/api/v1/ai/query": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Read-only operations assistant. Answers are grounded in allowlisted tenant-scoped tools; the model never selects a business or writes data. */
+        post: operations["AiController_query"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/rentals/{id}/contract": {
         parameters: {
             query?: never;
@@ -1338,6 +1355,43 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AiQueryDto: {
+            question: string;
+        };
+        AiFact: {
+            label: string;
+            value: string;
+        };
+        AiSource: {
+            id: string;
+            label: string;
+            /** @description In-app path built by the server. */
+            path: string;
+        };
+        AiToolUse: {
+            name: string;
+            /** Format: uuid */
+            traceId: string;
+            /** @enum {string} */
+            status: "OK" | "ERROR";
+        };
+        AiDiagnostics: {
+            provider: string;
+            latencyMs: number;
+            toolCalls: number;
+        };
+        AiAnswerResponse: {
+            /** @enum {string} */
+            status: "ANSWERED" | "CLARIFICATION_NEEDED" | "NO_DATA";
+            answer: string;
+            facts: components["schemas"]["AiFact"][];
+            sourceReferences: components["schemas"]["AiSource"][];
+            /** Format: date-time */
+            asOf: string | null;
+            limitations: string[];
+            toolsUsed: components["schemas"]["AiToolUse"][];
+            diagnostics: components["schemas"]["AiDiagnostics"];
+        };
         ContractBusinessResponse: {
             legalName: string;
             name: string;
@@ -3390,6 +3444,121 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    AiController_query: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Business-Id"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AiQueryDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiAnswerResponse"];
+                };
+            };
+            /** @description Standard API error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+            /** @description Standard API error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        statusCode: number;
+                        code: string;
+                        message: string;
+                        /** Format: uuid */
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
     ContractController_list: {
         parameters: {
             query?: never;

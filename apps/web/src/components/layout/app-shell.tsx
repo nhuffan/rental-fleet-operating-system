@@ -211,6 +211,9 @@ export function AppShell({
               },
             ]
           : []),
+        ...(!preview && context?.permissions.includes("alert.read")
+          ? [{ href: "/app/ai", label: "Trợ lý AI", icon: "search" as const }]
+          : []),
         ...(!preview && context?.permissions.includes("report.read")
           ? [
               {

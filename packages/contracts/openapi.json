@@ -1,6 +1,239 @@
 {
   "openapi": "3.0.0",
   "paths": {
+    "/api/v1/ai/query": {
+      "post": {
+        "description": "Read-only operations assistant. Answers are grounded in allowlisted tenant-scoped tools; the model never selects a business or writes data.",
+        "operationId": "AiController_query",
+        "parameters": [
+          {
+            "name": "X-Business-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiQueryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiAnswerResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Standard API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "statusCode",
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "",
+        "tags": [
+          "AI assistant"
+        ]
+      }
+    },
     "/api/v1/rentals/{id}/contract": {
       "get": {
         "operationId": "ContractController_list",
@@ -25491,6 +25724,155 @@
       }
     },
     "schemas": {
+      "AiQueryDto": {
+        "type": "object",
+        "properties": {
+          "question": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "question"
+        ]
+      },
+      "AiFact": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "value"
+        ]
+      },
+      "AiSource": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string",
+            "description": "In-app path built by the server."
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "path"
+        ]
+      },
+      "AiToolUse": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "traceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "OK",
+              "ERROR"
+            ]
+          }
+        },
+        "required": [
+          "name",
+          "traceId",
+          "status"
+        ]
+      },
+      "AiDiagnostics": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string"
+          },
+          "latencyMs": {
+            "type": "number"
+          },
+          "toolCalls": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "provider",
+          "latencyMs",
+          "toolCalls"
+        ]
+      },
+      "AiAnswerResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ANSWERED",
+              "CLARIFICATION_NEEDED",
+              "NO_DATA"
+            ]
+          },
+          "answer": {
+            "type": "string"
+          },
+          "facts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AiFact"
+            }
+          },
+          "sourceReferences": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AiSource"
+            }
+          },
+          "asOf": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "limitations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "toolsUsed": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AiToolUse"
+            }
+          },
+          "diagnostics": {
+            "$ref": "#/components/schemas/AiDiagnostics"
+          }
+        },
+        "required": [
+          "status",
+          "answer",
+          "facts",
+          "sourceReferences",
+          "asOf",
+          "limitations",
+          "toolsUsed",
+          "diagnostics"
+        ]
+      },
       "ContractBusinessResponse": {
         "type": "object",
         "properties": {

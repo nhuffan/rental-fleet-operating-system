@@ -465,3 +465,18 @@ Cập nhật: 08/11/2026. Mỗi stage chỉ gồm phần bàn giao và checklist
 
 - [x] Gọi tool bằng bộ dữ liệu thử → giữ số tiền gốc, giờ dữ liệu, nhãn GPS TEST và loại trường khách/thiết bị.
 - [x] Gọi với quyền không hợp lệ, UUID xe ngoài phạm vi hoặc bộ lọc khách → từ chối, không trả dữ liệu nhạy cảm.
+
+## Stage 34 output
+
+### Delivery
+
+- Owner có trang **Trợ lý AI** (`/app/ai`): hỏi về cảnh báo, báo cáo 30 ngày và xe còn trống; câu trả lời kèm số liệu, nguồn, giờ dữ liệu và giới hạn (GPS luôn là TEST). Câu hỏi thiếu thông tin được hỏi lại.
+- Mặc định tắt; chỉ đọc, tối đa 4 lần gọi công cụ mỗi câu hỏi. Chưa chạy với nhà cung cấp mô hình thật, chỉ có nhà cung cấp giả lập cho phát triển.
+
+### Cases to test
+
+- [ ] Bật `AI_COPILOT_ENABLED=true`, `AI_PROVIDER=fake` → `/app/ai` → bấm "Hôm nay xe nào cần xử lý?" → thấy cảnh báo, nguồn, giờ dữ liệu và ghi chú GPS TEST.
+- [ ] Hỏi "Xe nào còn trống?" không kèm ngày → AI hỏi lại khoảng ngày, không hiện danh sách xe.
+- [ ] Tắt cờ AI → hỏi một câu → thấy thông báo AI chưa bật; Cảnh báo và Báo cáo vẫn dùng bình thường.
+- [ ] Đăng nhập Superadmin hoặc Customer → không vào được `/app/ai`.
+
